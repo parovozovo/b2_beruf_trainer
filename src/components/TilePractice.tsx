@@ -1143,9 +1143,9 @@ const Hoeren2UI: React.FC<{
           })}
         </div>
 
-        <div className="p-4 bg-slate-900/60 rounded-xl border border-slate-800 text-xs text-slate-300 leading-relaxed whitespace-pre-wrap font-mono">
-          <h4 className="font-bold text-indigo-400 mb-2">Optionenliste (A-F):</h4>
-          {variant.optionsAtoF}
+        <div className="p-5 sm:p-6 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-lg text-sm sm:text-base text-slate-100 leading-relaxed font-sans">
+          <h4 className="font-extrabold text-indigo-600 dark:text-indigo-400 mb-3 text-sm uppercase tracking-wider">Aussagen / Optionen (A–F):</h4>
+          <FormattedText text={variant.optionsAtoF} />
         </div>
       </div>
     </div>
@@ -1237,11 +1237,9 @@ const Sprachbausteine1UI: React.FC<{
 
   return (
     <div className="space-y-6">
-      <div className="p-4 bg-slate-900/60 rounded-xl border border-slate-800 text-xs text-slate-200 leading-relaxed whitespace-pre-wrap font-sans">
-        <h4 className="font-bold text-indigo-400 mb-2">Lückentext (46-51):</h4>
-        <div className="p-3 bg-slate-950/60 rounded-lg">
-          {variant.textWithGaps}
-        </div>
+      <div className="p-5 sm:p-6 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-lg text-sm sm:text-base text-slate-100 leading-relaxed font-sans space-y-3">
+        <h4 className="font-extrabold text-indigo-600 dark:text-indigo-400 text-sm uppercase tracking-wider">Lückentext (Fragen 46–51):</h4>
+        <FormattedText text={variant.textWithGaps} />
       </div>
 
       <div className="p-4 bg-slate-900/40 rounded-xl border border-slate-800 space-y-3">
@@ -1298,9 +1296,9 @@ const Sprachbausteine2UI: React.FC<{
 }> = ({ variant, userAnswers, onAnswerChange, submitted }) => {
   return (
     <div className="space-y-6">
-      <div className="p-4 bg-slate-900/60 rounded-xl border border-slate-800 text-xs text-slate-200 leading-relaxed whitespace-pre-wrap">
-        <h4 className="font-bold text-indigo-400 mb-2">Text (52-57):</h4>
-        {variant.textWithGaps}
+      <div className="p-5 sm:p-6 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-lg text-sm sm:text-base text-slate-100 leading-relaxed font-sans space-y-3">
+        <h4 className="font-extrabold text-indigo-600 dark:text-indigo-400 text-sm uppercase tracking-wider">Mitteilung (Fragen 52–57):</h4>
+        <FormattedText text={variant.textWithGaps} />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">

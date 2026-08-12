@@ -15,10 +15,10 @@ export const FormattedText: React.FC<FormattedTextProps> = ({ text, className = 
     html = html.replace(/__(.*?)__/g, '<strong>$1</strong>');
 
     // Convert markdown italic *text* or _text_ -> <em>text</em>
-    html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    html = html.replace(/(?<!\*)\*(?!\*)(.*?)(?<!\*)\*(?!\*)/g, '<em>$1</em>');
 
-    // Convert line breaks \n -> <br />
-    html = html.replace(/\n/g, '<br />');
+    // Convert line breaks \r\n or \n -> <br />
+    html = html.replace(/\r\n/g, '<br />').replace(/\n/g, '<br />');
 
     return html;
   }, [text]);

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Mic, Play, Pause, RotateCcw, CheckCircle2, Sparkles, ArrowRight, Volume2, User, Users, RefreshCw } from 'lucide-react';
 import { playChimeSound } from '../utils/audio';
+import { FormattedText } from './FormattedText';
 import confetti from 'canvas-confetti';
 
 interface SprechenModuleProps {
@@ -23,7 +24,6 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
   // Topics choices
   const [choices1A, setChoices1A] = useState<Array<{ title: string; promptText: string }>>([]);
   const [choices2, setChoices2] = useState<Array<{ title: string; promptText: string }>>([]);
-  const [choice3, setChoice3] = useState<{ title: string; promptText: string } | null>(null);
 
   // Selected topics for Candidate A and Candidate B
   const [selectedTopicA, setSelectedTopicA] = useState<{ title: string; promptText: string } | null>(null);
@@ -120,13 +120,12 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
   const initPart3 = () => {
     setActivePart('3');
     const situations = sprechenTopics.sprecher3Situations;
-    const rand = situations[Math.floor(Math.random() * situations.length)] || {
+    const defaultSit = situations[0] || {
       title: 'Veranstaltungsorganisation',
       promptText: 'Planen Sie gemeinsam mit einem Kollegen eine interne Fortbildungsveranstaltung.',
     };
-    setChoice3(rand);
-    setSelectedTopicA(rand);
-    setSelectedTopicB(rand);
+    setSelectedTopicA(defaultSit);
+    setSelectedTopicB(defaultSit);
     setTimerSecondsA(180);
     setTimerSecondsB(180);
     setIsTimerRunning(false);
@@ -324,7 +323,7 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
                         }`}
                       >
                         <div className="font-bold text-xs mb-1">{t.title}</div>
-                        <div className="text-[11px] text-slate-400 line-clamp-2">{t.promptText}</div>
+                        <FormattedText text={t.promptText} className="text-[11px] text-slate-400 line-clamp-2" />
                       </div>
                     );
                   })}
@@ -346,17 +345,32 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
                         }`}
                       >
                         <div className="font-bold text-xs mb-1">{t.title}</div>
-                        <div className="text-[11px] text-slate-400 leading-relaxed">{t.promptText}</div>
+                        <FormattedText text={t.promptText} className="text-[11px] text-slate-400 leading-relaxed" />
                       </div>
                     );
                   })}
                 </div>
               )}
 
-              {activePart === '3' && choice3 && (
-                <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl space-y-2">
-                  <div className="font-bold text-xs text-emerald-300">{choice3.title}</div>
-                  <div className="text-xs text-slate-300 leading-relaxed">{choice3.promptText}</div>
+              {activePart === '3' && (
+                <div className="space-y-2.5 max-h-[520px] overflow-y-auto pr-1">
+                  {sprechenTopics.sprecher3Situations.map((t, idx) => {
+                    const isSelected = activeTopic?.title === t.title;
+                    return (
+                      <div
+                        key={idx}
+                        onClick={() => handleSelectTopic(t, 180)}
+                        className={`p-3 rounded-xl cursor-pointer transition-all border ${
+                          isSelected
+                            ? 'bg-emerald-500/25 border-emerald-500 text-white shadow-lg'
+                            : 'glass-card border-slate-800 text-slate-300 hover:border-slate-700'
+                        }`}
+                      >
+                        <div className="font-bold text-xs mb-1">{t.title}</div>
+                        <FormattedText text={t.promptText} className="text-[11px] text-slate-400 line-clamp-2" />
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -378,9 +392,9 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
                       Sprechen {activePart} — Einzelmodus
                     </span>
                     <h3 className="text-lg font-bold text-white mt-2">{selectedTopicA.title}</h3>
-                    <p className="text-xs text-slate-300 max-w-xl mx-auto mt-2 leading-relaxed bg-slate-900/60 p-3 rounded-xl border border-slate-800">
-                      {selectedTopicA.promptText}
-                    </p>
+                    <div className="text-xs text-slate-300 max-w-xl mx-auto mt-2 leading-relaxed bg-slate-900/60 p-4 rounded-xl border border-slate-800 text-left">
+                      <FormattedText text={selectedTopicA.promptText} />
+                    </div>
                   </div>
 
                   {/* Circular Timer */}
@@ -425,7 +439,7 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
             ) : (
               /* --- PAARMODUS (2 PERSONEN - SIMULATION) --- */
               <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-6">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3">
                   <span className="px-3 py-1 bg-emerald-500/20 text-emerald-300 rounded-md text-xs font-extrabold uppercase flex items-center gap-1.5">
                     <Users className="w-4 h-4" /> Paarmodus — Partner-Simulation
                   </span>
@@ -435,9 +449,22 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
                     onClick={() => handleSwitchSpeaker()}
                     className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold rounded-xl text-xs flex items-center gap-2 shadow-lg transition-all"
                   >
-                    <RefreshCw className="w-4 h-4" /> Sprecher wechseln (Jetzt: Partner {activeSpeaker})
+                    <RefreshCw className="w-4 h-4" /> Sprecher wechseln (Jetzt am Wort: Partner {activeSpeaker})
                   </button>
                 </div>
+
+                {/* Full-Width Active Task & Situation Card */}
+                {activeTopic && (
+                  <div className="p-4 sm:p-5 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-md space-y-2 text-left">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-extrabold uppercase text-indigo-400">
+                        📌 Aufgabenstellung für Partner {activeSpeaker}:
+                      </span>
+                      <span className="text-xs font-bold text-slate-300">{activeTopic.title}</span>
+                    </div>
+                    <FormattedText text={activeTopic.promptText} className="text-xs sm:text-sm text-slate-100 font-sans leading-relaxed pt-2 border-t border-slate-800" />
+                  </div>
+                )}
 
                 {/* Dual Speaker Cards Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -450,7 +477,7 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
                         : 'bg-slate-900/50 border-slate-800 opacity-75 hover:opacity-100'
                     }`}
                   >
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center justify-between mb-2">
                       <span className={`text-xs font-black uppercase px-2.5 py-1 rounded-lg ${
                         activeSpeaker === 'A' ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-400'
                       }`}>
@@ -461,13 +488,8 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
                       </span>
                     </div>
 
-                    <div className="text-xs space-y-1">
-                      <div className="font-bold text-slate-200">
-                        {selectedTopicA?.title || 'Kein Thema gewählt'}
-                      </div>
-                      <div className="text-[11px] text-slate-400 line-clamp-2">
-                        {selectedTopicA?.promptText || 'Klicken Sie links ein Thema für Partner A an.'}
-                      </div>
+                    <div className="text-xs font-bold text-slate-300 truncate">
+                      {selectedTopicA?.title || 'Kein Thema gewählt'}
                     </div>
                   </div>
 
@@ -480,7 +502,7 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
                         : 'bg-slate-900/50 border-slate-800 opacity-75 hover:opacity-100'
                     }`}
                   >
-                    <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center justify-between mb-2">
                       <span className={`text-xs font-black uppercase px-2.5 py-1 rounded-lg ${
                         activeSpeaker === 'B' ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-400'
                       }`}>
@@ -491,13 +513,8 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
                       </span>
                     </div>
 
-                    <div className="text-xs space-y-1">
-                      <div className="font-bold text-slate-200">
-                        {selectedTopicB?.title || 'Kein Thema gewählt'}
-                      </div>
-                      <div className="text-[11px] text-slate-400 line-clamp-2">
-                        {selectedTopicB?.promptText || 'Klicken Sie links ein Thema für Partner B an.'}
-                      </div>
+                    <div className="text-xs font-bold text-slate-300 truncate">
+                      {selectedTopicB?.title || 'Kein Thema gewählt'}
                     </div>
                   </div>
                 </div>
