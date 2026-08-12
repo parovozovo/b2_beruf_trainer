@@ -960,7 +960,7 @@ const LesenSchreibenUI: React.FC<{
   );
 };
 
-// Hoeren 1 UI (3 Nachrichten: Q22-23, Q24-25, Q26-27)
+// Hoeren 1 UI (Supports 1 single audio MP3 file OR 3 separate audio MP3 files)
 const Hoeren1UI: React.FC<{
   variant: {
     audioUrl?: string;
@@ -977,22 +977,26 @@ const Hoeren1UI: React.FC<{
   onAnswerChange: (key: string, val: string) => void;
   submitted: boolean;
 }> = ({ variant, userAnswers, onAnswerChange, submitted }) => {
+  const hasMultipleAudio = !!(variant.audioUrl2 || variant.audioUrl3);
+  const mainAudioUrl = variant.audioUrl || variant.audioUrl1;
+  const mainScriptText = variant.scriptText;
+
   const parts = [
     {
       title: 'Teil A / Nachricht 1 (Fragen 22–23)',
-      audioUrl: variant.audioUrl1 || (variant.audioUrl1 === undefined && variant.audioUrl2 === undefined ? variant.audioUrl : undefined),
-      scriptText: variant.scriptText1 || (variant.scriptText1 === undefined && variant.scriptText2 === undefined ? variant.scriptText : undefined),
+      audioUrl: hasMultipleAudio ? variant.audioUrl1 : undefined,
+      scriptText: variant.scriptText1,
       qIds: [22, 23],
     },
     {
       title: 'Teil B / Nachricht 2 (Fragen 24–25)',
-      audioUrl: variant.audioUrl2,
+      audioUrl: hasMultipleAudio ? variant.audioUrl2 : undefined,
       scriptText: variant.scriptText2,
       qIds: [24, 25],
     },
     {
       title: 'Teil C / Nachricht 3 (Fragen 26–27)',
-      audioUrl: variant.audioUrl3,
+      audioUrl: hasMultipleAudio ? variant.audioUrl3 : undefined,
       scriptText: variant.scriptText3,
       qIds: [26, 27],
     },
@@ -1000,6 +1004,10 @@ const Hoeren1UI: React.FC<{
 
   return (
     <div className="space-y-8">
+      {/* If 1 single audio file for all 3 Nachrichten */}
+      {!hasMultipleAudio && (mainAudioUrl || mainScriptText) && (
+        <AudioPlayerBlock audioUrl={mainAudioUrl} scriptText={mainScriptText} />
+      )}
       {parts.map((part, pIdx) => {
         const partQuestions = variant.questions.filter((q) => part.qIds.includes(q.id));
         if (partQuestions.length === 0 && !part.audioUrl && !part.scriptText) return null;
