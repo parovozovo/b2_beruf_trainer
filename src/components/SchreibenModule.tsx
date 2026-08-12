@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { Modelltest, ForumsbeitragTopic, WrittenEssayRecord, User } from '../types';
-import { FileEdit, Timer, Copy, Trash2, CheckCircle2, History, Sparkles, FileText, RotateCcw } from 'lucide-react';
+import { FileEdit, Timer, Copy, Trash2, CheckCircle2, History, FileText, RotateCcw, ChevronDown } from 'lucide-react';
 import { getWrittenEssays, saveWrittenEssay, deleteWrittenEssay } from '../utils/storage';
 
 interface SchreibenModuleProps {
@@ -23,11 +23,12 @@ export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
     promptText: string;
   } | null>(null);
   const [randomForumsChoices, setRandomForumsChoices] = useState<ForumsbeitragTopic[]>([]);
+  const [showPrompt, setShowPrompt] = useState(false);
 
   // Editor & Timer state
   const [userText, setUserText] = useState('');
   const [isTimerRunning, setIsTimerRunning] = useState(false);
-  const [secondsRemaining, setSecondsRemaining] = useState(1800); // 30 min default
+  const [secondsRemaining, setSecondsRemaining] = useState(900); // 15 min default
   const [copied, setCopied] = useState(false);
 
   // Essays History
@@ -72,7 +73,7 @@ export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
 
     setActiveTopic(chosen);
     setUserText('');
-    setSecondsRemaining(1800); // 30 min
+    setSecondsRemaining(900); // 15 min for Beschwerdebrief
     setIsTimerRunning(true);
   };
 
@@ -84,7 +85,6 @@ export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
 
   const handleStartForumsbeitrag = () => {
     setTaskType('forumsbeitrag');
-    // Pick 2 random topics from forumsbeitragTopics
     const shuffled = [...forumsbeitragTopics].sort(() => 0.5 - Math.random());
     const picked = shuffled.slice(0, 2);
     setRandomForumsChoices(picked);
@@ -98,7 +98,7 @@ export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
       title: topic.title,
       promptText: topic.promptText,
     });
-    setSecondsRemaining(2400); // 40 min
+    setSecondsRemaining(1200); // 20 min for Forenbeitrag
     setIsTimerRunning(true);
   };
 
@@ -136,10 +136,9 @@ export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
     alert('Ihre schriftliche Arbeit wurde erfolgreich gespeichert!');
   };
 
-  const handleCopyForAI = () => {
+  const handleCopyText = () => {
     if (!userText.trim()) return;
-    const fullPrompt = `Bitte korrigieren Sie meinen deutschen Text auf Niveau B2 Beruf hinsichtlich Grammatik, Rechtschreibung und Stil:\n\nTHEMA: ${activeTopic?.title}\nAUFGABE: ${activeTopic?.promptText}\n\nMEIN TEXT:\n${userText}`;
-    navigator.clipboard.writeText(fullPrompt);
+    navigator.clipboard.writeText(userText);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
   };
@@ -237,26 +236,34 @@ export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
                 )}
               </div>
 
-              {/* ORIGINAL E-MAILS (AUSGANGSTEXT) */}
+              {/* ORIGINAL E-MAILS (EXPANDED HIGH READABILITY CONTAINER) */}
               {activeTopic.emailsText ? (
                 <div className="space-y-1.5">
                   <h4 className="text-xs font-extrabold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
                     <FileText className="w-4 h-4" /> E-Mail-Korrespondenz (Ausgangstext):
                   </h4>
-                  <div className="p-3.5 bg-slate-100 dark:bg-slate-900/90 rounded-xl text-xs sm:text-sm text-slate-900 dark:text-slate-100 font-sans leading-relaxed whitespace-pre-wrap max-h-72 overflow-y-auto border border-slate-300 dark:border-slate-800 shadow-inner">
+                  <div className="p-4 bg-slate-100 dark:bg-slate-900/90 rounded-2xl text-xs sm:text-sm text-slate-900 dark:text-slate-100 font-sans leading-relaxed whitespace-pre-wrap max-h-[520px] overflow-y-auto border border-slate-300 dark:border-slate-800 shadow-inner">
                     {activeTopic.emailsText}
                   </div>
                 </div>
               ) : null}
 
-              {/* ARBEITSAUFTRAG / LEITPUNKTE */}
-              <div className="space-y-1.5">
-                <h4 className="text-xs font-extrabold text-pink-600 dark:text-pink-400 uppercase tracking-wider">
-                  Aufgabenstellung / Leitpunkte:
-                </h4>
-                <p className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 font-semibold leading-relaxed p-3.5 bg-pink-500/10 rounded-xl border border-pink-500/20 whitespace-pre-wrap">
-                  {activeTopic.promptText}
-                </p>
+              {/* COLLAPSIBLE ARBEITSAUFTRAG / LEITPUNKTE (HIDDEN BY DEFAULT) */}
+              <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setShowPrompt(!showPrompt)}
+                  className="w-full text-xs font-extrabold text-pink-600 dark:text-pink-400 hover:underline flex items-center justify-between p-2.5 rounded-xl bg-pink-500/10 border border-pink-500/20"
+                >
+                  <span>📝 Aufgabenstellung & Leitpunkte (Frage 21)</span>
+                  <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showPrompt ? 'rotate-180' : ''}`} />
+                </button>
+
+                {showPrompt && (
+                  <p className="mt-2.5 text-xs sm:text-sm text-slate-800 dark:text-slate-200 font-semibold leading-relaxed p-3.5 bg-pink-500/10 rounded-xl border border-pink-500/20 whitespace-pre-wrap">
+                    {activeTopic.promptText}
+                  </p>
+                )}
               </div>
 
               <div className="pt-2 flex items-center justify-between text-xs font-mono text-amber-600 dark:text-amber-400">
@@ -270,35 +277,32 @@ export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
             </div>
 
             {/* Quick Metrics Panel */}
-            <div className="glass-panel p-4 rounded-2xl border border-slate-800 flex items-center justify-around text-center text-xs">
+            <div className="glass-panel p-4 rounded-2xl border border-slate-300 dark:border-slate-800 flex items-center justify-around text-center text-xs">
               <div>
-                <div className="text-slate-400 font-medium">Zeichenanzahl</div>
-                <div className="text-lg font-bold text-white font-mono">{charCount}</div>
+                <div className="text-slate-600 dark:text-slate-400 font-bold">Zeichenanzahl</div>
+                <div className="text-lg font-black text-slate-900 dark:text-white font-mono">{charCount}</div>
               </div>
-              <div className="w-px h-8 bg-slate-800" />
+              <div className="w-px h-8 bg-slate-300 dark:bg-slate-800" />
               <div>
-                <div className="text-slate-400 font-medium">Zeilen</div>
-                <div className="text-lg font-bold text-indigo-400 font-mono">{lineCount}</div>
+                <div className="text-slate-600 dark:text-slate-400 font-bold">Zeilen</div>
+                <div className="text-lg font-black text-indigo-600 dark:text-indigo-400 font-mono">{lineCount}</div>
               </div>
             </div>
           </div>
 
           {/* Right / Lower Pane: Rich Writing Textarea */}
           <div className="lg:col-span-2 space-y-4">
-            <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-4">
+            <div className="glass-panel p-5 rounded-2xl border border-slate-300 dark:border-slate-800 space-y-4">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+                <label className="text-xs font-extrabold text-slate-900 dark:text-slate-200 uppercase tracking-wider">
                   Ihr Text (auf Deutsch):
                 </label>
-                <span className="text-[11px] text-slate-500 italic">
-                  * Lokale Speicherung. Keine automatische Bewertung.
-                </span>
               </div>
 
               <textarea
                 value={userText}
                 onChange={(e) => setUserText(e.target.value)}
-                rows={14}
+                rows={16}
                 placeholder="Sehr geehrte Damen und Herren..."
                 className="w-full p-4 glass-input rounded-xl text-sm font-sans leading-relaxed focus:ring-2 focus:ring-pink-500"
               />
@@ -306,22 +310,22 @@ export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
               <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
                 <button
                   onClick={handleSaveEssay}
-                  className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-lg transition-colors"
+                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-xl text-xs sm:text-sm flex items-center gap-2 shadow-md transition-colors"
                 >
                   <CheckCircle2 className="w-4 h-4" /> Arbeit speichern
                 </button>
 
                 <button
-                  onClick={handleCopyForAI}
-                  className="px-4 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-extrabold rounded-xl text-xs flex items-center gap-2 shadow-md transition-colors"
+                  onClick={handleCopyText}
+                  className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-extrabold rounded-xl text-xs sm:text-sm flex items-center gap-2 shadow-sm transition-colors border border-slate-700"
                 >
                   {copied ? (
                     <>
-                      <CheckCircle2 className="w-4 h-4 text-emerald-300" /> Kopiert für KI!
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Text kopiert!
                     </>
                   ) : (
                     <>
-                      <Copy className="w-4 h-4" /> Für ChatGPT / KI kopieren <Sparkles className="w-3.5 h-3.5" />
+                      <Copy className="w-4 h-4" /> Text kopieren
                     </>
                   )}
                 </button>

@@ -1070,35 +1070,48 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs text-slate-400 mb-1">Haupttext / Text 1 / Skript / Lückentext</label>
+                  <label className="block text-xs font-extrabold text-indigo-600 dark:text-indigo-400 mb-1">
+                    {selectedTileType === 'lesen_1' && 'Situationen / Personen 1–5'}
+                    {selectedTileType === 'lesen_2' && 'Text 1 (Artikel / Arbeitsordnung)'}
+                    {selectedTileType === 'lesen_3' && 'Situationen / Anfragen (Fragen 10–13)'}
+                    {selectedTileType === 'lesen_4' && 'Protokoll / Bericht'}
+                    {selectedTileType === 'lesen_schreiben' && 'E-Mail-Korrespondenz (2 E-Mails)'}
+                    {selectedTileType.startsWith('hoeren') && 'Skript / Transkript (Hörtext)'}
+                    {selectedTileType === 'sprachbausteine_1' && 'Bewerbungsschreiben mit Lücken [46]–[51]'}
+                    {selectedTileType === 'sprachbausteine_2' && 'Mitteilung mit Lücken [52]–[57]'}
+                  </label>
                   <textarea
                     value={vText1}
                     onChange={(e) => setVText1(e.target.value)}
                     rows={6}
-                    className="w-full p-3 glass-input rounded-xl text-xs font-mono"
+                    className="w-full p-3 glass-input rounded-xl text-xs font-sans"
                   />
                 </div>
 
                 {selectedTileType === 'lesen_2' && (
                   <div>
-                    <label className="block text-xs text-slate-400 mb-1">Text 2</label>
+                    <label className="block text-xs font-extrabold text-indigo-600 dark:text-indigo-400 mb-1">Text 2</label>
                     <textarea
                       value={vText2}
                       onChange={(e) => setVText2(e.target.value)}
                       rows={6}
-                      className="w-full p-3 glass-input rounded-xl text-xs font-mono"
+                      className="w-full p-3 glass-input rounded-xl text-xs font-sans"
                     />
                   </div>
                 )}
 
                 {(selectedTileType === 'lesen_1' || selectedTileType === 'lesen_3' || selectedTileType === 'hoeren_2') && (
                   <div>
-                    <label className="block text-xs text-slate-400 mb-1">Optionen-Text (A-H / A-F)</label>
+                    <label className="block text-xs font-extrabold text-indigo-600 dark:text-indigo-400 mb-1">
+                      {selectedTileType === 'lesen_1' && 'Anzeigen / Informationen (A–H)'}
+                      {selectedTileType === 'lesen_3' && 'Antworten / Forenbeiträge (A–F)'}
+                      {selectedTileType === 'hoeren_2' && 'Aussagen (A–G)'}
+                    </label>
                     <textarea
                       value={vHeadingsBlock}
                       onChange={(e) => setVHeadingsBlock(e.target.value)}
                       rows={6}
-                      className="w-full p-3 glass-input rounded-xl text-xs font-mono"
+                      className="w-full p-3 glass-input rounded-xl text-xs font-sans"
                     />
                   </div>
                 )}

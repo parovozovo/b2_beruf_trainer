@@ -745,7 +745,7 @@ const Lesen3UI: React.FC<{
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div className="space-y-5">
         <div className="p-5 sm:p-6 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-lg text-sm sm:text-base text-slate-100 leading-relaxed whitespace-pre-wrap font-sans">
-          <h4 className="font-extrabold text-indigo-400 mb-3 text-sm uppercase tracking-wider">Texte (Text 1 & Text 2):</h4>
+          <h4 className="font-extrabold text-indigo-600 dark:text-indigo-400 mb-3 text-sm uppercase tracking-wider">Situationen / Anfragen (Fragen 10–13):</h4>
           <div className="mb-4 font-normal">{variant.text1}</div>
           <div className="font-normal">{variant.text2}</div>
         </div>
