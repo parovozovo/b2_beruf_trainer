@@ -960,83 +960,125 @@ const LesenSchreibenUI: React.FC<{
   );
 };
 
-// Hoeren 1 UI
+// Hoeren 1 UI (3 Nachrichten: Q22-23, Q24-25, Q26-27)
 const Hoeren1UI: React.FC<{
   variant: {
     audioUrl?: string;
-    scriptText: string;
+    scriptText?: string;
+    audioUrl1?: string;
+    scriptText1?: string;
+    audioUrl2?: string;
+    scriptText2?: string;
+    audioUrl3?: string;
+    scriptText3?: string;
     questions: Array<{ id: number; type: 'richtig_falsch' | 'choice'; questionText: string; options?: [string, string, string]; correct: string | number }>;
   };
   userAnswers: Record<string, string>;
   onAnswerChange: (key: string, val: string) => void;
   submitted: boolean;
 }> = ({ variant, userAnswers, onAnswerChange, submitted }) => {
+  const parts = [
+    {
+      title: 'Teil A / Nachricht 1 (Fragen 22–23)',
+      audioUrl: variant.audioUrl1 || (variant.audioUrl1 === undefined && variant.audioUrl2 === undefined ? variant.audioUrl : undefined),
+      scriptText: variant.scriptText1 || (variant.scriptText1 === undefined && variant.scriptText2 === undefined ? variant.scriptText : undefined),
+      qIds: [22, 23],
+    },
+    {
+      title: 'Teil B / Nachricht 2 (Fragen 24–25)',
+      audioUrl: variant.audioUrl2,
+      scriptText: variant.scriptText2,
+      qIds: [24, 25],
+    },
+    {
+      title: 'Teil C / Nachricht 3 (Fragen 26–27)',
+      audioUrl: variant.audioUrl3,
+      scriptText: variant.scriptText3,
+      qIds: [26, 27],
+    },
+  ];
+
   return (
-    <div className="space-y-6">
-      <AudioPlayerBlock audioUrl={variant.audioUrl} scriptText={variant.scriptText} />
+    <div className="space-y-8">
+      {parts.map((part, pIdx) => {
+        const partQuestions = variant.questions.filter((q) => part.qIds.includes(q.id));
+        if (partQuestions.length === 0 && !part.audioUrl && !part.scriptText) return null;
 
-      <div className="space-y-4">
-        {variant.questions.map((q) => {
-          const uVal = userAnswers[String(q.id)];
-          const isCorrect = uVal === String(q.correct);
+        return (
+          <div key={pIdx} className="p-5 glass-panel rounded-2xl border border-slate-300 dark:border-slate-800 space-y-5">
+            <h4 className="font-extrabold text-indigo-600 dark:text-indigo-400 text-sm uppercase tracking-wider flex items-center gap-2">
+              <Volume2 className="w-4 h-4" /> {part.title}
+            </h4>
 
-          return (
-            <div key={q.id} className="p-4 bg-slate-900/40 rounded-xl border border-slate-800 space-y-2">
-              <div className="font-bold text-xs text-slate-200">
-                Frage {q.id}: {q.questionText}
-              </div>
+            {(part.audioUrl || part.scriptText) && (
+              <AudioPlayerBlock audioUrl={part.audioUrl} scriptText={part.scriptText} />
+            )}
 
-              {q.type === 'richtig_falsch' ? (
-                <div className="flex gap-2 max-w-xs">
-                  {['richtig', 'falsch'].map((val) => (
-                    <button
-                      key={val}
-                      disabled={submitted}
-                      onClick={() => onAnswerChange(String(q.id), val)}
-                      className={`flex-1 py-1 rounded-lg text-xs font-bold uppercase transition-all ${
-                        uVal === val ? 'bg-indigo-600 text-white' : 'glass-card text-slate-400'
-                      }`}
-                    >
-                      {val}
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-1 pl-2">
-                  {q.options?.map((opt, idx) => (
-                    <label key={idx} className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
-                      <input
-                        type="radio"
-                        name={`q-${q.id}`}
-                        disabled={submitted}
-                        checked={uVal === String(idx)}
-                        onChange={() => onAnswerChange(String(q.id), String(idx))}
-                        className="accent-indigo-500"
-                      />
-                      <span>{['a', 'b', 'c'][idx]}) {opt}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
+            <div className="space-y-4">
+              {partQuestions.map((q) => {
+                const uVal = userAnswers[String(q.id)];
+                const isCorrect = uVal === String(q.correct);
 
-              {submitted && (
-                <div className="text-xs pt-1">
-                  {isCorrect ? (
-                    <span className="text-emerald-400 font-bold flex items-center gap-1">
-                      <CheckCircle className="w-3.5 h-3.5" /> Richtig
-                    </span>
-                  ) : (
-                    <span className="text-rose-400 font-bold flex items-center gap-1">
-                      <XCircle className="w-3.5 h-3.5" /> Richtige Antwort:{' '}
-                      {q.type === 'choice' ? ['a', 'b', 'c'][Number(q.correct)] : String(q.correct)}
-                    </span>
-                  )}
-                </div>
-              )}
+                return (
+                  <div key={q.id} className="p-4 sm:p-5 bg-slate-900/80 rounded-2xl border border-slate-700/80 space-y-3">
+                    <div className="font-extrabold text-sm sm:text-base text-white">
+                      Frage {q.id}: {q.questionText}
+                    </div>
+
+                    {q.type === 'richtig_falsch' ? (
+                      <div className="flex gap-2 max-w-xs">
+                        {['richtig', 'falsch'].map((val) => (
+                          <button
+                            key={val}
+                            disabled={submitted}
+                            onClick={() => onAnswerChange(String(q.id), val)}
+                            className={`flex-1 py-2 rounded-xl text-xs sm:text-sm font-extrabold uppercase transition-all ${
+                              uVal === val ? 'bg-indigo-600 text-white shadow-md' : 'glass-card text-slate-300'
+                            }`}
+                          >
+                            {val}
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="space-y-2 pl-2">
+                        {q.options?.map((opt, idx) => (
+                          <label key={idx} className="flex items-center gap-2.5 text-xs sm:text-sm text-slate-200 cursor-pointer p-1 rounded hover:bg-slate-800/40">
+                            <input
+                              type="radio"
+                              name={`q-${q.id}`}
+                              disabled={submitted}
+                              checked={uVal === String(idx)}
+                              onChange={() => onAnswerChange(String(q.id), String(idx))}
+                              className="accent-indigo-500 w-4 h-4"
+                            />
+                            <span>{['a', 'b', 'c'][idx]}) {opt}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+
+                    {submitted && (
+                      <div className="text-xs pt-1">
+                        {isCorrect ? (
+                          <span className="text-emerald-400 font-bold flex items-center gap-1">
+                            <CheckCircle className="w-3.5 h-3.5" /> Richtig
+                          </span>
+                        ) : (
+                          <span className="text-rose-400 font-bold flex items-center gap-1">
+                            <XCircle className="w-3.5 h-3.5" /> Richtige Antwort:{' '}
+                            {q.type === 'choice' ? ['a', 'b', 'c'][Number(q.correct)] : String(q.correct)}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
-      </div>
+          </div>
+        );
+      })}
     </div>
   );
 };

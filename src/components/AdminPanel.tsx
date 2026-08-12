@@ -117,6 +117,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const text1Ref = React.useRef<HTMLTextAreaElement | null>(null);
   const text2Ref = React.useRef<HTMLTextAreaElement | null>(null);
   const headingsRef = React.useRef<HTMLTextAreaElement | null>(null);
+  const script1Ref = React.useRef<HTMLTextAreaElement | null>(null);
+  const script2Ref = React.useRef<HTMLTextAreaElement | null>(null);
+  const script3Ref = React.useRef<HTMLTextAreaElement | null>(null);
 
   const handleFormatText = (
     ref: React.RefObject<HTMLTextAreaElement | null>,
@@ -177,6 +180,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [vText2, setVText2] = useState('');
   const [vHeadingsBlock, setVHeadingsBlock] = useState('');
   const [vAudioUrl, setVAudioUrl] = useState('');
+
+  // Hoeren 1 specific separate audio/script blocks (Q22-23, Q24-25, Q26-27)
+  const [vAudioUrl1, setVAudioUrl1] = useState('');
+  const [vScriptText1, setVScriptText1] = useState('');
+  const [vAudioUrl2, setVAudioUrl2] = useState('');
+  const [vScriptText2, setVScriptText2] = useState('');
+  const [vAudioUrl3, setVAudioUrl3] = useState('');
+  const [vScriptText3, setVScriptText3] = useState('');
 
   // Correct answers maps for matching tiles
   const [vCorrectAnswersMap, setVCorrectAnswersMap] = useState<Record<string, string>>({
@@ -247,6 +258,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     protocolText?: string;
     emailsText?: string;
     scriptText?: string;
+    audioUrl1?: string;
+    scriptText1?: string;
+    audioUrl2?: string;
+    scriptText2?: string;
+    audioUrl3?: string;
+    scriptText3?: string;
     textWithGaps?: string;
     audioUrl?: string;
     correctAnswers?: Record<string, string>;
@@ -270,6 +287,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       setVText2('');
       setVHeadingsBlock('');
       setVAudioUrl('');
+      setVAudioUrl1('');
+      setVScriptText1('');
+      setVAudioUrl2('');
+      setVScriptText2('');
+      setVAudioUrl3('');
+      setVScriptText3('');
 
       if (selectedTileType === 'hoeren_2') {
         setVCorrectAnswersMap({ '28': 'A', '29': 'B', '30': 'C', '31': 'D' });
@@ -310,6 +333,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         setVText2(found.text2 || '');
         setVHeadingsBlock(found.headingsBlock || found.optionsAtoF || '');
         setVAudioUrl(found.audioUrl || '');
+        setVAudioUrl1(found.audioUrl1 || '');
+        setVScriptText1(found.scriptText1 || '');
+        setVAudioUrl2(found.audioUrl2 || '');
+        setVScriptText2(found.scriptText2 || '');
+        setVAudioUrl3(found.audioUrl3 || '');
+        setVScriptText3(found.scriptText3 || '');
         setVCorrectAnswersMap(found.correctAnswers || {});
         if (found.q6Text) setVQ6Text(found.q6Text);
         else setVQ6Text('Die Teilnahme an der betriebsärztlichen Augenuntersuchung ist für Mitarbeiter an Bildschirmarbeitsplätzen verpflichtend.');
@@ -603,7 +632,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         id: targetId,
         title: vTitle,
         audioUrl: vAudioUrl || undefined,
-        scriptText: vText1,
+        scriptText: vText1 || undefined,
+        audioUrl1: vAudioUrl1 || undefined,
+        scriptText1: vScriptText1 || undefined,
+        audioUrl2: vAudioUrl2 || undefined,
+        scriptText2: vScriptText2 || undefined,
+        audioUrl3: vAudioUrl3 || undefined,
+        scriptText3: vScriptText3 || undefined,
         questions: vHoeren1QuestionsList,
       };
       constructedVariant = v as unknown as Record<string, unknown>;
@@ -1118,83 +1153,171 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 />
               </div>
 
-              {selectedTileType.startsWith('hoeren') && (
-                <div className="space-y-3">
-                  <label className="block text-xs font-extrabold text-indigo-600 dark:text-indigo-400">
-                    Audio MP3 URL (Supabase Storage / Web URL)
-                  </label>
-                  <input
-                    type="text"
-                    value={vAudioUrl}
-                    onChange={(e) => setVAudioUrl(e.target.value)}
-                    placeholder="https://<your-project>.supabase.co/storage/v1/object/public/audio-files/audio.mp3"
-                    className="w-full px-3 py-2 glass-input rounded-xl text-xs font-mono"
-                  />
-                  {vAudioUrl && (
-                    <div className="pt-1">
-                      <span className="block text-[11px] font-extrabold text-indigo-600 dark:text-indigo-400 mb-1.5">
-                        ▶️ Live-Vorschau (Admin Audio-Test & Tempo-Steuerung):
-                      </span>
-                      <AudioPlayerBlock audioUrl={vAudioUrl} scriptText={vText1} autoShowScript={false} />
+              {selectedTileType === 'hoeren_1' ? (
+                <div className="space-y-6 pt-2 border-t border-slate-800">
+                  <h4 className="font-extrabold text-sm text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
+                    3 separate Hörtexte & Audio-Dateien für Hören 1 (22–27):
+                  </h4>
+
+                  {/* Nachricht 1 (Q22-23) */}
+                  <div className="p-4 bg-slate-900/60 rounded-2xl border border-slate-800 space-y-3">
+                    <label className="block text-xs font-extrabold text-indigo-400">
+                      📻 Nachricht 1 (Fragen 22–23) — MP3 URL & Skript:
+                    </label>
+                    <input
+                      type="text"
+                      value={vAudioUrl1}
+                      onChange={(e) => setVAudioUrl1(e.target.value)}
+                      placeholder="Audio MP3 URL für Nachricht 1 (Fragen 22-23)"
+                      className="w-full px-3 py-2 glass-input rounded-xl text-xs font-mono"
+                    />
+                    {vAudioUrl1 && (
+                      <AudioPlayerBlock audioUrl={vAudioUrl1} scriptText={vScriptText1} autoShowScript={false} />
+                    )}
+                    <FormattingToolbar onFormat={(tag) => handleFormatText(script1Ref, vScriptText1, setVScriptText1, tag)} />
+                    <textarea
+                      ref={script1Ref}
+                      value={vScriptText1}
+                      onChange={(e) => setVScriptText1(e.target.value)}
+                      placeholder="Skript / Transkript für Nachricht 1 (Fragen 22–23)..."
+                      rows={4}
+                      className="w-full p-3 glass-input rounded-xl text-xs font-sans"
+                    />
+                  </div>
+
+                  {/* Nachricht 2 (Q24-25) */}
+                  <div className="p-4 bg-slate-900/60 rounded-2xl border border-slate-800 space-y-3">
+                    <label className="block text-xs font-extrabold text-indigo-400">
+                      📻 Nachricht 2 (Fragen 24–25) — MP3 URL & Skript:
+                    </label>
+                    <input
+                      type="text"
+                      value={vAudioUrl2}
+                      onChange={(e) => setVAudioUrl2(e.target.value)}
+                      placeholder="Audio MP3 URL für Nachricht 2 (Fragen 24-25)"
+                      className="w-full px-3 py-2 glass-input rounded-xl text-xs font-mono"
+                    />
+                    {vAudioUrl2 && (
+                      <AudioPlayerBlock audioUrl={vAudioUrl2} scriptText={vScriptText2} autoShowScript={false} />
+                    )}
+                    <FormattingToolbar onFormat={(tag) => handleFormatText(script2Ref, vScriptText2, setVScriptText2, tag)} />
+                    <textarea
+                      ref={script2Ref}
+                      value={vScriptText2}
+                      onChange={(e) => setVScriptText2(e.target.value)}
+                      placeholder="Skript / Transkript für Nachricht 2 (Fragen 24–25)..."
+                      rows={4}
+                      className="w-full p-3 glass-input rounded-xl text-xs font-sans"
+                    />
+                  </div>
+
+                  {/* Nachricht 3 (Q26-27) */}
+                  <div className="p-4 bg-slate-900/60 rounded-2xl border border-slate-800 space-y-3">
+                    <label className="block text-xs font-extrabold text-indigo-400">
+                      📻 Nachricht 3 (Fragen 26–27) — MP3 URL & Skript:
+                    </label>
+                    <input
+                      type="text"
+                      value={vAudioUrl3}
+                      onChange={(e) => setVAudioUrl3(e.target.value)}
+                      placeholder="Audio MP3 URL für Nachricht 3 (Fragen 26-27)"
+                      className="w-full px-3 py-2 glass-input rounded-xl text-xs font-mono"
+                    />
+                    {vAudioUrl3 && (
+                      <AudioPlayerBlock audioUrl={vAudioUrl3} scriptText={vScriptText3} autoShowScript={false} />
+                    )}
+                    <FormattingToolbar onFormat={(tag) => handleFormatText(script3Ref, vScriptText3, setVScriptText3, tag)} />
+                    <textarea
+                      ref={script3Ref}
+                      value={vScriptText3}
+                      onChange={(e) => setVScriptText3(e.target.value)}
+                      placeholder="Skript / Transkript für Nachricht 3 (Fragen 26–27)..."
+                      rows={4}
+                      className="w-full p-3 glass-input rounded-xl text-xs font-sans"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {selectedTileType.startsWith('hoeren') && (
+                    <div className="space-y-3">
+                      <label className="block text-xs font-extrabold text-indigo-600 dark:text-indigo-400">
+                        Audio MP3 URL (Supabase Storage / Web URL)
+                      </label>
+                      <input
+                        type="text"
+                        value={vAudioUrl}
+                        onChange={(e) => setVAudioUrl(e.target.value)}
+                        placeholder="https://<your-project>.supabase.co/storage/v1/object/public/audio-files/audio.mp3"
+                        className="w-full px-3 py-2 glass-input rounded-xl text-xs font-mono"
+                      />
+                      {vAudioUrl && (
+                        <div className="pt-1">
+                          <span className="block text-[11px] font-extrabold text-indigo-600 dark:text-indigo-400 mb-1.5">
+                            ▶️ Live-Vorschau (Admin Audio-Test & Tempo-Steuerung):
+                          </span>
+                          <AudioPlayerBlock audioUrl={vAudioUrl} scriptText={vText1} autoShowScript={false} />
+                        </div>
+                      )}
                     </div>
                   )}
-                </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-extrabold text-indigo-600 dark:text-indigo-400 mb-1">
+                        {selectedTileType === 'lesen_1' && 'Situationen / Personen 1–5'}
+                        {selectedTileType === 'lesen_2' && 'Text 1 (Artikel / Arbeitsordnung)'}
+                        {selectedTileType === 'lesen_3' && 'Situationen / Anfragen (Fragen 10–13)'}
+                        {selectedTileType === 'lesen_4' && 'Protokoll / Bericht'}
+                        {selectedTileType === 'lesen_schreiben' && 'E-Mail-Korrespondenz (2 E-Mails)'}
+                        {selectedTileType.startsWith('hoeren') && 'Skript / Transkript (Hörtext)'}
+                        {selectedTileType === 'sprachbausteine_1' && 'Bewerbungsschreiben mit Lücken [46]–[51]'}
+                        {selectedTileType === 'sprachbausteine_2' && 'Mitteilung mit Lücken [52]–[57]'}
+                      </label>
+                      <FormattingToolbar onFormat={(tag) => handleFormatText(text1Ref, vText1, setVText1, tag)} />
+                      <textarea
+                        ref={text1Ref}
+                        value={vText1}
+                        onChange={(e) => setVText1(e.target.value)}
+                        rows={7}
+                        className="w-full p-3 glass-input rounded-xl text-xs font-sans"
+                      />
+                    </div>
+
+                    {selectedTileType === 'lesen_2' && (
+                      <div>
+                        <label className="block text-xs font-extrabold text-indigo-600 dark:text-indigo-400 mb-1">Text 2</label>
+                        <FormattingToolbar onFormat={(tag) => handleFormatText(text2Ref, vText2, setVText2, tag)} />
+                        <textarea
+                          ref={text2Ref}
+                          value={vText2}
+                          onChange={(e) => setVText2(e.target.value)}
+                          rows={7}
+                          className="w-full p-3 glass-input rounded-xl text-xs font-sans"
+                        />
+                      </div>
+                    )}
+
+                    {(selectedTileType === 'lesen_1' || selectedTileType === 'lesen_3' || selectedTileType === 'hoeren_2') && (
+                      <div>
+                        <label className="block text-xs font-extrabold text-indigo-600 dark:text-indigo-400 mb-1">
+                          {selectedTileType === 'lesen_1' && 'Anzeigen / Informationen (A–H)'}
+                          {selectedTileType === 'lesen_3' && 'Antworten / Forenbeiträge (A–F)'}
+                          {selectedTileType === 'hoeren_2' && 'Aussagen (A–G)'}
+                        </label>
+                        <FormattingToolbar onFormat={(tag) => handleFormatText(headingsRef, vHeadingsBlock, setVHeadingsBlock, tag)} />
+                        <textarea
+                          ref={headingsRef}
+                          value={vHeadingsBlock}
+                          onChange={(e) => setVHeadingsBlock(e.target.value)}
+                          rows={7}
+                          className="w-full p-3 glass-input rounded-xl text-xs font-sans"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </>
               )}
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-extrabold text-indigo-600 dark:text-indigo-400 mb-1">
-                    {selectedTileType === 'lesen_1' && 'Situationen / Personen 1–5'}
-                    {selectedTileType === 'lesen_2' && 'Text 1 (Artikel / Arbeitsordnung)'}
-                    {selectedTileType === 'lesen_3' && 'Situationen / Anfragen (Fragen 10–13)'}
-                    {selectedTileType === 'lesen_4' && 'Protokoll / Bericht'}
-                    {selectedTileType === 'lesen_schreiben' && 'E-Mail-Korrespondenz (2 E-Mails)'}
-                    {selectedTileType.startsWith('hoeren') && 'Skript / Transkript (Hörtext)'}
-                    {selectedTileType === 'sprachbausteine_1' && 'Bewerbungsschreiben mit Lücken [46]–[51]'}
-                    {selectedTileType === 'sprachbausteine_2' && 'Mitteilung mit Lücken [52]–[57]'}
-                  </label>
-                  <FormattingToolbar onFormat={(tag) => handleFormatText(text1Ref, vText1, setVText1, tag)} />
-                  <textarea
-                    ref={text1Ref}
-                    value={vText1}
-                    onChange={(e) => setVText1(e.target.value)}
-                    rows={7}
-                    className="w-full p-3 glass-input rounded-xl text-xs font-sans"
-                  />
-                </div>
-
-                {selectedTileType === 'lesen_2' && (
-                  <div>
-                    <label className="block text-xs font-extrabold text-indigo-600 dark:text-indigo-400 mb-1">Text 2</label>
-                    <FormattingToolbar onFormat={(tag) => handleFormatText(text2Ref, vText2, setVText2, tag)} />
-                    <textarea
-                      ref={text2Ref}
-                      value={vText2}
-                      onChange={(e) => setVText2(e.target.value)}
-                      rows={7}
-                      className="w-full p-3 glass-input rounded-xl text-xs font-sans"
-                    />
-                  </div>
-                )}
-
-                {(selectedTileType === 'lesen_1' || selectedTileType === 'lesen_3' || selectedTileType === 'hoeren_2') && (
-                  <div>
-                    <label className="block text-xs font-extrabold text-indigo-600 dark:text-indigo-400 mb-1">
-                      {selectedTileType === 'lesen_1' && 'Anzeigen / Informationen (A–H)'}
-                      {selectedTileType === 'lesen_3' && 'Antworten / Forenbeiträge (A–F)'}
-                      {selectedTileType === 'hoeren_2' && 'Aussagen (A–G)'}
-                    </label>
-                    <FormattingToolbar onFormat={(tag) => handleFormatText(headingsRef, vHeadingsBlock, setVHeadingsBlock, tag)} />
-                    <textarea
-                      ref={headingsRef}
-                      value={vHeadingsBlock}
-                      onChange={(e) => setVHeadingsBlock(e.target.value)}
-                      rows={7}
-                      className="w-full p-3 glass-input rounded-xl text-xs font-sans"
-                    />
-                  </div>
-                )}
-              </div>
 
               {/* LESEN 1 SPECIFIC VISUAL CORRECT ANSWERS PICKER (1-5) */}
               {selectedTileType === 'lesen_1' && (
