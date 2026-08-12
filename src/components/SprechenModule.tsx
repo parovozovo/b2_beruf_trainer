@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Mic, Play, Pause, RotateCcw, CheckCircle2, Sparkles, ArrowRight, Volume2 } from 'lucide-react';
+import { Mic, Play, Pause, RotateCcw, CheckCircle2, Sparkles, ArrowRight, Volume2, User, Users, RefreshCw } from 'lucide-react';
 import { playChimeSound } from '../utils/audio';
 import confetti from 'canvas-confetti';
 
@@ -14,23 +14,38 @@ interface SprechenModuleProps {
 export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }) => {
   const [activePart, setActivePart] = useState<'1A' | '2' | '3' | 'finish'>('1A');
 
+  // Mode Selection: 'einzel' (1 Person) vs 'paar' (2 Personen - Partner-Simulation)
+  const [mode, setMode] = useState<'einzel' | 'paar'>('paar');
+
+  // Active speaker in Paarmodus: 'A' or 'B'
+  const [activeSpeaker, setActiveSpeaker] = useState<'A' | 'B'>('A');
+
   // Topics choices
   const [choices1A, setChoices1A] = useState<Array<{ title: string; promptText: string }>>([]);
   const [choices2, setChoices2] = useState<Array<{ title: string; promptText: string }>>([]);
   const [choice3, setChoice3] = useState<{ title: string; promptText: string } | null>(null);
 
-  // Selected topic for active part
-  const [selectedTopic, setSelectedTopic] = useState<{ title: string; promptText: string } | null>(null);
+  // Selected topics for Candidate A and Candidate B
+  const [selectedTopicA, setSelectedTopicA] = useState<{ title: string; promptText: string } | null>(null);
+  const [selectedTopicB, setSelectedTopicB] = useState<{ title: string; promptText: string } | null>(null);
 
-  // Timer state
-  const [timerSeconds, setTimerSeconds] = useState(120); // 2 mins for 1A
+  // Timer states for Speaker A and Speaker B
+  const [timerSecondsA, setTimerSecondsA] = useState(120);
+  const [timerSecondsB, setTimerSecondsB] = useState(120);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
-  const [timerFinished, setTimerFinished] = useState(false);
+  const [timerFinishedA, setTimerFinishedA] = useState(false);
+  const [timerFinishedB, setTimerFinishedB] = useState(false);
 
   // Initialize Part 1A choices
   useEffect(() => {
     initPart1A();
   }, [sprechenTopics]);
+
+  const getDefaultDuration = (part: '1A' | '2' | '3') => {
+    if (part === '1A') return 120; // 2 min
+    if (part === '2') return 180;  // 3 min presentation
+    return 180; // 3 min per partner for Teil 3 planning
+  };
 
   const initPart1A = () => {
     setActivePart('1A');
@@ -77,9 +92,14 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
       },
     ];
     setChoices1A(std1A);
-    setSelectedTopic(null);
+    setSelectedTopicA(null);
+    setSelectedTopicB(null);
+    setTimerSecondsA(120);
+    setTimerSecondsB(120);
     setIsTimerRunning(false);
-    setTimerFinished(false);
+    setTimerFinishedA(false);
+    setTimerFinishedB(false);
+    setActiveSpeaker('A');
   };
 
   const initPart2 = () => {
@@ -87,9 +107,14 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
     const topics = sprechenTopics.sprecher2Topics;
     const shuffled = [...topics].sort(() => 0.5 - Math.random()).slice(0, 2);
     setChoices2(shuffled);
-    setSelectedTopic(null);
+    setSelectedTopicA(null);
+    setSelectedTopicB(null);
+    setTimerSecondsA(180);
+    setTimerSecondsB(180);
     setIsTimerRunning(false);
-    setTimerFinished(false);
+    setTimerFinishedA(false);
+    setTimerFinishedB(false);
+    setActiveSpeaker('A');
   };
 
   const initPart3 = () => {
@@ -100,37 +125,62 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
       promptText: 'Planen Sie gemeinsam mit einem Kollegen eine interne Fortbildungsveranstaltung.',
     };
     setChoice3(rand);
-    setSelectedTopic(rand);
-    setTimerSeconds(120); // 2 mins
+    setSelectedTopicA(rand);
+    setSelectedTopicB(rand);
+    setTimerSecondsA(180);
+    setTimerSecondsB(180);
     setIsTimerRunning(false);
-    setTimerFinished(false);
+    setTimerFinishedA(false);
+    setTimerFinishedB(false);
+    setActiveSpeaker('A');
   };
 
-  // Handle topic choice & timer duration setup
+  // Handle topic choice & timer duration setup for active speaker
   const handleSelectTopic = (topic: { title: string; promptText: string }, durationSecs: number) => {
-    setSelectedTopic(topic);
-    setTimerSeconds(durationSecs);
+    if (activeSpeaker === 'A' || mode === 'einzel') {
+      setSelectedTopicA(topic);
+      setTimerSecondsA(durationSecs);
+      setTimerFinishedA(false);
+    } else {
+      setSelectedTopicB(topic);
+      setTimerSecondsB(durationSecs);
+      setTimerFinishedB(false);
+    }
     setIsTimerRunning(false);
-    setTimerFinished(false);
   };
 
-  // Timer tick effect
+  // Timer tick effect: Decrements active speaker's timer
   useEffect(() => {
-    if (!isTimerRunning || timerSeconds <= 0) return;
+    if (!isTimerRunning) return;
+
     const timer = setInterval(() => {
-      setTimerSeconds((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          setIsTimerRunning(false);
-          setTimerFinished(true);
-          playChimeSound(); // Play audio notification chime!
-          return 0;
-        }
-        return prev - 1;
-      });
+      if (mode === 'einzel' || activeSpeaker === 'A') {
+        setTimerSecondsA((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            setIsTimerRunning(false);
+            setTimerFinishedA(true);
+            playChimeSound();
+            return 0;
+          }
+          return prev - 1;
+        });
+      } else {
+        setTimerSecondsB((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            setIsTimerRunning(false);
+            setTimerFinishedB(true);
+            playChimeSound();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }
     }, 1000);
+
     return () => clearInterval(timer);
-  }, [isTimerRunning, timerSeconds]);
+  }, [isTimerRunning, mode, activeSpeaker]);
 
   const formatTime = (secs: number) => {
     const m = Math.floor(secs / 60);
@@ -138,51 +188,85 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
     return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   };
 
+  const handleSwitchSpeaker = (targetSpeaker?: 'A' | 'B') => {
+    const next = targetSpeaker || (activeSpeaker === 'A' ? 'B' : 'A');
+    setActiveSpeaker(next);
+  };
+
   const handleFinishAll = () => {
     setActivePart('finish');
     confetti({ particleCount: 150, spread: 90, origin: { y: 0.6 } });
   };
 
+  const activeTopic = activeSpeaker === 'A' || mode === 'einzel' ? selectedTopicA : selectedTopicB;
+
   return (
     <div className="space-y-6 animate-fadeIn">
-      {/* Top Section Tabs */}
-      <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Top Header Card with Mode Toggle Switch & Part Tabs */}
+      <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-5">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h2 className="text-xl font-bold text-white flex items-center gap-2">
               <Mic className="w-5 h-5 text-emerald-400" /> Modul Sprechen
             </h2>
-            <p className="text-xs text-slate-400">
-              Vorbereitung auf den mündlichen Teil: Teil 1A (8 Standardfragen), Teil 2 (Präsentation), Teil 3 (Planung).
+            <p className="text-xs text-slate-400 mt-0.5">
+              Prüfungssimulation: Teil 1A (Qualifikation & Fragen), Teil 2 (Präsentation), Teil 3 (Planung).
             </p>
           </div>
 
-          <div className="flex gap-2">
+          {/* Mode Switcher: Solo vs Partner Simulation */}
+          <div className="flex items-center gap-2 p-1 bg-slate-900/90 rounded-2xl border border-slate-800">
             <button
-              onClick={initPart1A}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                activePart === '1A' ? 'bg-emerald-600 text-white shadow-lg' : 'glass-card text-slate-400'
+              type="button"
+              onClick={() => setMode('einzel')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all ${
+                mode === 'einzel'
+                  ? 'bg-indigo-600 text-white shadow-md'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
-              Teil 1A
+              <User className="w-3.5 h-3.5" /> Einzelmodus (1 Person)
             </button>
             <button
-              onClick={initPart2}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                activePart === '2' ? 'bg-emerald-600 text-white shadow-lg' : 'glass-card text-slate-400'
+              type="button"
+              onClick={() => setMode('paar')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all ${
+                mode === 'paar'
+                  ? 'bg-emerald-600 text-white shadow-md'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
-              Teil 2
-            </button>
-            <button
-              onClick={initPart3}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                activePart === '3' ? 'bg-emerald-600 text-white shadow-lg' : 'glass-card text-slate-400'
-              }`}
-            >
-              Teil 3
+              <Users className="w-3.5 h-3.5" /> Paarmodus (2 Personen)
             </button>
           </div>
+        </div>
+
+        {/* Part Tabs */}
+        <div className="flex gap-2 pt-2 border-t border-slate-800">
+          <button
+            onClick={initPart1A}
+            className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all ${
+              activePart === '1A' ? 'bg-emerald-600 text-white shadow-lg' : 'glass-card text-slate-400 hover:text-white'
+            }`}
+          >
+            Teil 1A (Qualifikation)
+          </button>
+          <button
+            onClick={initPart2}
+            className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all ${
+              activePart === '2' ? 'bg-emerald-600 text-white shadow-lg' : 'glass-card text-slate-400 hover:text-white'
+            }`}
+          >
+            Teil 2 (Präsentation)
+          </button>
+          <button
+            onClick={initPart3}
+            className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all ${
+              activePart === '3' ? 'bg-emerald-600 text-white shadow-lg' : 'glass-card text-slate-400 hover:text-white'
+            }`}
+          >
+            Teil 3 (Planung)
+          </button>
         </div>
       </div>
 
@@ -198,7 +282,7 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
               Gut gemacht! <Sparkles className="w-6 h-6 text-amber-400" />
             </h2>
             <p className="text-sm text-slate-300">
-              Sie haben alle Phasen des mündlichen Ausdrucks (Sprechen) erfolgreich durchgemacht!
+              Sie haben alle Phasen des mündlichen Ausdrucks (Sprechen) erfolgreich absolviert!
             </p>
           </div>
 
@@ -214,151 +298,270 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
           {/* Left Column: Topics Selection */}
           <div className="lg:col-span-1 space-y-4">
             <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-4">
-              <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
-                Thema wählen für {activePart}:
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  Thema wählen für {activePart}:
+                </h3>
+                {mode === 'paar' && (
+                  <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                    Für Partner {activeSpeaker}
+                  </span>
+                )}
+              </div>
 
               {activePart === '1A' && (
-                <div className="space-y-2.5 max-h-[500px] overflow-y-auto pr-1">
-                  {choices1A.map((t, idx) => (
-                    <div
-                      key={idx}
-                      onClick={() => handleSelectTopic(t, 120)}
-                      className={`p-3 rounded-xl cursor-pointer transition-all border ${
-                        selectedTopic?.title === t.title
-                          ? 'bg-emerald-500/20 border-emerald-500/60 text-white'
-                          : 'glass-card border-slate-800 text-slate-300 hover:border-slate-700'
-                      }`}
-                    >
-                      <div className="font-bold text-xs mb-1">{t.title}</div>
-                      <div className="text-[11px] text-slate-400 line-clamp-2">{t.promptText}</div>
-                    </div>
-                  ))}
+                <div className="space-y-2.5 max-h-[520px] overflow-y-auto pr-1">
+                  {choices1A.map((t, idx) => {
+                    const isSelected = activeTopic?.title === t.title;
+                    return (
+                      <div
+                        key={idx}
+                        onClick={() => handleSelectTopic(t, 120)}
+                        className={`p-3 rounded-xl cursor-pointer transition-all border ${
+                          isSelected
+                            ? 'bg-emerald-500/25 border-emerald-500 text-white shadow-lg'
+                            : 'glass-card border-slate-800 text-slate-300 hover:border-slate-700'
+                        }`}
+                      >
+                        <div className="font-bold text-xs mb-1">{t.title}</div>
+                        <div className="text-[11px] text-slate-400 line-clamp-2">{t.promptText}</div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
               {activePart === '2' && (
                 <div className="space-y-3">
-                  {choices2.map((t) => (
-                    <div
-                      key={t.title}
-                      onClick={() => handleSelectTopic(t, 180)}
-                      className={`p-4 rounded-xl cursor-pointer transition-all border ${
-                        selectedTopic?.title === t.title
-                          ? 'bg-emerald-500/20 border-emerald-500/60 text-white'
-                          : 'glass-card border-slate-800 text-slate-300 hover:border-slate-700'
-                      }`}
-                    >
-                      <div className="font-bold text-xs mb-1">{t.title}</div>
-                      <div className="text-[11px] text-slate-400 line-clamp-2">{t.promptText}</div>
-                    </div>
-                  ))}
+                  {choices2.map((t) => {
+                    const isSelected = activeTopic?.title === t.title;
+                    return (
+                      <div
+                        key={t.title}
+                        onClick={() => handleSelectTopic(t, 180)}
+                        className={`p-4 rounded-xl cursor-pointer transition-all border ${
+                          isSelected
+                            ? 'bg-emerald-500/25 border-emerald-500 text-white shadow-lg'
+                            : 'glass-card border-slate-800 text-slate-300 hover:border-slate-700'
+                        }`}
+                      >
+                        <div className="font-bold text-xs mb-1">{t.title}</div>
+                        <div className="text-[11px] text-slate-400 leading-relaxed">{t.promptText}</div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
               {activePart === '3' && choice3 && (
                 <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl space-y-2">
                   <div className="font-bold text-xs text-emerald-300">{choice3.title}</div>
-                  <div className="text-xs text-slate-300">{choice3.promptText}</div>
+                  <div className="text-xs text-slate-300 leading-relaxed">{choice3.promptText}</div>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Right Column: Timer & Active Presentation Pane */}
+          {/* Right Column: Timers & Speaker Cards */}
           <div className="lg:col-span-2 space-y-4">
-            {!selectedTopic ? (
-              <div className="glass-panel p-10 rounded-2xl text-center text-slate-400 border border-slate-800">
-                <Mic className="w-10 h-10 mx-auto mb-2 text-slate-600" />
-                <p className="text-sm">Wählen Sie links eines der 8 Themen aus, um die Zeitmessung zu starten.</p>
-              </div>
+            {mode === 'einzel' ? (
+              /* --- EINZELMODUS (1 PERSON) --- */
+              !selectedTopicA ? (
+                <div className="glass-panel p-10 rounded-2xl text-center text-slate-400 border border-slate-800">
+                  <Mic className="w-10 h-10 mx-auto mb-2 text-slate-600" />
+                  <p className="text-sm">Wählen Sie links ein Thema aus, um die Zeitmessung zu starten.</p>
+                </div>
+              ) : (
+                <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-6 text-center">
+                  <div>
+                    <span className="px-3 py-1 bg-emerald-500/20 text-emerald-300 rounded-md text-xs font-bold uppercase">
+                      Sprechen {activePart} — Einzelmodus
+                    </span>
+                    <h3 className="text-lg font-bold text-white mt-2">{selectedTopicA.title}</h3>
+                    <p className="text-xs text-slate-300 max-w-xl mx-auto mt-2 leading-relaxed bg-slate-900/60 p-3 rounded-xl border border-slate-800">
+                      {selectedTopicA.promptText}
+                    </p>
+                  </div>
+
+                  {/* Circular Timer */}
+                  <div className="relative w-48 h-48 mx-auto flex flex-col items-center justify-center bg-slate-900 rounded-full border-4 border-emerald-500/40 shadow-2xl">
+                    <span className="text-4xl font-extrabold font-mono text-white tracking-widest">
+                      {formatTime(timerSecondsA)}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-semibold uppercase mt-1">
+                      {isTimerRunning ? 'Vortrag läuft...' : timerFinishedA ? 'Zeit abgelaufen!' : 'Bereit'}
+                    </span>
+                  </div>
+
+                  {timerFinishedA && (
+                    <div className="p-3 bg-emerald-500/20 border border-emerald-500/40 rounded-xl text-xs text-emerald-300 font-bold flex items-center justify-center gap-2 animate-bounce">
+                      <Volume2 className="w-4 h-4" /> Zeit abgelaufen! Der Signalton wurde abgespielt. Fahren Sie mit dem nächsten Teil fort.
+                    </div>
+                  )}
+
+                  {/* Controls */}
+                  <div className="flex items-center justify-center gap-3 pt-2">
+                    <button
+                      onClick={() => setIsTimerRunning(!isTimerRunning)}
+                      className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-lg transition-colors"
+                    >
+                      {isTimerRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                      {isTimerRunning ? 'Pause' : 'Starten'}
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setIsTimerRunning(false);
+                        setTimerSecondsA(getDefaultDuration(activePart));
+                        setTimerFinishedA(false);
+                      }}
+                      className="px-4 py-3 glass-card hover:bg-slate-800 text-slate-300 font-semibold rounded-xl text-xs flex items-center gap-1.5 transition-colors border border-slate-700/60"
+                    >
+                      <RotateCcw className="w-4 h-4" /> Zurücksetzen
+                    </button>
+                  </div>
+                </div>
+              )
             ) : (
-              <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-6 text-center">
-                <div>
-                  <span className="px-3 py-1 bg-emerald-500/20 text-emerald-300 rounded-md text-xs font-bold uppercase">
-                    Sprechen {activePart}
+              /* --- PAARMODUS (2 PERSONEN - SIMULATION) --- */
+              <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-6">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <span className="px-3 py-1 bg-emerald-500/20 text-emerald-300 rounded-md text-xs font-extrabold uppercase flex items-center gap-1.5">
+                    <Users className="w-4 h-4" /> Paarmodus — Partner-Simulation
                   </span>
-                  <h3 className="text-lg font-bold text-white mt-2">{selectedTopic.title}</h3>
-                  <p className="text-xs text-slate-300 max-w-xl mx-auto mt-2 leading-relaxed bg-slate-900/60 p-3 rounded-xl border border-slate-800">
-                    {selectedTopic.promptText}
-                  </p>
+
+                  <button
+                    type="button"
+                    onClick={() => handleSwitchSpeaker()}
+                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold rounded-xl text-xs flex items-center gap-2 shadow-lg transition-all"
+                  >
+                    <RefreshCw className="w-4 h-4" /> Sprecher wechseln (Jetzt: Partner {activeSpeaker})
+                  </button>
                 </div>
 
-                {/* Circular Timer Display */}
-                <div className="relative w-48 h-48 mx-auto flex flex-col items-center justify-center bg-slate-900 rounded-full border-4 border-emerald-500/40 shadow-2xl">
-                  <span className="text-4xl font-extrabold font-mono text-white tracking-widest">
-                    {formatTime(timerSeconds)}
-                  </span>
-                  <span className="text-[10px] text-slate-400 font-semibold uppercase mt-1">
-                    {isTimerRunning ? 'Vortrag läuft...' : timerFinished ? 'Zeit abgelaufen!' : 'Bereit'}
-                  </span>
+                {/* Dual Speaker Cards Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  {/* Speaker A Card */}
+                  <div
+                    onClick={() => handleSwitchSpeaker('A')}
+                    className={`p-5 rounded-2xl transition-all cursor-pointer border ${
+                      activeSpeaker === 'A'
+                        ? 'bg-slate-900/90 border-emerald-500 ring-2 ring-emerald-500/40 shadow-xl'
+                        : 'bg-slate-900/50 border-slate-800 opacity-75 hover:opacity-100'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <span className={`text-xs font-black uppercase px-2.5 py-1 rounded-lg ${
+                        activeSpeaker === 'A' ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-400'
+                      }`}>
+                        👤 Partner A {activeSpeaker === 'A' ? '(AM WORT)' : ''}
+                      </span>
+                      <span className="text-2xl font-black font-mono text-white">
+                        {formatTime(timerSecondsA)}
+                      </span>
+                    </div>
+
+                    <div className="text-xs space-y-1">
+                      <div className="font-bold text-slate-200">
+                        {selectedTopicA?.title || 'Kein Thema gewählt'}
+                      </div>
+                      <div className="text-[11px] text-slate-400 line-clamp-2">
+                        {selectedTopicA?.promptText || 'Klicken Sie links ein Thema für Partner A an.'}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Speaker B Card */}
+                  <div
+                    onClick={() => handleSwitchSpeaker('B')}
+                    className={`p-5 rounded-2xl transition-all cursor-pointer border ${
+                      activeSpeaker === 'B'
+                        ? 'bg-slate-900/90 border-emerald-500 ring-2 ring-emerald-500/40 shadow-xl'
+                        : 'bg-slate-900/50 border-slate-800 opacity-75 hover:opacity-100'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <span className={`text-xs font-black uppercase px-2.5 py-1 rounded-lg ${
+                        activeSpeaker === 'B' ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-400'
+                      }`}>
+                        👤 Partner B {activeSpeaker === 'B' ? '(AM WORT)' : ''}
+                      </span>
+                      <span className="text-2xl font-black font-mono text-white">
+                        {formatTime(timerSecondsB)}
+                      </span>
+                    </div>
+
+                    <div className="text-xs space-y-1">
+                      <div className="font-bold text-slate-200">
+                        {selectedTopicB?.title || 'Kein Thema gewählt'}
+                      </div>
+                      <div className="text-[11px] text-slate-400 line-clamp-2">
+                        {selectedTopicB?.promptText || 'Klicken Sie links ein Thema für Partner B an.'}
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Sound Alert Notification if finished */}
-                {timerFinished && (
+                {/* Sound Alerts */}
+                {(timerFinishedA || timerFinishedB) && (
                   <div className="p-3 bg-emerald-500/20 border border-emerald-500/40 rounded-xl text-xs text-emerald-300 font-bold flex items-center justify-center gap-2 animate-bounce">
-                    <Volume2 className="w-4 h-4" /> Zeit abgelaufen! Der Signalton wurde abgespielt. Fahren Sie mit dem nächsten Teil fort.
+                    <Volume2 className="w-4 h-4" /> Zeit für Partner {timerFinishedA ? 'A' : 'B'} abgelaufen! Der Signalton wurde abgespielt.
                   </div>
                 )}
 
-                {/* Timer Controls */}
+                {/* Timer Action Controls */}
                 <div className="flex items-center justify-center gap-3 pt-2">
                   <button
                     onClick={() => setIsTimerRunning(!isTimerRunning)}
                     className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-lg transition-colors"
                   >
-                    {isTimerRunning ? (
-                      <>
-                        <Pause className="w-4 h-4" /> Pause
-                      </>
-                    ) : (
-                      <>
-                        <Play className="w-4 h-4" /> Starten
-                      </>
-                    )}
+                    {isTimerRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+                    {isTimerRunning ? `Pause (Partner ${activeSpeaker})` : `Starten (Partner ${activeSpeaker})`}
                   </button>
 
                   <button
                     onClick={() => {
                       setIsTimerRunning(false);
-                      setTimerSeconds(activePart === '2' ? 180 : 120);
-                      setTimerFinished(false);
+                      setTimerSecondsA(getDefaultDuration(activePart));
+                      setTimerSecondsB(getDefaultDuration(activePart));
+                      setTimerFinishedA(false);
+                      setTimerFinishedB(false);
                     }}
                     className="px-4 py-3 glass-card hover:bg-slate-800 text-slate-300 font-semibold rounded-xl text-xs flex items-center gap-1.5 transition-colors border border-slate-700/60"
                   >
-                    <RotateCcw className="w-4 h-4" /> Zurücksetzen
+                    <RotateCcw className="w-4 h-4" /> Beide Zeiten zurücksetzen
                   </button>
-                </div>
-
-                {/* Pager to next part */}
-                <div className="pt-4 border-t border-slate-800 flex justify-end">
-                  {activePart === '1A' && (
-                    <button
-                      onClick={initPart2}
-                      className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-lg"
-                    >
-                      Weiter zu Sprechen Teil 2 <ArrowRight className="w-4 h-4" />
-                    </button>
-                  )}
-                  {activePart === '2' && (
-                    <button
-                      onClick={initPart3}
-                      className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-lg"
-                    >
-                      Weiter zu Sprechen Teil 3 <ArrowRight className="w-4 h-4" />
-                    </button>
-                  )}
-                  {activePart === '3' && (
-                    <button
-                      onClick={handleFinishAll}
-                      className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-lg"
-                    >
-                      Sprechen beenden <CheckCircle2 className="w-4 h-4" />
-                    </button>
-                  )}
                 </div>
               </div>
             )}
+
+            {/* Pager to next part */}
+            <div className="pt-4 border-t border-slate-800 flex justify-end">
+              {activePart === '1A' && (
+                <button
+                  onClick={initPart2}
+                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-lg"
+                >
+                  Weiter zu Sprechen Teil 2 <ArrowRight className="w-4 h-4" />
+                </button>
+              )}
+              {activePart === '2' && (
+                <button
+                  onClick={initPart3}
+                  className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-lg"
+                >
+                  Weiter zu Sprechen Teil 3 <ArrowRight className="w-4 h-4" />
+                </button>
+              )}
+              {activePart === '3' && (
+                <button
+                  onClick={handleFinishAll}
+                  className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-lg"
+                >
+                  Sprechen beenden <CheckCircle2 className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}
