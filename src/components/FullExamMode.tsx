@@ -229,25 +229,25 @@ export const FullExamMode: React.FC<FullExamModeProps> = ({
           </div>
 
           <div>
-            <h2 className="text-2xl font-extrabold text-white mb-2">
+            <h2 className="text-2xl sm:text-3xl font-extrabold mb-3">
               Prüfungssimulation B2 Beruf
             </h2>
-            <p className="text-sm text-slate-300 leading-relaxed">
+            <p className="text-base sm:text-lg text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
               Der Test umfasst die Fragen 1–57 (Module Lesen, Hören und Sprachbausteine). Alle Aufgaben werden per Zufallsprinzip aus den verfügbaren Modelltests gewählt.
             </p>
           </div>
 
-          <div className="p-4 bg-slate-900/60 rounded-xl border border-slate-800 text-xs text-slate-400 space-y-1 text-left">
-            <div>• <strong className="text-white">Gesamtdauer:</strong> 85 Minuten für den gesamten Testlauf.</div>
-            <div>• <strong className="text-white">Bestehensgrenze:</strong> Mindestens 60% der Gesamtzahl korrekter Antworten.</div>
-            <div>• <strong className="text-white">Ausnahme:</strong> Aufgaben 21 (Beschwerde) und 58 (Forenbeitrag) werden im Modul Schreiben absolviert.</div>
+          <div className="p-5 glass-card rounded-2xl text-sm sm:text-base space-y-2 text-left font-medium border border-slate-300 dark:border-slate-800">
+            <div>• <strong className="font-extrabold">Gesamtdauer:</strong> 85 Minuten für den gesamten Testlauf.</div>
+            <div>• <strong className="font-extrabold">Bestehensgrenze:</strong> Mindestens 60% der Gesamtzahl korrekter Antworten.</div>
+            <div>• <strong className="font-extrabold">Ausnahme:</strong> Aufgaben 21 (Beschwerde) und 58 (Forenbeitrag) werden im Modul Schreiben absolviert.</div>
           </div>
 
           <button
             onClick={handleStartExam}
-            className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-2xl shadow-xl shadow-purple-600/30 transition-all flex items-center justify-center gap-2 text-base uppercase"
+            className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-extrabold rounded-2xl shadow-xl shadow-purple-600/30 transition-all flex items-center justify-center gap-2 text-base sm:text-lg uppercase tracking-wide"
           >
-            <Timer className="w-5 h-5" /> Prüfung jetzt starten
+            <Timer className="w-6 h-6" /> Prüfung jetzt starten
           </button>
         </div>
       ) : examFinished && finalResult ? (

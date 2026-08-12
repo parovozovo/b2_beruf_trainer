@@ -53,28 +53,28 @@ export const Dashboard: React.FC<DashboardProps> = ({
       <div className="relative overflow-hidden rounded-3xl glass-panel p-8 border border-indigo-500/30">
         <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="relative z-10 space-y-4 max-w-2xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-500/20 text-indigo-300 rounded-full text-xs font-semibold border border-indigo-500/30">
-            <Sparkles className="w-3.5 h-3.5" /> Willkommen beim Deutsch B2 Beruf Trainer
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 rounded-full text-xs sm:text-sm font-extrabold border border-indigo-500/30">
+            <Sparkles className="w-4 h-4 text-indigo-500" /> Willkommen beim Deutsch B2 Beruf Trainer
           </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
             Guten Tag, {userName}! 👋
           </h1>
-          <p className="text-sm text-slate-300 leading-relaxed">
+          <p className="text-base sm:text-lg text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
             Bereiten Sie sich gezielt auf die Prüfung Deutsch B2 Beruf vor. Wählen Sie Einzelteile zum Üben oder starten Sie eine vollständige Simulation mit Zeitmessung.
           </p>
 
           <div className="flex flex-wrap items-center gap-3 pt-2">
             <button
               onClick={() => onSelectMode('full_exam')}
-              className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-bold rounded-2xl shadow-lg shadow-indigo-500/25 transition-all text-xs flex items-center gap-2"
+              className="px-6 py-3.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-extrabold rounded-2xl shadow-lg shadow-indigo-500/25 transition-all text-xs sm:text-sm flex items-center gap-2"
             >
               <Timer className="w-4 h-4" /> Prüfungssimulation starten
             </button>
             <button
               onClick={() => onSelectMode('tile_practice')}
-              className="px-6 py-3 glass-card hover:bg-slate-800 text-slate-200 font-bold rounded-2xl border border-slate-700/60 transition-all text-xs flex items-center gap-2"
+              className="px-6 py-3.5 glass-card hover:bg-slate-800 text-slate-800 dark:text-slate-200 font-extrabold rounded-2xl border border-slate-300 dark:border-slate-700/60 transition-all text-xs sm:text-sm flex items-center gap-2"
             >
-              <Dumbbell className="w-4 h-4 text-indigo-400" /> Einzelteile trainieren
+              <Dumbbell className="w-4 h-4 text-indigo-500" /> Einzelteile trainieren
             </button>
           </div>
         </div>
@@ -85,15 +85,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {/* Card 1: Tile Practice */}
         <div
           onClick={() => onSelectMode('tile_practice')}
-          className="glass-panel p-6 rounded-2xl border border-slate-800 hover:border-indigo-500/50 cursor-pointer transition-all group"
+          className="glass-panel p-6 rounded-2xl border border-slate-300 dark:border-slate-800 hover:border-indigo-500/50 cursor-pointer transition-all group"
         >
-          <div className="w-12 h-12 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+          <div className="w-12 h-12 rounded-xl bg-indigo-500/20 text-indigo-500 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
             <Dumbbell className="w-6 h-6" />
           </div>
-          <h3 className="text-base font-bold text-white mb-1 group-hover:text-indigo-300 transition-colors">
+          <h3 className="text-lg font-extrabold mb-1 group-hover:text-indigo-500 transition-colors">
             Teile-Training
           </h3>
-          <p className="text-xs text-slate-400 leading-relaxed">
+          <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
             Lesen 1–4, Hören 1–4, Sprachbausteine 1–2 gezielt mit sofortiger Auswertung üben.
           </p>
         </div>
@@ -101,15 +101,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {/* Card 2: Full Exam */}
         <div
           onClick={() => onSelectMode('full_exam')}
-          className="glass-panel p-6 rounded-2xl border border-slate-800 hover:border-indigo-500/50 cursor-pointer transition-all group relative overflow-hidden"
+          className="glass-panel p-6 rounded-2xl border border-slate-300 dark:border-slate-800 hover:border-indigo-500/50 cursor-pointer transition-all group relative overflow-hidden"
         >
-          <div className="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+          <div className="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-500 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
             <Award className="w-6 h-6" />
           </div>
-          <h3 className="text-base font-bold text-white mb-1 group-hover:text-amber-300 transition-colors flex items-center gap-2">
-            Komplettprüfung {isPremium && <Sparkles className="w-4 h-4 text-amber-400" />}
+          <h3 className="text-lg font-extrabold mb-1 group-hover:text-amber-500 transition-colors flex items-center gap-2">
+            Komplettprüfung {isPremium && <Sparkles className="w-4 h-4 text-amber-500" />}
           </h3>
-          <p className="text-xs text-slate-400 leading-relaxed">
+          <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
             Realistischer Test aller 57 Fragen im originalen Telc B2 Beruf Format mit Countdown.
           </p>
         </div>
@@ -117,15 +117,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {/* Card 3: Schreiben */}
         <div
           onClick={() => onSelectMode('schreiben')}
-          className="glass-panel p-6 rounded-2xl border border-slate-800 hover:border-indigo-500/50 cursor-pointer transition-all group"
+          className="glass-panel p-6 rounded-2xl border border-slate-300 dark:border-slate-800 hover:border-indigo-500/50 cursor-pointer transition-all group"
         >
-          <div className="w-12 h-12 rounded-xl bg-pink-500/20 text-pink-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+          <div className="w-12 h-12 rounded-xl bg-pink-500/20 text-pink-500 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
             <FileEdit className="w-6 h-6" />
           </div>
-          <h3 className="text-base font-bold text-white mb-1 group-hover:text-pink-300 transition-colors">
+          <h3 className="text-lg font-extrabold mb-1 group-hover:text-pink-500 transition-colors">
             Schreiben (Q58)
           </h3>
-          <p className="text-xs text-slate-400 leading-relaxed">
+          <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
             Beschwerdebriefe und Forenbeiträge verfassen mit Kopierfunktion für KI-Korrektur.
           </p>
         </div>
@@ -133,15 +133,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
         {/* Card 4: Sprechen */}
         <div
           onClick={() => onSelectMode('sprechen')}
-          className="glass-panel p-6 rounded-2xl border border-slate-800 hover:border-indigo-500/50 cursor-pointer transition-all group"
+          className="glass-panel p-6 rounded-2xl border border-slate-300 dark:border-slate-800 hover:border-indigo-500/50 cursor-pointer transition-all group"
         >
-          <div className="w-12 h-12 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+          <div className="w-12 h-12 rounded-xl bg-emerald-500/20 text-emerald-500 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
             <Mic className="w-6 h-6" />
           </div>
-          <h3 className="text-base font-bold text-white mb-1 group-hover:text-emerald-300 transition-colors">
+          <h3 className="text-lg font-extrabold mb-1 group-hover:text-emerald-500 transition-colors">
             Sprechen (1A, 2, 3)
           </h3>
-          <p className="text-xs text-slate-400 leading-relaxed">
+          <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
             Präsentationen und Diskussionen mit Rund-Timer und Akustik-Signal üben.
           </p>
         </div>
