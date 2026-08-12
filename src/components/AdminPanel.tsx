@@ -104,7 +104,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [vHeadingsBlock, setVHeadingsBlock] = useState('');
   const [vAudioUrl, setVAudioUrl] = useState('');
 
-  // Lesen 1 / Lesen 3 / Hoeren 2 correct answers map
+  // Correct answers maps for matching tiles
   const [vCorrectAnswersMap, setVCorrectAnswersMap] = useState<Record<string, string>>({
     '1': 'A',
     '2': 'B',
@@ -192,7 +192,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       setVText2('');
       setVHeadingsBlock('');
       setVAudioUrl('');
-      setVCorrectAnswersMap({ '1': 'A', '2': 'B', '3': 'C', '4': 'D', '5': 'E' });
+
+      if (selectedTileType === 'hoeren_2') {
+        setVCorrectAnswersMap({ '28': 'A', '29': 'B', '30': 'C', '31': 'D' });
+      } else if (selectedTileType === 'lesen_3') {
+        setVCorrectAnswersMap({ '10': 'A', '11': 'B', '12': 'C', '13': 'D' });
+      } else {
+        setVCorrectAnswersMap({ '1': 'A', '2': 'B', '3': 'C', '4': 'D', '5': 'E' });
+      }
+
       setVQ6Correct('richtig');
       setVQ7Text('Frage 7 Text...');
       setVQ7Options(['Option A', 'Option B', 'Option C']);
@@ -206,8 +214,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         { id: 15, questionText: 'Beispielfrage 2', options: ['Antwort A', 'Antwort B', 'Antwort C'], correctIndex: 1 },
       ]);
       setVHoeren1QuestionsList([
-        { id: 22, type: 'richtig_falsch', questionText: 'Aussage 22', correct: 'richtig' },
-        { id: 23, type: 'choice', questionText: 'Frage 23', options: ['Option A', 'Option B', 'Option C'], correct: 0 },
+        { id: 22, type: 'richtig_falsch', questionText: 'Aussage 22 (Richtig oder Falsch)', correct: 'richtig' },
+        { id: 23, type: 'choice', questionText: 'Frage 23 (Mehrfachauswahl)', options: ['Option A', 'Option B', 'Option C'], correct: 0 },
+        { id: 24, type: 'richtig_falsch', questionText: 'Aussage 24 (Richtig oder Falsch)', correct: 'falsch' },
+        { id: 25, type: 'choice', questionText: 'Frage 25 (Mehrfachauswahl)', options: ['Option A', 'Option B', 'Option C'], correct: 1 },
+        { id: 26, type: 'richtig_falsch', questionText: 'Aussage 26 (Richtig oder Falsch)', correct: 'richtig' },
+        { id: 27, type: 'choice', questionText: 'Frage 27 (Mehrfachauswahl)', options: ['Option A', 'Option B', 'Option C'], correct: 2 },
       ]);
       setVQ41Correct('a');
       setVBeschwerdePrompt('');
@@ -355,7 +367,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     window.scrollTo({ top: 350, behavior: 'smooth' });
   };
 
-  // Handlers for Question Builder Items
+  // Handlers for Question Builder Items (ABC Questions)
   const handleAddQuestionABC = () => {
     const nextId = vQuestionsABCList.length > 0 ? Math.max(...vQuestionsABCList.map((q) => q.id)) + 1 : 14;
     setVQuestionsABCList([
@@ -372,6 +384,33 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
   const handleRemoveQuestionABC = (index: number) => {
     setVQuestionsABCList(vQuestionsABCList.filter((_, idx) => idx !== index));
+  };
+
+  // Handlers for Hoeren 1 Question Builder
+  const handleAddHoeren1Question = () => {
+    const nextId = vHoeren1QuestionsList.length > 0 ? Math.max(...vHoeren1QuestionsList.map((q) => q.id)) + 1 : 22;
+    const isRF = nextId % 2 === 0;
+    if (isRF) {
+      setVHoeren1QuestionsList([
+        ...vHoeren1QuestionsList,
+        { id: nextId, type: 'richtig_falsch', questionText: `Aussage ${nextId}`, correct: 'richtig' },
+      ]);
+    } else {
+      setVHoeren1QuestionsList([
+        ...vHoeren1QuestionsList,
+        { id: nextId, type: 'choice', questionText: `Frage ${nextId}`, options: ['Option A', 'Option B', 'Option C'], correct: 0 },
+      ]);
+    }
+  };
+
+  const handleUpdateHoeren1Question = (index: number, updated: Hoeren1Question) => {
+    const list = [...vHoeren1QuestionsList];
+    list[index] = updated;
+    setVHoeren1QuestionsList(list);
+  };
+
+  const handleRemoveHoeren1Question = (index: number) => {
+    setVHoeren1QuestionsList(vHoeren1QuestionsList.filter((_, idx) => idx !== index));
   };
 
   // Save Variant Form Handler
@@ -1157,6 +1196,171 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         </select>
                       </div>
                     ))}
+                  </div>
+                </div>
+              )}
+
+              {/* HOEREN 1 SPECIFIC VISUAL QUESTION BUILDER (Q22-27) */}
+              {selectedTileType === 'hoeren_1' && (
+                <div className="p-4 bg-slate-900/60 rounded-xl border border-slate-800 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold text-indigo-400">Fragenliste für Hören 1 (Q22–27 Richtig/Falsch & ABC):</h4>
+                    <button
+                      type="button"
+                      onClick={handleAddHoeren1Question}
+                      className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold flex items-center gap-1"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Frage hinzufügen
+                    </button>
+                  </div>
+
+                  <div className="space-y-3">
+                    {vHoeren1QuestionsList.map((q, index) => (
+                      <div key={index} className="p-4 bg-slate-950/60 rounded-xl border border-slate-800 space-y-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2">
+                            <span className="w-6 h-6 rounded-md bg-indigo-500/20 text-indigo-300 font-bold text-xs flex items-center justify-center">
+                              Q{q.id}
+                            </span>
+                            <span className="text-xs font-bold text-slate-300">
+                              {q.type === 'richtig_falsch' ? 'Aussage (Richtig / Falsch)' : 'Frage (Mehrfachauswahl A, B, C)'}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveHoeren1Question(index)}
+                            className="text-rose-400 hover:text-rose-300 p-1"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] text-slate-400 mb-1">Fragetext</label>
+                          <input
+                            type="text"
+                            value={q.questionText}
+                            onChange={(e) => handleUpdateHoeren1Question(index, { ...q, questionText: e.target.value })}
+                            className="w-full px-3 py-1.5 glass-input rounded-lg text-xs font-medium"
+                          />
+                        </div>
+
+                        {q.type === 'richtig_falsch' ? (
+                          <div className="space-y-1">
+                            <label className="block text-[11px] text-slate-400 font-bold">Richtige Antwort:</label>
+                            <div className="flex gap-3">
+                              {['richtig', 'falsch'].map((val) => (
+                                <button
+                                  key={val}
+                                  type="button"
+                                  onClick={() => handleUpdateHoeren1Question(index, { ...q, correct: val as 'richtig' | 'falsch' })}
+                                  className={`px-4 py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
+                                    q.correct === val ? 'bg-indigo-600 text-white shadow-md' : 'glass-card text-slate-400'
+                                  }`}
+                                >
+                                  {val}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="space-y-2">
+                            <label className="block text-[11px] text-slate-400 font-bold">Optionen (Radio anklicken für Richtig):</label>
+                            {(q.options || ['Option A', 'Option B', 'Option C']).map((optText, optIdx) => (
+                              <div key={optIdx} className="flex items-center gap-2">
+                                <label className="flex items-center gap-1.5 text-xs text-slate-300 font-bold cursor-pointer shrink-0">
+                                  <input
+                                    type="radio"
+                                    name={`h1-q-${index}-correct`}
+                                    checked={Number(q.correct) === optIdx}
+                                    onChange={() => handleUpdateHoeren1Question(index, { ...q, correct: optIdx })}
+                                    className="accent-indigo-500 w-4 h-4"
+                                  />
+                                  <span>Option {['a', 'b', 'c'][optIdx]})</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  value={optText}
+                                  onChange={(e) => {
+                                    const newOpts = [...(q.options || ['A', 'B', 'C'])] as [string, string, string];
+                                    newOpts[optIdx] = e.target.value;
+                                    handleUpdateHoeren1Question(index, { ...q, options: newOpts });
+                                  }}
+                                  className="w-full px-3 py-1 glass-input rounded-lg text-xs"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* HOEREN 2 SPECIFIC VISUAL FIELDS (Q28-31) */}
+              {selectedTileType === 'hoeren_2' && (
+                <div className="p-4 bg-slate-900/60 rounded-xl border border-slate-800 space-y-3">
+                  <h4 className="text-xs font-bold text-indigo-400">Richtige Zuordnung für Fragen 28–31 (A-F):</h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {['28', '29', '30', '31'].map((num) => (
+                      <div key={num} className="space-y-1">
+                        <label className="block text-[11px] text-slate-400 font-bold">Frage {num}</label>
+                        <select
+                          value={vCorrectAnswersMap[num] || 'A'}
+                          onChange={(e) => setVCorrectAnswersMap({ ...vCorrectAnswersMap, [num]: e.target.value })}
+                          className="w-full px-2 py-1.5 glass-input rounded-lg text-xs font-bold"
+                        >
+                          {['A', 'B', 'C', 'D', 'E', 'F'].map((opt) => (
+                            <option key={opt} value={opt}>Option {opt}</option>
+                          ))}
+                        </select>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* HOEREN SCHREIBEN SPECIFIC VISUAL FIELDS (Q41-45) */}
+              {selectedTileType === 'hoeren_schreiben' && (
+                <div className="p-4 bg-slate-900/60 rounded-xl border border-slate-800 space-y-4">
+                  <h4 className="text-xs font-bold text-indigo-400">Frage 41 (Mehrfachauswahl a, b, c) & Notizfelder 42–45:</h4>
+                  
+                  <div className="p-3 bg-slate-950/60 rounded-lg space-y-2 border border-slate-800">
+                    <span className="text-xs font-bold text-white">Frage 41 Korrekte Antwort:</span>
+                    <div className="flex gap-3">
+                      {['a', 'b', 'c'].map((opt) => (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => setVQ41Correct(opt as 'a' | 'b' | 'c')}
+                          className={`flex-1 py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
+                            vQ41Correct === opt ? 'bg-indigo-600 text-white shadow-md' : 'glass-card text-slate-400'
+                          }`}
+                        >
+                          Option {opt.toUpperCase()}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="p-3 bg-slate-950/60 rounded-lg space-y-2 border border-slate-800">
+                    <span className="text-xs font-bold text-white">Telefonnotiz Felder (Q42–45):</span>
+                    <p className="text-[11px] text-slate-400">Vordefinierte Feldbeschriftungen für das Notizformular:</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                      <div className="p-2 bg-slate-900/80 rounded border border-slate-800">
+                        <span className="text-indigo-400 font-bold">Feld 42:</span> Name des Anrufers
+                      </div>
+                      <div className="p-2 bg-slate-900/80 rounded border border-slate-800">
+                        <span className="text-indigo-400 font-bold">Feld 43:</span> Telefonnummer
+                      </div>
+                      <div className="p-2 bg-slate-900/80 rounded border border-slate-800">
+                        <span className="text-indigo-400 font-bold">Feld 44:</span> Informationen / Anliegen
+                      </div>
+                      <div className="p-2 bg-slate-900/80 rounded border border-slate-800">
+                        <span className="text-indigo-400 font-bold">Feld 45:</span> Zu erledigen / Rückruf
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
