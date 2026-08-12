@@ -1115,16 +1115,81 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     reader.onload = async (event) => {
       try {
         const parsed = JSON.parse(event.target?.result as string);
-        if (parsed.modelltests) await onSaveModelltests(parsed.modelltests);
-        if (parsed.promoCodes) await onSavePromoCodes(parsed.promoCodes);
-        if (parsed.forumsbeitragTopics) await onSaveForumsbeitragTopics(parsed.forumsbeitragTopics);
-        if (parsed.sprechenTopics) await onSaveSprechenTopics(parsed.sprechenTopics);
-        showToast('Daten erfolgreich importiert!');
-      } catch {
+        let importedSomething = false;
+
+        // Standard Full Backup Object (contains keys like modelltests, forumsbeitragTopics...)
+        if (parsed.modelltests && Array.isArray(parsed.modelltests)) {
+          const updatedTests = [...modelltests];
+          parsed.modelltests.forEach((impMT: Modelltest) => {
+            const idx = updatedTests.findIndex((mt) => mt.id === impMT.id);
+            if (idx >= 0) {
+              updatedTests[idx] = impMT;
+            } else {
+              updatedTests.push(impMT);
+            }
+          });
+          await onSaveModelltests(updatedTests);
+          importedSomething = true;
+        }
+
+        // Single Modelltest Object uploaded directly
+        if (!parsed.modelltests && parsed.id && parsed.variants) {
+          const updatedTests = [...modelltests];
+          const idx = updatedTests.findIndex((mt) => mt.id === parsed.id);
+          if (idx >= 0) {
+            updatedTests[idx] = parsed;
+          } else {
+            updatedTests.push(parsed);
+          }
+          await onSaveModelltests(updatedTests);
+          importedSomething = true;
+        }
+
+        // Single array of Modelltests uploaded directly
+        if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].variants) {
+          const updatedTests = [...modelltests];
+          parsed.forEach((impMT: Modelltest) => {
+            const idx = updatedTests.findIndex((mt) => mt.id === impMT.id);
+            if (idx >= 0) {
+              updatedTests[idx] = impMT;
+            } else {
+              updatedTests.push(impMT);
+            }
+          });
+          await onSaveModelltests(updatedTests);
+          importedSomething = true;
+        }
+
+        // Promo Codes
+        if (parsed.promoCodes && Array.isArray(parsed.promoCodes)) {
+          await onSavePromoCodes(parsed.promoCodes);
+          importedSomething = true;
+        }
+
+        // Forenbeitrag Topics (Q58)
+        if (parsed.forumsbeitragTopics && Array.isArray(parsed.forumsbeitragTopics)) {
+          await onSaveForumsbeitragTopics(parsed.forumsbeitragTopics);
+          importedSomething = true;
+        }
+
+        // Sprechen Topics (Q1A, Q2, Q3)
+        if (parsed.sprechenTopics && typeof parsed.sprechenTopics === 'object') {
+          await onSaveSprechenTopics(parsed.sprechenTopics);
+          importedSomething = true;
+        }
+
+        if (importedSomething) {
+          showToast('Daten erfolgreich importiert & mit БД синхронізовано!');
+        } else {
+          showToast('Unbekanntes JSON-Format! Bitte Backup-Struktur prüfen.', 'error');
+        }
+      } catch (err) {
+        console.error('Import JSON Error:', err);
         showToast('Fehler beim Importieren der JSON-Datei!', 'error');
       }
     };
     reader.readAsText(file);
+    e.target.value = '';
   };
 
   return (
