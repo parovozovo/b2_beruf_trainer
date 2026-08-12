@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { Modelltest, ForumsbeitragTopic, WrittenEssayRecord, User } from '../types';
-import { FileEdit, Timer, Copy, Trash2, CheckCircle2, History, Sparkles } from 'lucide-react';
+import { FileEdit, Timer, Copy, Trash2, CheckCircle2, History, Sparkles, FileText, RotateCcw } from 'lucide-react';
 import { getWrittenEssays, saveWrittenEssay, deleteWrittenEssay } from '../utils/storage';
 
 interface SchreibenModuleProps {
@@ -17,7 +17,11 @@ export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
   const [taskType, setTaskType] = useState<'beschwerde' | 'forumsbeitrag'>('beschwerde');
 
   // Active topic state
-  const [activeTopic, setActiveTopic] = useState<{ title: string; promptText: string } | null>(null);
+  const [activeTopic, setActiveTopic] = useState<{
+    title: string;
+    emailsText?: string;
+    promptText: string;
+  } | null>(null);
   const [randomForumsChoices, setRandomForumsChoices] = useState<ForumsbeitragTopic[]>([]);
 
   // Editor & Timer state
@@ -33,29 +37,50 @@ export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
     setHistory(getWrittenEssays(currentUser?.id));
   }, [currentUser?.id]);
 
+  // Extract all available LesenSchreiben topics
+  const getBeschwerdeTopics = () => {
+    const list: { title: string; emailsText: string; promptText: string }[] = [];
+    modelltests.forEach((mt) => {
+      mt.variants.lesen_schreiben?.forEach((v) => {
+        if (v.emailsText || v.beschwerdeTopicText) {
+          list.push({
+            title: `Beschwerdebrief (${v.title || mt.title})`,
+            emailsText: v.emailsText || '',
+            promptText: v.beschwerdeTopicText || 'Schreiben Sie eine Antwort-E-Mail auf die obenstehende Beschwerde. Gehen Sie auf alle 4 Leitpunkte ein.',
+          });
+        }
+      });
+    });
+    return list;
+  };
+
   // Handle task selection setup
   const handleStartBeschwerde = () => {
     setTaskType('beschwerde');
-    // Extract random Q21 topic from available LesenSchreiben variants
-    const allQ21: string[] = [];
-    modelltests.forEach((mt) => {
-      mt.variants.lesen_schreiben?.forEach((v) => {
-        if (v.beschwerdeTopicText) allQ21.push(v.beschwerdeTopicText);
-      });
-    });
+    const topics = getBeschwerdeTopics();
+    let chosen: { title: string; emailsText?: string; promptText: string };
 
-    const chosenPrompt = allQ21.length > 0
-      ? allQ21[Math.floor(Math.random() * allQ21.length)]
-      : 'Schreiben Sie eine förmliche Beschwerde wegen Mängeln an gelieferten Büromöbeln und verlangen Sie umgehenden Ersatz.';
+    if (topics.length > 0) {
+      chosen = topics[Math.floor(Math.random() * topics.length)];
+    } else {
+      chosen = {
+        title: 'Beschwerdebrief (Frage 21)',
+        emailsText: `E-Mail 1: Von: Kundenservice TechnicGmbH <service@technic.de>\nAn: Fr. Schneider <schneider@buero-design.de>\nBetreff: Lieferverzögerung Bestellt-Nr. 88492\nSehr geehrte Frau Schneider, leider verzögert sich die Lieferung der bestellten 10 Ergonomie-Bürostühle um voraussichtlich 3 Wochen aufgrund von Rohstoffengpässen beim Hersteller. Wir bitten um Ihr Verständnis.\n\nE-Mail 2: Von: Fr. Schneider\nSehr geehrte Damen und Herren, wir haben die Bürostühle für unsere Neueröffnung am 01. Juni fest eingeplant. Eine Verzögerung von 3 Wochen ist für uns inakzeptabel...`,
+        promptText: `Schreiben Sie eine förmliche Antwort / Beschwerde (Frage 21) an die TechnicGmbH. Verlangen Sie eine Teillieferung von Leihstühlen bis zum 25. Mai oder drohen Sie mit dem Rücktritt vom Kaufvertrag.`,
+      };
+    }
 
-    setActiveTopic({
-      title: 'Beschwerdebrief (Frage 21)',
-      promptText: chosenPrompt,
-    });
+    setActiveTopic(chosen);
     setUserText('');
     setSecondsRemaining(1800); // 30 min
     setIsTimerRunning(true);
   };
+
+  useEffect(() => {
+    if (!activeTopic && taskType === 'beschwerde') {
+      handleStartBeschwerde();
+    }
+  }, []);
 
   const handleStartForumsbeitrag = () => {
     setTaskType('forumsbeitrag');
@@ -196,21 +221,49 @@ export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left / Upper Pane: Topic Prompt & Info */}
           <div className="lg:col-span-1 space-y-4">
-            <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-3">
-              <span className="px-2.5 py-1 bg-pink-500/20 text-pink-300 rounded-md text-[11px] font-bold uppercase">
-                {activeTopic.title}
-              </span>
-
-              <h3 className="text-base font-bold text-white">Aufgabenstellung:</h3>
-              <p className="text-xs text-slate-300 leading-relaxed p-3 bg-slate-900/60 rounded-xl border border-slate-800 whitespace-pre-wrap">
-                {activeTopic.promptText}
-              </p>
-
-              <div className="pt-2 flex items-center justify-between text-xs font-mono text-amber-400">
-                <span className="flex items-center gap-1.5 font-bold">
-                  <Timer className="w-4 h-4" /> Verbleibende Zeit:
+            <div className="glass-panel p-5 rounded-2xl border border-slate-300 dark:border-slate-800 space-y-4">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <span className="px-2.5 py-1 bg-pink-500/20 text-pink-700 dark:text-pink-300 rounded-md text-[11px] font-extrabold uppercase border border-pink-500/30">
+                  {activeTopic.title}
                 </span>
-                <span className="text-base font-bold bg-slate-900 px-2 py-1 rounded border border-slate-800">
+                {taskType === 'beschwerde' && getBeschwerdeTopics().length > 1 && (
+                  <button
+                    type="button"
+                    onClick={handleStartBeschwerde}
+                    className="text-[11px] font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
+                  >
+                    <RotateCcw className="w-3 h-3" /> Thema wechseln
+                  </button>
+                )}
+              </div>
+
+              {/* ORIGINAL E-MAILS (AUSGANGSTEXT) */}
+              {activeTopic.emailsText ? (
+                <div className="space-y-1.5">
+                  <h4 className="text-xs font-extrabold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <FileText className="w-4 h-4" /> E-Mail-Korrespondenz (Ausgangstext):
+                  </h4>
+                  <div className="p-3.5 bg-slate-100 dark:bg-slate-900/90 rounded-xl text-xs sm:text-sm text-slate-900 dark:text-slate-100 font-sans leading-relaxed whitespace-pre-wrap max-h-72 overflow-y-auto border border-slate-300 dark:border-slate-800 shadow-inner">
+                    {activeTopic.emailsText}
+                  </div>
+                </div>
+              ) : null}
+
+              {/* ARBEITSAUFTRAG / LEITPUNKTE */}
+              <div className="space-y-1.5">
+                <h4 className="text-xs font-extrabold text-pink-600 dark:text-pink-400 uppercase tracking-wider">
+                  Aufgabenstellung / Leitpunkte:
+                </h4>
+                <p className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 font-semibold leading-relaxed p-3.5 bg-pink-500/10 rounded-xl border border-pink-500/20 whitespace-pre-wrap">
+                  {activeTopic.promptText}
+                </p>
+              </div>
+
+              <div className="pt-2 flex items-center justify-between text-xs font-mono text-amber-600 dark:text-amber-400">
+                <span className="flex items-center gap-1.5 font-extrabold">
+                  <Timer className="w-4 h-4 text-amber-500" /> Verbleibende Zeit:
+                </span>
+                <span className="text-base font-extrabold bg-slate-200 dark:bg-slate-900 text-slate-900 dark:text-amber-400 px-3 py-1 rounded-lg border border-slate-300 dark:border-slate-800">
                   {formatTimer(secondsRemaining)}
                 </span>
               </div>
