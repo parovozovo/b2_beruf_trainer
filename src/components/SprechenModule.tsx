@@ -23,7 +23,6 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
 
   // Topics choices
   const [choices1A, setChoices1A] = useState<Array<{ title: string; promptText: string }>>([]);
-  const [choices2, setChoices2] = useState<Array<{ title: string; promptText: string }>>([]);
 
   // Selected topics for Candidate A and Candidate B
   const [selectedTopicA, setSelectedTopicA] = useState<{ title: string; promptText: string } | null>(null);
@@ -92,8 +91,11 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
       },
     ];
     setChoices1A(std1A);
-    setSelectedTopicA(null);
-    setSelectedTopicB(null);
+
+    // Auto-preselect random questions for A and B by default
+    const shuffled = [...std1A].sort(() => 0.5 - Math.random());
+    setSelectedTopicA(shuffled[0] || std1A[0]);
+    setSelectedTopicB(shuffled[1] || std1A[1] || std1A[0]);
     setTimerSecondsA(120);
     setTimerSecondsB(120);
     setIsTimerRunning(false);
@@ -105,10 +107,12 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
   const initPart2 = () => {
     setActivePart('2');
     const topics = sprechenTopics.sprecher2Topics;
-    const shuffled = [...topics].sort(() => 0.5 - Math.random()).slice(0, 2);
-    setChoices2(shuffled);
-    setSelectedTopicA(null);
-    setSelectedTopicB(null);
+    const shuffled = [...topics].sort(() => 0.5 - Math.random());
+    const topA = shuffled[0] || null;
+    const topB = shuffled[1] || shuffled[0] || null;
+
+    setSelectedTopicA(topA);
+    setSelectedTopicB(topB);
     setTimerSecondsA(180);
     setTimerSecondsB(180);
     setIsTimerRunning(false);
@@ -120,18 +124,37 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
   const initPart3 = () => {
     setActivePart('3');
     const situations = sprechenTopics.sprecher3Situations;
-    const defaultSit = situations[0] || {
-      title: 'Veranstaltungsorganisation',
-      promptText: 'Planen Sie gemeinsam mit einem Kollegen eine interne Fortbildungsveranstaltung.',
-    };
-    setSelectedTopicA(defaultSit);
-    setSelectedTopicB(defaultSit);
+    const shuffled = [...situations].sort(() => 0.5 - Math.random());
+    const sitA = shuffled[0] || null;
+    const sitB = shuffled[1] || shuffled[0] || null;
+
+    setSelectedTopicA(sitA);
+    setSelectedTopicB(sitB);
     setTimerSecondsA(180);
     setTimerSecondsB(180);
     setIsTimerRunning(false);
     setTimerFinishedA(false);
     setTimerFinishedB(false);
     setActiveSpeaker('A');
+  };
+
+  // Re-randomize topics for active part
+  const handleRandomizeTopics = () => {
+    if (activePart === '2') {
+      const topics = sprechenTopics.sprecher2Topics;
+      const shuffled = [...topics].sort(() => 0.5 - Math.random());
+      setSelectedTopicA(shuffled[0] || null);
+      setSelectedTopicB(shuffled[1] || shuffled[0] || null);
+    } else if (activePart === '3') {
+      const situations = sprechenTopics.sprecher3Situations;
+      const shuffled = [...situations].sort(() => 0.5 - Math.random());
+      setSelectedTopicA(shuffled[0] || null);
+      setSelectedTopicB(shuffled[1] || shuffled[0] || null);
+    } else if (activePart === '1A') {
+      const shuffled = [...choices1A].sort(() => 0.5 - Math.random());
+      setSelectedTopicA(shuffled[0] || null);
+      setSelectedTopicB(shuffled[1] || shuffled[0] || null);
+    }
   };
 
   // Handle topic choice & timer duration setup for active speaker
@@ -148,7 +171,7 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
     setIsTimerRunning(false);
   };
 
-  // Timer tick effect: Decrements active speaker's timer
+  // Timer tick effect: Decrements active speaker's timer & auto-switches speaker when timer reaches 0
   useEffect(() => {
     if (!isTimerRunning) return;
 
@@ -160,6 +183,9 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
             setIsTimerRunning(false);
             setTimerFinishedA(true);
             playChimeSound();
+            if (mode === 'paar' && timerSecondsB > 0) {
+              setActiveSpeaker('B');
+            }
             return 0;
           }
           return prev - 1;
@@ -171,6 +197,9 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
             setIsTimerRunning(false);
             setTimerFinishedB(true);
             playChimeSound();
+            if (mode === 'paar' && timerSecondsA > 0) {
+              setActiveSpeaker('A');
+            }
             return 0;
           }
           return prev - 1;
@@ -179,7 +208,7 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isTimerRunning, mode, activeSpeaker]);
+  }, [isTimerRunning, mode, activeSpeaker, timerSecondsA, timerSecondsB]);
 
   const formatTime = (secs: number) => {
     const m = Math.floor(secs / 60);
@@ -294,12 +323,12 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column: Topics Selection */}
+          {/* Left Column: Topics Selection & Quick Actions */}
           <div className="lg:col-span-1 space-y-4">
             <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
-                  Thema wählen für {activePart}:
+                <h3 className="text-xs font-extrabold text-slate-300 uppercase tracking-wider">
+                  Themen für {activePart}:
                 </h3>
                 {mode === 'paar' && (
                   <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
@@ -308,6 +337,16 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
                 )}
               </div>
 
+              {/* Quick Action Button: Randomize Topics */}
+              <button
+                type="button"
+                onClick={handleRandomizeTopics}
+                className="w-full py-2 px-3 bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-200 border border-indigo-500/40 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm"
+              >
+                <RefreshCw className="w-3.5 h-3.5" /> 🎲 Zufällige Themen neu auslosen
+              </button>
+
+              {/* Topic List */}
               {activePart === '1A' && (
                 <div className="space-y-2.5 max-h-[520px] overflow-y-auto pr-1">
                   {choices1A.map((t, idx) => {
@@ -331,21 +370,21 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
               )}
 
               {activePart === '2' && (
-                <div className="space-y-3">
-                  {choices2.map((t) => {
+                <div className="space-y-2.5 max-h-[520px] overflow-y-auto pr-1">
+                  {sprechenTopics.sprecher2Topics.map((t, idx) => {
                     const isSelected = activeTopic?.title === t.title;
                     return (
                       <div
-                        key={t.title}
+                        key={idx}
                         onClick={() => handleSelectTopic(t, 180)}
-                        className={`p-4 rounded-xl cursor-pointer transition-all border ${
+                        className={`p-3 rounded-xl cursor-pointer transition-all border ${
                           isSelected
                             ? 'bg-emerald-500/25 border-emerald-500 text-white shadow-lg'
                             : 'glass-card border-slate-800 text-slate-300 hover:border-slate-700'
                         }`}
                       >
                         <div className="font-bold text-xs mb-1">{t.title}</div>
-                        <FormattedText text={t.promptText} className="text-[11px] text-slate-400 leading-relaxed" />
+                        <FormattedText text={t.promptText} className="text-[11px] text-slate-400 line-clamp-2" />
                       </div>
                     );
                   })}
@@ -376,7 +415,7 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
             </div>
           </div>
 
-          {/* Right Column: Timers & Speaker Cards */}
+          {/* Right Column: Timers & Active Cards */}
           <div className="lg:col-span-2 space-y-4">
             {mode === 'einzel' ? (
               /* --- EINZELMODUS (1 PERSON) --- */
@@ -455,7 +494,7 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
 
                 {/* Full-Width Active Task & Situation Card */}
                 {activeTopic && (
-                  <div className="p-4 sm:p-5 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-md space-y-2 text-left">
+                  <div className="p-4 sm:p-5 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-md space-y-2 text-left animate-fadeIn">
                     <div className="flex items-center justify-between">
                       <span className="text-[11px] font-extrabold uppercase text-indigo-400">
                         📌 Aufgabenstellung für Partner {activeSpeaker}:
