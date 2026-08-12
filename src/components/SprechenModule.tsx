@@ -452,25 +452,29 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
                 {/* Speaker A Card */}
                 <div
                   onClick={() => handleSwitchSpeaker('A')}
-                  className={`p-5 rounded-2xl transition-all cursor-pointer border ${
+                  className={`p-5 rounded-2xl transition-all cursor-pointer border-2 ${
                     activeSpeaker === 'A'
-                      ? 'bg-slate-900/90 border-emerald-500 ring-2 ring-emerald-500/40 shadow-xl'
-                      : 'bg-slate-900/50 border-slate-800 opacity-75 hover:opacity-100'
+                      ? 'bg-emerald-500/10 dark:bg-emerald-950/30 border-emerald-500 ring-4 ring-emerald-500/20 shadow-xl'
+                      : 'glass-card hover:bg-slate-100 dark:hover:bg-slate-800/80 border-slate-300 dark:border-slate-700/80'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className={`text-xs font-black uppercase px-2.5 py-1 rounded-lg ${
-                      activeSpeaker === 'A' ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-400'
+                    <span className={`text-xs font-black uppercase px-3 py-1 rounded-xl transition-all ${
+                      activeSpeaker === 'A'
+                        ? 'bg-emerald-600 text-white shadow-md'
+                        : 'bg-indigo-600/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30'
                     }`}>
                       👤 Partner A {activeSpeaker === 'A' ? '(AM WORT)' : ''}
                     </span>
-                    <span className="text-2xl font-black font-mono text-white">
+                    <span className={`text-2xl font-black font-mono tracking-wider ${
+                      activeSpeaker === 'A' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-200'
+                    }`}>
                       {formatTime(timerSecondsA)}
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between pt-1 text-xs">
-                    <span className="font-bold text-slate-300 truncate max-w-[200px]">
+                  <div className="flex items-center justify-between pt-2 text-xs border-t border-slate-200 dark:border-slate-800">
+                    <span className="font-bold text-slate-800 dark:text-slate-200 truncate max-w-[200px]">
                       {selectedTopicA?.title || 'Kein Thema gewählt'}
                     </span>
                     <button
@@ -479,7 +483,7 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
                         e.stopPropagation();
                         openTopicModalForPartner('A');
                       }}
-                      className="text-[11px] text-indigo-400 hover:text-indigo-300 font-bold flex items-center gap-1 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20"
+                      className="text-[11px] text-indigo-700 dark:text-indigo-300 hover:text-indigo-600 font-extrabold flex items-center gap-1 bg-indigo-500/15 hover:bg-indigo-500/25 px-2.5 py-1 rounded-lg border border-indigo-500/30 transition-all"
                     >
                       <Edit3 className="w-3 h-3" /> Ändern
                     </button>
@@ -489,25 +493,29 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
                 {/* Speaker B Card */}
                 <div
                   onClick={() => handleSwitchSpeaker('B')}
-                  className={`p-5 rounded-2xl transition-all cursor-pointer border ${
+                  className={`p-5 rounded-2xl transition-all cursor-pointer border-2 ${
                     activeSpeaker === 'B'
-                      ? 'bg-slate-900/90 border-emerald-500 ring-2 ring-emerald-500/40 shadow-xl'
-                      : 'bg-slate-900/50 border-slate-800 opacity-75 hover:opacity-100'
+                      ? 'bg-emerald-500/10 dark:bg-emerald-950/30 border-emerald-500 ring-4 ring-emerald-500/20 shadow-xl'
+                      : 'glass-card hover:bg-slate-100 dark:hover:bg-slate-800/80 border-slate-300 dark:border-slate-700/80'
                   }`}
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className={`text-xs font-black uppercase px-2.5 py-1 rounded-lg ${
-                      activeSpeaker === 'B' ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-400'
+                    <span className={`text-xs font-black uppercase px-3 py-1 rounded-xl transition-all ${
+                      activeSpeaker === 'B'
+                        ? 'bg-emerald-600 text-white shadow-md'
+                        : 'bg-indigo-600/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30'
                     }`}>
                       👤 Partner B {activeSpeaker === 'B' ? '(AM WORT)' : ''}
                     </span>
-                    <span className="text-2xl font-black font-mono text-white">
+                    <span className={`text-2xl font-black font-mono tracking-wider ${
+                      activeSpeaker === 'B' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-200'
+                    }`}>
                       {formatTime(timerSecondsB)}
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between pt-1 text-xs">
-                    <span className="font-bold text-slate-300 truncate max-w-[200px]">
+                  <div className="flex items-center justify-between pt-2 text-xs border-t border-slate-200 dark:border-slate-800">
+                    <span className="font-bold text-slate-800 dark:text-slate-200 truncate max-w-[200px]">
                       {selectedTopicB?.title || 'Kein Thema gewählt'}
                     </span>
                     <button
@@ -516,7 +524,7 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
                         e.stopPropagation();
                         openTopicModalForPartner('B');
                       }}
-                      className="text-[11px] text-indigo-400 hover:text-indigo-300 font-bold flex items-center gap-1 bg-indigo-500/10 px-2 py-0.5 rounded border border-indigo-500/20"
+                      className="text-[11px] text-indigo-700 dark:text-indigo-300 hover:text-indigo-600 font-extrabold flex items-center gap-1 bg-indigo-500/15 hover:bg-indigo-500/25 px-2.5 py-1 rounded-lg border border-indigo-500/30 transition-all"
                     >
                       <Edit3 className="w-3 h-3" /> Ändern
                     </button>
