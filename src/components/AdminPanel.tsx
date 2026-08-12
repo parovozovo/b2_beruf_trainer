@@ -399,20 +399,34 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     return list;
   };
 
-  // Handlers for Question Builder Items (ABC Questions)
+  // Handlers for Question Builder Items (ABC Questions & Zusatzfragen)
   const handleAddQuestionABC = () => {
     const { start, end } = getTileABCQuestionRange(selectedTileType);
-    const maxAllowed = end - start + 1;
-    if (vQuestionsABCList.length >= maxAllowed) {
-      showToast(`Für ${selectedTileType} sind bereits alle ${maxAllowed} Fragen (Q${start}–Q${end}) angelegt!`, 'error');
+    const maxStandardCount = end - start + 1;
+    const maxTotalAllowed = maxStandardCount + 5;
+
+    if (vQuestionsABCList.length >= maxTotalAllowed) {
+      showToast(`Maximale Fragenanzahl (${maxTotalAllowed}) für ${selectedTileType} erreicht!`, 'error');
       return;
     }
-    const currentMax = vQuestionsABCList.length > 0 ? Math.max(...vQuestionsABCList.map((q) => q.id)) : start - 1;
-    const nextId = Math.min(currentMax + 1, end);
+
+    const currentMaxId = vQuestionsABCList.length > 0 ? Math.max(...vQuestionsABCList.map((q) => q.id)) : start - 1;
+    const nextId = currentMaxId + 1;
+    const isExtra = vQuestionsABCList.length >= maxStandardCount;
+
     setVQuestionsABCList([
       ...vQuestionsABCList,
-      { id: nextId, questionText: `Frage ${nextId}`, options: ['Option A', 'Option B', 'Option C'], correctIndex: 0 },
+      {
+        id: nextId,
+        questionText: isExtra ? `Zusatzfrage ${nextId}` : `Frage ${nextId}`,
+        options: ['Option A', 'Option B', 'Option C'],
+        correctIndex: 0,
+      },
     ]);
+
+    if (isExtra) {
+      showToast(`Zusätzliche Übungsfrage (Frage ${nextId}) hinzugefügt.`, 'success');
+    }
   };
 
   const handleUpdateQuestionABC = (index: number, updated: QuestionABC) => {
@@ -1432,22 +1446,34 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     <button
                       type="button"
                       onClick={handleAddQuestionABC}
-                      className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold flex items-center gap-1"
+                      className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-extrabold flex items-center gap-1.5 shadow-sm"
                     >
-                      <Plus className="w-3.5 h-3.5" /> Frage hinzufügen
+                      <Plus className="w-3.5 h-3.5" />
+                      {vQuestionsABCList.length >= (getTileABCQuestionRange(selectedTileType).end - getTileABCQuestionRange(selectedTileType).start + 1)
+                        ? '+ Zusätzliche Übungsfrage (Zusatzfrage)'
+                        : '+ Standard-Frage hinzufügen'}
                     </button>
                   </div>
 
                   <div className="space-y-3">
-                    {vQuestionsABCList.map((q, index) => (
-                      <div key={index} className="p-4 bg-slate-950/60 rounded-xl border border-slate-800 space-y-3">
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-2">
-                            <span className="w-6 h-6 rounded-md bg-indigo-500/20 text-indigo-300 font-bold text-xs flex items-center justify-center">
-                              Q{q.id}
-                            </span>
-                            <span className="text-xs font-bold text-slate-300">Frage #{index + 1}</span>
-                          </div>
+                    {vQuestionsABCList.map((q, index) => {
+                      const range = getTileABCQuestionRange(selectedTileType);
+                      const isExtra = index >= (range.end - range.start + 1);
+
+                      return (
+                        <div key={index} className="p-4 bg-slate-950/60 rounded-xl border border-slate-800 space-y-3">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-2">
+                              <span className="w-6 h-6 rounded-md bg-indigo-500/20 text-indigo-300 font-bold text-xs flex items-center justify-center">
+                                Q{q.id}
+                              </span>
+                              <span className="text-xs font-bold text-slate-300">Frage #{index + 1}</span>
+                              {isExtra && (
+                                <span className="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 text-[10px] font-extrabold border border-indigo-500/30">
+                                  Zusatzfrage
+                                </span>
+                              )}
+                            </div>
                           <button
                             type="button"
                             onClick={() => handleRemoveQuestionABC(index)}
@@ -1497,8 +1523,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                             </div>
                           ))}
                         </div>
-                      </div>
-                    ))}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}

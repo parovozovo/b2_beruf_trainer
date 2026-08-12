@@ -758,8 +758,13 @@ const GenericABCQuestionsUI: React.FC<{
 
           return (
             <div key={q.id} className="p-4 sm:p-5 bg-slate-900/80 rounded-2xl border border-slate-700/80 space-y-3">
-              <div className="font-extrabold text-sm sm:text-base text-white">
-                Frage {q.id}: {q.questionText}
+              <div className="font-extrabold text-sm sm:text-base text-white flex items-center justify-between gap-2">
+                <span>Frage {q.id}: {q.questionText}</span>
+                {q.questionText?.toLowerCase().includes('zusatzfrage') && (
+                  <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 border border-indigo-500/30">
+                    Zusatzfrage
+                  </span>
+                )}
               </div>
               <div className="space-y-2 pl-2">
                 {q.options.map((opt, idx) => (
@@ -823,8 +828,13 @@ const LesenSchreibenUI: React.FC<{
 
           return (
             <div key={q.id} className="p-4 sm:p-5 bg-slate-900/80 rounded-2xl border border-slate-700/80 space-y-3">
-              <div className="font-extrabold text-sm sm:text-base text-white">
-                Frage {q.id}: {q.questionText}
+              <div className="font-extrabold text-sm sm:text-base text-white flex items-center justify-between gap-2">
+                <span>Frage {q.id}: {q.questionText}</span>
+                {(q.id > 20 || q.questionText?.toLowerCase().includes('zusatzfrage')) && (
+                  <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 border border-indigo-500/30">
+                    Zusatzfrage
+                  </span>
+                )}
               </div>
               <div className="space-y-2 pl-2">
                 {q.options.map((opt, idx) => (
