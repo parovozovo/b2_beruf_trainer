@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { Modelltest, TileType, User } from '../types';
-import { Crown, CheckCircle, XCircle, Volume2, HelpCircle, ArrowRight, RotateCcw, Award } from 'lucide-react';
+import { Crown, CheckCircle, XCircle, Volume2, HelpCircle, ArrowRight, RotateCcw, Award, Layers } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 interface TilePracticeProps {
@@ -33,8 +33,9 @@ export const TilePractice: React.FC<TilePracticeProps> = ({
 }) => {
   const [selectedModelltestId, setSelectedModelltestId] = useState<string>(modelltests[0]?.id || '');
   const [selectedTileType, setSelectedTileType] = useState<TileType>('lesen_1');
+  const [selectedVariantIndex, setSelectedVariantIndex] = useState<number>(0);
 
-  // Answers state: key -> string or number
+  // Answers state
   const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
   const [currentScore, setCurrentScore] = useState<{ score: number; maxScore: number } | null>(null);
@@ -48,6 +49,7 @@ export const TilePractice: React.FC<TilePracticeProps> = ({
       return;
     }
     setSelectedModelltestId(testId);
+    setSelectedVariantIndex(0);
     setUserAnswers({});
     setSubmitted(false);
     setCurrentScore(null);
@@ -55,6 +57,14 @@ export const TilePractice: React.FC<TilePracticeProps> = ({
 
   const handleSelectTileType = (type: TileType) => {
     setSelectedTileType(type);
+    setSelectedVariantIndex(0);
+    setUserAnswers({});
+    setSubmitted(false);
+    setCurrentScore(null);
+  };
+
+  const handleSelectVariantIndex = (idx: number) => {
+    setSelectedVariantIndex(idx);
     setUserAnswers({});
     setSubmitted(false);
     setCurrentScore(null);
@@ -62,7 +72,7 @@ export const TilePractice: React.FC<TilePracticeProps> = ({
 
   // Get active variant for selected tile type
   const variants = activeTest?.variants[selectedTileType] || [];
-  const activeVariant = (variants as Array<{ id: string; title: string }>)[0];
+  const activeVariant = (variants as Array<{ id: string; title: string }>)[selectedVariantIndex] || (variants as Array<{ id: string; title: string }>)[0];
 
   const handleAnswerChange = (key: string, value: string) => {
     if (submitted) return;
@@ -176,7 +186,7 @@ export const TilePractice: React.FC<TilePracticeProps> = ({
 
   return (
     <div className="space-y-6 animate-fadeIn">
-      {/* Top Bar: Select Modelltest & Select Tile */}
+      {/* Top Bar: Select Modelltest & Select Tile & Select Variant */}
       <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-4">
         {/* Modelltest Selector */}
         <div>
@@ -222,6 +232,29 @@ export const TilePractice: React.FC<TilePracticeProps> = ({
             ))}
           </div>
         </div>
+
+        {/* Variant Picker (If multiple variants exist for this tile) */}
+        {variants.length > 1 && (
+          <div className="pt-2 border-t border-slate-800/80 flex items-center gap-2">
+            <Layers className="w-4 h-4 text-indigo-400 shrink-0" />
+            <span className="text-xs font-semibold text-slate-300">Variante wählen:</span>
+            <div className="flex flex-wrap gap-1.5">
+              {(variants as Array<{ id: string; title: string }>).map((v, idx) => (
+                <button
+                  key={v.id}
+                  onClick={() => handleSelectVariantIndex(idx)}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                    selectedVariantIndex === idx
+                      ? 'bg-indigo-500 text-white shadow-sm'
+                      : 'bg-slate-800/60 text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Variante {idx + 1}: {v.title}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Main Content Area for Active Variant */}

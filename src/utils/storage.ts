@@ -1,5 +1,6 @@
 import type { User, PromoCode, Modelltest, ForumsbeitragTopic, WrittenEssayRecord, FullExamResult, TileResult } from '../types';
 import { INITIAL_PROMO_CODES, INITIAL_FORUMSBEITRAG_TOPICS, INITIAL_MODELLTESTS, INITIAL_SPRECHEN_TOPICS } from '../data/initialData';
+import { supabase, isSupabaseConfigured } from './supabase';
 
 const KEYS = {
   CURRENT_USER: 'b2_current_user',
@@ -52,24 +53,35 @@ export function setCurrentUser(user: User): void {
   localStorage.setItem(KEYS.CURRENT_USER, JSON.stringify(user));
 }
 
-export function getPromoCodes(): PromoCode[] {
-  const data = localStorage.getItem(KEYS.PROMO_CODES);
-  if (!data) {
-    localStorage.setItem(KEYS.PROMO_CODES, JSON.stringify(INITIAL_PROMO_CODES));
-    return INITIAL_PROMO_CODES;
+// ASYNC CLOUD & LOCAL STORAGE HANDLERS WITH SUPABASE SYNC
+
+export async function fetchModelltestsAsync(): Promise<Modelltest[]> {
+  if (isSupabaseConfigured) {
+    try {
+      const { data, error } = await supabase.from('modelltests').select('*');
+      if (!error && data && data.length > 0) {
+        const tests: Modelltest[] = data.map((item: Record<string, unknown>) => ({
+          id: String(item.id),
+          title: String(item.title),
+          description: String(item.description || ''),
+          isPremium: Boolean(item.is_premium),
+          isHidden: Boolean(item.is_hidden),
+          variants: (item.variants as Modelltest['variants']) || INITIAL_MODELLTESTS[0].variants,
+        }));
+        saveModelltestsLocal(tests);
+        return tests;
+      } else if (data && data.length === 0) {
+        // Seed initial tests into Supabase if empty!
+        await seedInitialDataToSupabase();
+      }
+    } catch {
+      // Fallback
+    }
   }
-  try {
-    return JSON.parse(data);
-  } catch {
-    return INITIAL_PROMO_CODES;
-  }
+  return getModelltestsLocal();
 }
 
-export function savePromoCodes(codes: PromoCode[]): void {
-  localStorage.setItem(KEYS.PROMO_CODES, JSON.stringify(codes));
-}
-
-export function getModelltests(): Modelltest[] {
+export function getModelltestsLocal(): Modelltest[] {
   const data = localStorage.getItem(KEYS.MODELLTESTS);
   if (!data) {
     localStorage.setItem(KEYS.MODELLTESTS, JSON.stringify(INITIAL_MODELLTESTS));
@@ -82,8 +94,92 @@ export function getModelltests(): Modelltest[] {
   }
 }
 
-export function saveModelltests(tests: Modelltest[]): void {
+export function saveModelltestsLocal(tests: Modelltest[]): void {
   localStorage.setItem(KEYS.MODELLTESTS, JSON.stringify(tests));
+}
+
+export async function saveModelltestsAsync(tests: Modelltest[]): Promise<void> {
+  saveModelltestsLocal(tests);
+  if (isSupabaseConfigured) {
+    try {
+      for (const mt of tests) {
+        await supabase.from('modelltests').upsert({
+          id: mt.id,
+          title: mt.title,
+          description: mt.description,
+          is_premium: mt.isPremium,
+          is_hidden: mt.isHidden || false,
+          variants: mt.variants,
+        });
+      }
+    } catch {
+      // Error ignored, saved locally
+    }
+  }
+}
+
+export async function fetchPromoCodesAsync(): Promise<PromoCode[]> {
+  if (isSupabaseConfigured) {
+    try {
+      const { data, error } = await supabase.from('promo_codes').select('*');
+      if (!error && data && data.length > 0) {
+        const codes: PromoCode[] = data.map((item: Record<string, unknown>) => ({
+          id: String(item.id),
+          code: String(item.code),
+          durationDays: Number(item.duration_days),
+          maxUses: Number(item.max_uses),
+          usedCount: Number(item.used_count),
+          createdDate: String(item.created_date),
+          usedByEmails: (item.used_by_emails as string[]) || [],
+          active: Boolean(item.active),
+        }));
+        savePromoCodesLocal(codes);
+        return codes;
+      }
+    } catch {
+      // Fallback
+    }
+  }
+  return getPromoCodesLocal();
+}
+
+export function getPromoCodesLocal(): PromoCode[] {
+  const data = localStorage.getItem(KEYS.PROMO_CODES);
+  if (!data) {
+    localStorage.setItem(KEYS.PROMO_CODES, JSON.stringify(INITIAL_PROMO_CODES));
+    return INITIAL_PROMO_CODES;
+  }
+  try {
+    return JSON.parse(data);
+  } catch {
+    return INITIAL_PROMO_CODES;
+  }
+}
+
+export function savePromoCodesLocal(codes: PromoCode[]): void {
+  localStorage.setItem(KEYS.PROMO_CODES, JSON.stringify(codes));
+}
+
+export async function savePromoCodesAsync(codes: PromoCode[]): Promise<void> {
+  savePromoCodesLocal(codes);
+  if (isSupabaseConfigured) {
+    try {
+      for (const pc of codes) {
+        await supabase.from('promo_codes').upsert({
+          id: pc.id,
+          code: pc.code,
+          duration_days: pc.durationDays,
+          max_uses: pc.maxUses,
+          used_count: pc.usedCount,
+          created_date: pc.createdDate,
+          used_by_emails: pc.usedByEmails,
+          active: pc.active,
+        });
+      }
+    } catch {
+      // Ignore
+    }
+  }
 }
 
 export function getForumsbeitragTopics(): ForumsbeitragTopic[] {
@@ -180,4 +276,45 @@ export function saveFullExamResult(result: FullExamResult): void {
   const results = getFullExamResults();
   results.unshift(result);
   localStorage.setItem(KEYS.FULL_EXAM_RESULTS, JSON.stringify(results));
+}
+
+// SEEDER FOR INITIAL DATA INTO SUPABASE CLOUD DATABASE
+export async function seedInitialDataToSupabase(): Promise<void> {
+  if (!isSupabaseConfigured) return;
+  try {
+    for (const mt of INITIAL_MODELLTESTS) {
+      await supabase.from('modelltests').upsert({
+        id: mt.id,
+        title: mt.title,
+        description: mt.description,
+        is_premium: mt.isPremium,
+        is_hidden: false,
+        variants: mt.variants,
+      });
+    }
+
+    for (const pc of INITIAL_PROMO_CODES) {
+      await supabase.from('promo_codes').upsert({
+        id: pc.id,
+        code: pc.code,
+        duration_days: pc.durationDays,
+        max_uses: pc.maxUses,
+        used_count: pc.usedCount,
+        created_date: pc.createdDate,
+        used_by_emails: pc.usedByEmails,
+        active: pc.active,
+      });
+    }
+
+    for (const fb of INITIAL_FORUMSBEITRAG_TOPICS) {
+      await supabase.from('forumsbeitrag_topics').upsert({
+        id: fb.id,
+        title: fb.title,
+        prompt_text: fb.promptText,
+        is_premium: fb.isPremium,
+      });
+    }
+  } catch {
+    // Ignore seed errors
+  }
 }

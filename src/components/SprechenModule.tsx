@@ -5,6 +5,7 @@ import confetti from 'canvas-confetti';
 
 interface SprechenModuleProps {
   sprechenTopics: {
+    sprecher1AQuestions?: Array<{ id: string; title: string; promptText: string }>;
     sprecher2Topics: Array<{ id: string; title: string; promptText: string }>;
     sprecher3Situations: Array<{ id: string; title: string; promptText: string }>;
   };
@@ -29,18 +30,50 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
   // Initialize Part 1A choices
   useEffect(() => {
     initPart1A();
-  }, []);
+  }, [sprechenTopics]);
 
   const initPart1A = () => {
     setActivePart('1A');
-    const std1A = [
+    const std1A = sprechenTopics.sprecher1AQuestions || [
       {
-        title: 'Mündliche Präsentation 1A: Beruflicher Werdegang und Pläne',
-        promptText: 'Stellen Sie sich und Ihren beruflichen Hintergrund vor. Berichten Sie über Ihre Ausbildung, Erfahrung und Ihre weiteren Karriereziele in Deutschland.',
+        id: 'sp1a-1',
+        title: '1. Beruflicher Werdegang & Abschluss',
+        promptText: 'Stellen Sie Ihren bisherigen beruflichen Werdegang, Ihre Ausbildung und Ihre Abschlüsse strukturiert vor.',
       },
       {
-        title: 'Mündliche Präsentation 1A: Typischer Arbeitsalltag und Aufgaben',
-        promptText: 'Beschreiben Sie Ihren typischen Arbeitsalltag im Betrieb. Welche Aufgaben führen Sie regelmäßig durch und welche Qualifikationen nutzen Sie dabei?',
+        id: 'sp1a-2',
+        title: '2. Bisherige Berufserfahrung & Schwerpunkte',
+        promptText: 'Berichten Sie über Ihre wichtigsten praktischen Berufserfahrungen und Ihre fachlichen Schwerpunkte.',
+      },
+      {
+        id: 'sp1a-3',
+        title: '3. Aktuelle Tätigkeit oder Weiterbildung',
+        promptText: 'Beschreiben Sie Ihre derzeitige berufliche Rolle, Ihre Aufgaben im Betrieb oder Ihre laufende Sprach-/Fortbildungsmaßnahme.',
+      },
+      {
+        id: 'sp1a-4',
+        title: '4. Zukünftige berufliche Pläne in Deutschland',
+        promptText: 'Erläutern Sie Ihre Karriereziele und in welchem Arbeitsfeld Sie in Deutschland zukünftig arbeiten möchten.',
+      },
+      {
+        id: 'sp1a-5',
+        title: '5. Hauptaufgaben im Berufsalltag',
+        promptText: 'Welche konkreten Aufgaben führen Sie in Ihrem Berufsfeld am häufigsten durch und wie organisieren Sie Ihren Arbeitstag?',
+      },
+      {
+        id: 'sp1a-6',
+        title: '6. Zusammenarbeit mit Kollegen & Kunden',
+        promptText: 'Wie gestalten Sie die Kommunikation und Teamarbeit mit Kolleginnen, Vorgesetzten und Kunden im Betrieb?',
+      },
+      {
+        id: 'sp1a-7',
+        title: '7. Besondere Kenntnisse (Sprachen, EDV)',
+        promptText: 'Welche Zusatzqualifikationen, Sprachkenntnisse, Zertifikate oder EDV-Kenntnisse bringen Sie für den Beruf mit?',
+      },
+      {
+        id: 'sp1a-8',
+        title: '8. Herausforderungen & persönliche Motivation',
+        promptText: 'Was motiviert Sie in Ihrem Beruf besonders und wie gehen Sie mit herausfordernden Situationen am Arbeitsplatz um?',
       },
     ];
     setChoices1A(std1A);
@@ -120,7 +153,7 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
               <Mic className="w-5 h-5 text-emerald-400" /> Modul Sprechen
             </h2>
             <p className="text-xs text-slate-400">
-              Simulation der mündlichen Prüfung mit Zeitmessung und Akustiksignalen.
+              Vorbereitung auf den mündlichen Teil: Teil 1A (8 Standardfragen), Teil 2 (Präsentation), Teil 3 (Planung).
             </p>
           </div>
 
@@ -186,12 +219,12 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
               </h3>
 
               {activePart === '1A' && (
-                <div className="space-y-3">
+                <div className="space-y-2.5 max-h-[500px] overflow-y-auto pr-1">
                   {choices1A.map((t, idx) => (
                     <div
                       key={idx}
                       onClick={() => handleSelectTopic(t, 120)}
-                      className={`p-4 rounded-xl cursor-pointer transition-all border ${
+                      className={`p-3 rounded-xl cursor-pointer transition-all border ${
                         selectedTopic?.title === t.title
                           ? 'bg-emerald-500/20 border-emerald-500/60 text-white'
                           : 'glass-card border-slate-800 text-slate-300 hover:border-slate-700'
@@ -237,7 +270,7 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
             {!selectedTopic ? (
               <div className="glass-panel p-10 rounded-2xl text-center text-slate-400 border border-slate-800">
                 <Mic className="w-10 h-10 mx-auto mb-2 text-slate-600" />
-                <p className="text-sm">Wählen Sie links ein Thema aus, um die Zeitmessung zu starten.</p>
+                <p className="text-sm">Wählen Sie links eines der 8 Themen aus, um die Zeitmessung zu starten.</p>
               </div>
             ) : (
               <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-6 text-center">

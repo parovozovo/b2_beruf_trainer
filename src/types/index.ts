@@ -207,6 +207,7 @@ export interface WrittenEssayRecord {
 }
 
 export interface TileResult {
+  userId?: string;
   tileType: TileType;
   modelltestId: string;
   variantId: string;

@@ -39,6 +39,48 @@ export const INITIAL_FORUMSBEITRAG_TOPICS: ForumsbeitragTopic[] = [
 ];
 
 export const INITIAL_SPRECHEN_TOPICS = {
+  sprecher1AQuestions: [
+    {
+      id: 'sp1a-1',
+      title: '1. Beruflicher Werdegang & Abschluss',
+      promptText: 'Stellen Sie Ihren bisherigen beruflichen Werdegang, Ihre Ausbildung und Ihre Abschlüsse strukturiert vor.'
+    },
+    {
+      id: 'sp1a-2',
+      title: '2. Bisherige Berufserfahrung & Schwerpunkte',
+      promptText: 'Berichten Sie über Ihre wichtigsten praktischen Berufserfahrungen und Ihre fachlichen Schwerpunkte.'
+    },
+    {
+      id: 'sp1a-3',
+      title: '3. Aktuelle Tätigkeit oder Weiterbildung',
+      promptText: 'Beschreiben Sie Ihre derzeitige berufliche Rolle, Ihre Aufgaben im Betrieb oder Ihre laufende Sprach-/Fortbildungsmaßnahme.'
+    },
+    {
+      id: 'sp1a-4',
+      title: '4. Zukünftige berufliche Pläne in Deutschland',
+      promptText: 'Erläutern Sie Ihre Karriereziele und in welchem Arbeitsfeld Sie in Deutschland zukünftig arbeiten möchten.'
+    },
+    {
+      id: 'sp1a-5',
+      title: '5. Hauptaufgaben im Berufsalltag',
+      promptText: 'Welche konkreten Aufgaben führen Sie in Ihrem Berufsfeld am häufigsten durch und wie organisieren Sie Ihren Arbeitstag?'
+    },
+    {
+      id: 'sp1a-6',
+      title: '6. Zusammenarbeit mit Kollegen & Kunden',
+      promptText: 'Wie gestalten Sie die Kommunikation und Teamarbeit mit Kolleginnen, Vorgesetzten und Kunden im Betrieb?'
+    },
+    {
+      id: 'sp1a-7',
+      title: '7. Besondere Kenntnisse (Sprachen, EDV & Systeme)',
+      promptText: 'Welche Zusatzqualifikationen, Sprachkenntnisse, Zertifikate oder EDV-Kenntnisse bringen Sie für den Beruf mit?'
+    },
+    {
+      id: 'sp1a-8',
+      title: '8. Herausforderungen & persönliche Motivation',
+      promptText: 'Was motiviert Sie in Ihrem Beruf besonders und wie gehen Sie mit herausfordernden Situationen am Arbeitsplatz um?'
+    }
+  ],
   sprecher2Topics: [
     {
       id: 'sp2-1',
