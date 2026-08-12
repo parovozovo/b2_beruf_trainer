@@ -34,13 +34,17 @@ import {
   Mic,
   Eye,
   EyeOff,
+  CheckCircle,
+  AlertTriangle,
+  RefreshCw,
 } from 'lucide-react';
+import { isSupabaseConfigured } from '../utils/supabase';
 
 interface AdminPanelProps {
   modelltests: Modelltest[];
-  onSaveModelltests: (tests: Modelltest[]) => void;
+  onSaveModelltests: (tests: Modelltest[]) => Promise<void> | void;
   promoCodes: PromoCode[];
-  onSavePromoCodes: (codes: PromoCode[]) => void;
+  onSavePromoCodes: (codes: PromoCode[]) => Promise<void> | void;
   forumsbeitragTopics: ForumsbeitragTopic[];
   onSaveForumsbeitragTopics: (topics: ForumsbeitragTopic[]) => void;
   sprechenTopics: {
@@ -64,6 +68,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   onSaveSprechenTopics,
 }) => {
   const [activeTab, setActiveTab] = useState<'modelltests' | 'promocodes' | 'forumsbeitrag' | 'sprechen'>('modelltests');
+
+  // UI Toast notification state
+  const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const showToast = (text: string, type: 'success' | 'error' = 'success') => {
+    setToastMessage({ type, text });
+    setTimeout(() => setToastMessage(null), 5000);
+  };
 
   // New Modelltest form state
   const [newTestTitle, setNewTestTitle] = useState('');
@@ -90,7 +102,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [vHeadingsBlock, setVHeadingsBlock] = useState('');
   const [vAudioUrl, setVAudioUrl] = useState('');
 
-  // Lesen 1 / Lesen 3 / Hoeren 2 correct answers map (e.g., { "1": "A", "2": "C" })
+  // Lesen 1 / Lesen 3 / Hoeren 2 correct answers map
   const [vCorrectAnswersMap, setVCorrectAnswersMap] = useState<Record<string, string>>({
     '1': 'A',
     '2': 'B',
@@ -110,7 +122,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [vQ9Options, setVQ9Options] = useState<[string, string, string]>(['Aufzug nutzen', 'Warten', 'Notausgang nutzen']);
   const [vQ9CorrectIndex, setVQ9CorrectIndex] = useState<number>(2);
 
-  // Questions ABC list (Visual builder for Lesen 4, LesenSchreiben, Hoeren 3, Hoeren 4, Sprachbausteine 2)
+  // Questions ABC list (Visual builder)
   const [vQuestionsABCList, setVQuestionsABCList] = useState<QuestionABC[]>([]);
 
   // Hoeren 1 questions list
@@ -235,7 +247,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   }, [selectedModelltestId, selectedTileType, selectedVariantId]);
 
   // Handlers for Modelltests List & Properties
-  const handleCreateModelltest = (e: React.FormEvent) => {
+  const handleCreateModelltest = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTestTitle.trim()) return;
 
@@ -261,39 +273,50 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       },
     };
 
-    onSaveModelltests([...modelltests, newTest]);
-    setNewTestTitle('');
-    setNewTestDesc('');
-    setNewTestIsPremium(false);
-    alert('Neuer Modelltest wurde erfolgreich erstellt!');
+    try {
+      await onSaveModelltests([...modelltests, newTest]);
+      setNewTestTitle('');
+      setNewTestDesc('');
+      setNewTestIsPremium(false);
+      showToast('Neuer Modelltest wurde erfolgreich erstellt & in Supabase gespeichert!');
+    } catch {
+      showToast('Fehler beim Speichern in Supabase!', 'error');
+    }
   };
 
-  const handleDeleteModelltest = (id: string) => {
+  const handleDeleteModelltest = async (id: string) => {
     if (!confirm('Möchten Sie diesen Modelltest wirklich löschen?')) return;
-    onSaveModelltests(modelltests.filter((m) => m.id !== id));
+    try {
+      await onSaveModelltests(modelltests.filter((m) => m.id !== id));
+      showToast('Modelltest gelöscht.');
+    } catch {
+      showToast('Fehler beim Löschen.', 'error');
+    }
   };
 
-  const handleToggleModelltestPremium = (id: string) => {
+  const handleToggleModelltestPremium = async (id: string) => {
     const updated = modelltests.map((m) => (m.id === id ? { ...m, isPremium: !m.isPremium } : m));
-    onSaveModelltests(updated);
+    await onSaveModelltests(updated);
+    showToast('Premium-Status aktualisiert.');
   };
 
-  const handleToggleModelltestHidden = (id: string) => {
+  const handleToggleModelltestHidden = async (id: string) => {
     const updated = modelltests.map((m) => (m.id === id ? { ...m, isHidden: !m.isHidden } : m));
-    onSaveModelltests(updated);
+    await onSaveModelltests(updated);
+    showToast('Sichtbarkeitsstatus aktualisiert.');
   };
 
-  const handleSaveModelltestMetadata = (e: React.FormEvent) => {
+  const handleSaveModelltestMetadata = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingModelltest) return;
     const updated = modelltests.map((m) => (m.id === editingModelltest.id ? editingModelltest : m));
-    onSaveModelltests(updated);
+    await onSaveModelltests(updated);
     setEditingModelltest(null);
-    alert('Modelltest-Eigenschaften wurden aktualisiert!');
+    showToast('Modelltest-Eigenschaften gespeichert!');
   };
 
   // Delete Variant Handler
-  const handleDeleteVariant = (vId: string) => {
+  const handleDeleteVariant = async (vId: string) => {
     if (!confirm('Variante wirklich löschen?')) return;
 
     const updatedTests = modelltests.map((m) => {
@@ -309,8 +332,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       };
     });
 
-    onSaveModelltests(updatedTests as Modelltest[]);
+    await onSaveModelltests(updatedTests as Modelltest[]);
     setSelectedVariantId('new');
+    showToast('Variante gelöscht.');
   };
 
   // Jump directly to editing a specific tile variant from the Modelltests list
@@ -341,7 +365,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   };
 
   // Save Variant Form Handler
-  const handleSaveVariant = (e: React.FormEvent) => {
+  const handleSaveVariant = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!vTitle.trim()) return;
 
@@ -486,13 +510,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       };
     });
 
-    onSaveModelltests(updatedTests as Modelltest[]);
-    setSelectedVariantId('new');
-    alert('Prüfungsvariante wurde erfolgreich gespeichert!');
+    try {
+      await onSaveModelltests(updatedTests as Modelltest[]);
+      setSelectedVariantId('new');
+      showToast('Prüfungsvariante erfolgreich in Supabase & lokal gespeichert!');
+    } catch {
+      showToast('Fehler beim Speichern der Variante in Supabase!', 'error');
+    }
   };
 
   // Promo Code Handlers
-  const handleGeneratePromoCode = (e: React.FormEvent) => {
+  const handleGeneratePromoCode = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!promoCodeInput.trim()) return;
 
@@ -507,18 +535,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       active: true,
     };
 
-    onSavePromoCodes([...promoCodes, newCodeObj]);
+    await onSavePromoCodes([...promoCodes, newCodeObj]);
     setPromoCodeInput('');
-    alert('Gutscheincode erfolgreich generiert!');
+    showToast('Gutscheincode erfolgreich erstellt & gespeichert!');
   };
 
-  const handleTogglePromoActive = (id: string) => {
+  const handleTogglePromoActive = async (id: string) => {
     const updated = promoCodes.map((c) => (c.id === id ? { ...c, active: !c.active } : c));
-    onSavePromoCodes(updated);
+    await onSavePromoCodes(updated);
+    showToast('Gutscheincode-Status geändert.');
   };
 
-  const handleDeletePromoCode = (id: string) => {
-    onSavePromoCodes(promoCodes.filter((c) => c.id !== id));
+  const handleDeletePromoCode = async (id: string) => {
+    await onSavePromoCodes(promoCodes.filter((c) => c.id !== id));
+    showToast('Gutscheincode gelöscht.');
   };
 
   // Forumsbeitrag Topics Handlers
@@ -535,11 +565,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     setFbTitle('');
     setFbPrompt('');
     setFbIsPremium(false);
-    alert('Thema für Forenbeitrag erfolgreich hinzugefügt!');
+    showToast('Thema für Forenbeitrag hinzugefügt!');
   };
 
   const handleDeleteForumsbeitragTopic = (id: string) => {
     onSaveForumsbeitragTopics(forumsbeitragTopics.filter((t) => t.id !== id));
+    showToast('Thema gelöscht.');
   };
 
   // Sprechen Topics Handlers
@@ -553,7 +584,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     });
     setSp2Title('');
     setSp2Prompt('');
-    alert('Thema für Sprechen Teil 2 hinzugefügt!');
+    showToast('Sprechen Teil 2 Thema hinzugefügt!');
   };
 
   const handleDeleteSp2Topic = (id: string) => {
@@ -561,6 +592,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       ...sprechenTopics,
       sprecher2Topics: sprechenTopics.sprecher2Topics.filter((t) => t.id !== id),
     });
+    showToast('Thema gelöscht.');
   };
 
   const handleAddSp3Situation = (e: React.FormEvent) => {
@@ -573,7 +605,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     });
     setSp3Title('');
     setSp3Prompt('');
-    alert('Situation für Sprechen Teil 3 hinzugefügt!');
+    showToast('Sprechen Teil 3 Situation hinzugefügt!');
   };
 
   const handleDeleteSp3Situation = (id: string) => {
@@ -581,6 +613,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       ...sprechenTopics,
       sprecher3Situations: sprechenTopics.sprecher3Situations.filter((s) => s.id !== id),
     });
+    showToast('Situation gelöscht.');
   };
 
   // Export / Import JSON Data
@@ -598,23 +631,41 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (event) => {
+    reader.onload = async (event) => {
       try {
         const parsed = JSON.parse(event.target?.result as string);
-        if (parsed.modelltests) onSaveModelltests(parsed.modelltests);
-        if (parsed.promoCodes) onSavePromoCodes(parsed.promoCodes);
+        if (parsed.modelltests) await onSaveModelltests(parsed.modelltests);
+        if (parsed.promoCodes) await onSavePromoCodes(parsed.promoCodes);
         if (parsed.forumsbeitragTopics) onSaveForumsbeitragTopics(parsed.forumsbeitragTopics);
         if (parsed.sprechenTopics) onSaveSprechenTopics(parsed.sprechenTopics);
-        alert('Daten erfolgreich importiert!');
+        showToast('Daten erfolgreich importiert!');
       } catch {
-        alert('Fehler beim Importieren der JSON-Datei!');
+        showToast('Fehler beim Importieren der JSON-Datei!', 'error');
       }
     };
     reader.readAsText(file);
   };
 
   return (
-    <div className="space-y-8 animate-fadeIn">
+    <div className="space-y-8 animate-fadeIn relative">
+      {/* UI Toast Notification Banner */}
+      {toastMessage && (
+        <div
+          className={`fixed top-20 right-6 z-50 p-4 rounded-2xl border shadow-2xl flex items-center gap-3 animate-fadeIn text-xs font-bold text-white max-w-md ${
+            toastMessage.type === 'success'
+              ? 'bg-emerald-950/90 border-emerald-500/60 text-emerald-200'
+              : 'bg-rose-950/90 border-rose-500/60 text-rose-200'
+          }`}
+        >
+          {toastMessage.type === 'success' ? (
+            <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0" />
+          ) : (
+            <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0" />
+          )}
+          <span>{toastMessage.text}</span>
+        </div>
+      )}
+
       {/* Header Banner */}
       <div className="glass-panel p-6 rounded-3xl border border-rose-500/30 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -622,13 +673,28 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <Shield className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-2xl font-extrabold text-white">Verwaltung (Admin-Bereich)</h1>
-            <p className="text-xs text-slate-400">Visueller Editor für alle 12 Prüfungsteile, Gutscheine & Modulinhalte</p>
+            <h1 className="text-2xl font-extrabold text-white flex items-center gap-2">
+              Verwaltung (Admin-Bereich)
+              {isSupabaseConfigured && (
+                <span className="px-2.5 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-full text-[10px] font-bold">
+                  ✓ Supabase БД verbunden
+                </span>
+              )}
+            </h1>
+            <p className="text-xs text-slate-400">
+              Visueller Editor für alle 12 Prüfungsteile. Alle Änderungen werden direkt in Supabase gespeichert.
+            </p>
           </div>
         </div>
 
-        {/* Action Controls: Export / Import */}
+        {/* Action Controls: Sync / Export / Import */}
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => onSaveModelltests(modelltests)}
+            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md"
+          >
+            <RefreshCw className="w-3.5 h-3.5" /> Mit Supabase синхронізація
+          </button>
           <button
             onClick={handleExportDataJSON}
             className="px-3 py-1.5 glass-card hover:bg-slate-800 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 flex items-center gap-1.5"
@@ -723,9 +789,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
                 <button
                   type="submit"
-                  className="py-2 px-4 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs shadow-lg transition-colors ml-auto"
+                  className="py-2.5 px-5 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs shadow-lg transition-colors ml-auto flex items-center gap-1.5"
                 >
-                  Erstellen
+                  <Save className="w-3.5 h-3.5" /> Erstellen & in БД speichern
                 </button>
               </div>
             </form>
@@ -1040,7 +1106,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 </div>
               )}
 
-              {/* VISUAL QUESTION BUILDER FOR ABC TILES (Lesen 4, LesenSchreiben, Hoeren 3, Hoeren 4, Sprachbausteine 2) */}
+              {/* VISUAL QUESTION BUILDER FOR ABC TILES */}
               {(selectedTileType === 'lesen_4' ||
                 selectedTileType === 'lesen_schreiben' ||
                 selectedTileType === 'hoeren_3' ||
@@ -1169,15 +1235,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               <div className="flex items-center gap-3">
                 <button
                   type="submit"
-                  className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs shadow-lg transition-colors flex items-center gap-2"
+                  className="px-6 py-3.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-extrabold rounded-xl text-xs shadow-lg transition-colors flex items-center gap-2"
                 >
-                  <Save className="w-4 h-4" /> Variante speichern
+                  <Save className="w-4 h-4" /> Variante in Supabase БД speichern
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setSelectedVariantId('new')}
-                  className="px-4 py-3 glass-card text-slate-400 hover:text-white text-xs font-medium rounded-xl flex items-center gap-1.5"
+                  className="px-4 py-3.5 glass-card text-slate-400 hover:text-white text-xs font-medium rounded-xl flex items-center gap-1.5"
                 >
                   <RotateCcw className="w-3.5 h-3.5" /> Abbrechen
                 </button>
@@ -1403,7 +1469,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   type="submit"
                   className="w-full py-2.5 px-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs shadow-lg transition-colors"
                 >
-                  Code erstellen
+                  Code erstellen & speichern
                 </button>
               </div>
             </form>

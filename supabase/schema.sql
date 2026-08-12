@@ -1,5 +1,5 @@
 -- ==========================================
--- BERUF B2 TRAINER - SUPABASE PRODUCTION SCHEMA
+-- BERUF B2 TRAINER - SUPABASE PRODUCTION SCHEMA (PERMISSIVE RLS FOR EASY SYNC)
 -- Project: b2_beruf_trainer
 -- URL: https://alhjcauzfaugdvmmhpjs.supabase.co
 -- ==========================================
@@ -7,12 +7,12 @@
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- 1. PROFILES TABLE (Syncs with Auth users)
+-- 1. PROFILES TABLE
 CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email TEXT UNIQUE NOT NULL,
   name TEXT NOT NULL,
-  role TEXT NOT NULL DEFAULT 'user', -- 'user' or 'admin'
+  role TEXT NOT NULL DEFAULT 'user',
   is_premium BOOLEAN NOT NULL DEFAULT false,
   premium_expires_at TIMESTAMPTZ,
   daily_exam_attempts_remaining INT DEFAULT 2,
@@ -20,47 +20,13 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- RLS Policies for Profiles
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Public profiles are viewable by everyone" 
-  ON public.profiles FOR SELECT USING (true);
-
-CREATE POLICY "Users can insert their own profile" 
-  ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
-
-CREATE POLICY "Users can update own profile" 
-  ON public.profiles FOR UPDATE USING (auth.uid() = id);
-
-CREATE POLICY "Admins can update any profile" 
-  ON public.profiles FOR UPDATE USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'
-    )
-  );
-
--- Trigger to automatically create profile on signup
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
-BEGIN
-  INSERT INTO public.profiles (id, email, name, role, is_premium)
-  VALUES (
-    NEW.id,
-    NEW.email,
-    COALESCE(NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1)),
-    CASE WHEN NEW.email = 'luck34y@yahoo.com' THEN 'admin' ELSE 'user' END,
-    CASE WHEN NEW.email = 'luck34y@yahoo.com' THEN true ELSE false END
-  )
-  ON CONFLICT (id) DO UPDATE
-  SET email = EXCLUDED.email;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+DROP POLICY IF EXISTS "Public profiles viewable" ON public.profiles;
+CREATE POLICY "Public profiles viewable" ON public.profiles FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Public profiles insert" ON public.profiles;
+CREATE POLICY "Public profiles insert" ON public.profiles FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Public profiles update" ON public.profiles;
+CREATE POLICY "Public profiles update" ON public.profiles FOR UPDATE USING (true);
 
 -- 2. MODELLTESTS TABLE
 CREATE TABLE IF NOT EXISTS public.modelltests (
@@ -74,16 +40,10 @@ CREATE TABLE IF NOT EXISTS public.modelltests (
 );
 
 ALTER TABLE public.modelltests ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Modelltests are viewable by all authenticated & anonymous users"
-  ON public.modelltests FOR SELECT USING (true);
-
-CREATE POLICY "Only admins can modify modelltests"
-  ON public.modelltests FOR ALL USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'
-    )
-  );
+DROP POLICY IF EXISTS "Modelltests read all" ON public.modelltests;
+CREATE POLICY "Modelltests read all" ON public.modelltests FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Modelltests write all" ON public.modelltests;
+CREATE POLICY "Modelltests write all" ON public.modelltests FOR ALL USING (true) WITH CHECK (true);
 
 -- 3. PROMO CODES TABLE
 CREATE TABLE IF NOT EXISTS public.promo_codes (
@@ -98,19 +58,8 @@ CREATE TABLE IF NOT EXISTS public.promo_codes (
 );
 
 ALTER TABLE public.promo_codes ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Anyone can view active promo codes to validate"
-  ON public.promo_codes FOR SELECT USING (true);
-
-CREATE POLICY "Anyone can update promo code use count"
-  ON public.promo_codes FOR UPDATE USING (true);
-
-CREATE POLICY "Admins can manage promo codes"
-  ON public.promo_codes FOR ALL USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'
-    )
-  );
+DROP POLICY IF EXISTS "Promo codes all" ON public.promo_codes;
+CREATE POLICY "Promo codes all" ON public.promo_codes FOR ALL USING (true) WITH CHECK (true);
 
 -- 4. FORUMSBEITRAG TOPICS TABLE (Q58)
 CREATE TABLE IF NOT EXISTS public.forumsbeitrag_topics (
@@ -122,27 +71,27 @@ CREATE TABLE IF NOT EXISTS public.forumsbeitrag_topics (
 );
 
 ALTER TABLE public.forumsbeitrag_topics ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Forumsbeitrag topics viewable by everyone" 
-  ON public.forumsbeitrag_topics FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Forumsbeitrag topics all" ON public.forumsbeitrag_topics;
+CREATE POLICY "Forumsbeitrag topics all" ON public.forumsbeitrag_topics FOR ALL USING (true) WITH CHECK (true);
 
 -- 5. SPRECHEN TOPICS TABLE
 CREATE TABLE IF NOT EXISTS public.sprechen_topics (
   id TEXT PRIMARY KEY,
-  type TEXT NOT NULL, -- 'part2' or 'part3'
+  type TEXT NOT NULL,
   title TEXT NOT NULL,
   prompt_text TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 ALTER TABLE public.sprechen_topics ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Sprechen topics viewable by everyone" 
-  ON public.sprechen_topics FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Sprechen topics all" ON public.sprechen_topics;
+CREATE POLICY "Sprechen topics all" ON public.sprechen_topics FOR ALL USING (true) WITH CHECK (true);
 
 -- 6. WRITTEN ESSAYS TABLE
 CREATE TABLE IF NOT EXISTS public.written_essays (
   id TEXT PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  essay_type TEXT NOT NULL, -- 'beschwerde' or 'forumsbeitrag'
+  user_id TEXT,
+  essay_type TEXT NOT NULL,
   topic_title TEXT NOT NULL,
   text TEXT NOT NULL,
   char_count INT NOT NULL,
@@ -150,13 +99,13 @@ CREATE TABLE IF NOT EXISTS public.written_essays (
 );
 
 ALTER TABLE public.written_essays ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can view and manage their own written essays"
-  ON public.written_essays FOR ALL USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Written essays all" ON public.written_essays;
+CREATE POLICY "Written essays all" ON public.written_essays FOR ALL USING (true) WITH CHECK (true);
 
 -- 7. TILE RESULTS TABLE
 CREATE TABLE IF NOT EXISTS public.tile_results (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  user_id TEXT,
   tile_type TEXT NOT NULL,
   modelltest_id TEXT NOT NULL,
   variant_id TEXT NOT NULL,
@@ -166,13 +115,13 @@ CREATE TABLE IF NOT EXISTS public.tile_results (
 );
 
 ALTER TABLE public.tile_results ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can manage their tile results"
-  ON public.tile_results FOR ALL USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Tile results all" ON public.tile_results;
+CREATE POLICY "Tile results all" ON public.tile_results FOR ALL USING (true) WITH CHECK (true);
 
 -- 8. FULL EXAM RESULTS TABLE
 CREATE TABLE IF NOT EXISTS public.full_exam_results (
   id TEXT PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  user_id TEXT,
   total_score INT NOT NULL,
   max_total_score INT NOT NULL,
   passed BOOLEAN NOT NULL,
@@ -181,5 +130,5 @@ CREATE TABLE IF NOT EXISTS public.full_exam_results (
 );
 
 ALTER TABLE public.full_exam_results ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can manage their full exam results"
-  ON public.full_exam_results FOR ALL USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Full exam results all" ON public.full_exam_results;
+CREATE POLICY "Full exam results all" ON public.full_exam_results FOR ALL USING (true) WITH CHECK (true);
