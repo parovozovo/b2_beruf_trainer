@@ -1,5 +1,5 @@
 -- ==========================================
--- BERUF B2 TRAINER - SUPABASE PRODUCTION SCHEMA (PERMISSIVE RLS FOR EASY SYNC)
+-- BERUF B2 TRAINER - FIX FOR POSTGRESQL ERROR 42501 (PERMISSION DENIED)
 -- Project: b2_beruf_trainer
 -- URL: https://alhjcauzfaugdvmmhpjs.supabase.co
 -- ==========================================
@@ -20,14 +20,6 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Public profiles viewable" ON public.profiles;
-CREATE POLICY "Public profiles viewable" ON public.profiles FOR SELECT USING (true);
-DROP POLICY IF EXISTS "Public profiles insert" ON public.profiles;
-CREATE POLICY "Public profiles insert" ON public.profiles FOR INSERT WITH CHECK (true);
-DROP POLICY IF EXISTS "Public profiles update" ON public.profiles;
-CREATE POLICY "Public profiles update" ON public.profiles FOR UPDATE USING (true);
-
 -- 2. MODELLTESTS TABLE
 CREATE TABLE IF NOT EXISTS public.modelltests (
   id TEXT PRIMARY KEY,
@@ -38,12 +30,6 @@ CREATE TABLE IF NOT EXISTS public.modelltests (
   variants JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
-
-ALTER TABLE public.modelltests ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Modelltests read all" ON public.modelltests;
-CREATE POLICY "Modelltests read all" ON public.modelltests FOR SELECT USING (true);
-DROP POLICY IF EXISTS "Modelltests write all" ON public.modelltests;
-CREATE POLICY "Modelltests write all" ON public.modelltests FOR ALL USING (true) WITH CHECK (true);
 
 -- 3. PROMO CODES TABLE
 CREATE TABLE IF NOT EXISTS public.promo_codes (
@@ -57,11 +43,7 @@ CREATE TABLE IF NOT EXISTS public.promo_codes (
   active BOOLEAN NOT NULL DEFAULT true
 );
 
-ALTER TABLE public.promo_codes ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Promo codes all" ON public.promo_codes;
-CREATE POLICY "Promo codes all" ON public.promo_codes FOR ALL USING (true) WITH CHECK (true);
-
--- 4. FORUMSBEITRAG TOPICS TABLE (Q58)
+-- 4. FORUMSBEITRAG TOPICS TABLE
 CREATE TABLE IF NOT EXISTS public.forumsbeitrag_topics (
   id TEXT PRIMARY KEY,
   title TEXT NOT NULL,
@@ -69,10 +51,6 @@ CREATE TABLE IF NOT EXISTS public.forumsbeitrag_topics (
   is_premium BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
-
-ALTER TABLE public.forumsbeitrag_topics ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Forumsbeitrag topics all" ON public.forumsbeitrag_topics;
-CREATE POLICY "Forumsbeitrag topics all" ON public.forumsbeitrag_topics FOR ALL USING (true) WITH CHECK (true);
 
 -- 5. SPRECHEN TOPICS TABLE
 CREATE TABLE IF NOT EXISTS public.sprechen_topics (
@@ -82,10 +60,6 @@ CREATE TABLE IF NOT EXISTS public.sprechen_topics (
   prompt_text TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
-
-ALTER TABLE public.sprechen_topics ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Sprechen topics all" ON public.sprechen_topics;
-CREATE POLICY "Sprechen topics all" ON public.sprechen_topics FOR ALL USING (true) WITH CHECK (true);
 
 -- 6. WRITTEN ESSAYS TABLE
 CREATE TABLE IF NOT EXISTS public.written_essays (
@@ -97,10 +71,6 @@ CREATE TABLE IF NOT EXISTS public.written_essays (
   char_count INT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
-
-ALTER TABLE public.written_essays ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Written essays all" ON public.written_essays;
-CREATE POLICY "Written essays all" ON public.written_essays FOR ALL USING (true) WITH CHECK (true);
 
 -- 7. TILE RESULTS TABLE
 CREATE TABLE IF NOT EXISTS public.tile_results (
@@ -114,10 +84,6 @@ CREATE TABLE IF NOT EXISTS public.tile_results (
   completed_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-ALTER TABLE public.tile_results ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Tile results all" ON public.tile_results;
-CREATE POLICY "Tile results all" ON public.tile_results FOR ALL USING (true) WITH CHECK (true);
-
 -- 8. FULL EXAM RESULTS TABLE
 CREATE TABLE IF NOT EXISTS public.full_exam_results (
   id TEXT PRIMARY KEY,
@@ -129,6 +95,23 @@ CREATE TABLE IF NOT EXISTS public.full_exam_results (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-ALTER TABLE public.full_exam_results ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "Full exam results all" ON public.full_exam_results;
-CREATE POLICY "Full exam results all" ON public.full_exam_results FOR ALL USING (true) WITH CHECK (true);
+-- ==========================================
+-- DISABLE RLS & GRANT ALL PERMISSIONS TO FIX 42501 PERMISSION DENIED
+-- ==========================================
+ALTER TABLE public.profiles DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.modelltests DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.promo_codes DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.forumsbeitrag_topics DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.sprechen_topics DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.written_essays DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.tile_results DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.full_exam_results DISABLE ROW LEVEL SECURITY;
+
+GRANT ALL ON TABLE public.profiles TO anon, authenticated, service_role;
+GRANT ALL ON TABLE public.modelltests TO anon, authenticated, service_role;
+GRANT ALL ON TABLE public.promo_codes TO anon, authenticated, service_role;
+GRANT ALL ON TABLE public.forumsbeitrag_topics TO anon, authenticated, service_role;
+GRANT ALL ON TABLE public.sprechen_topics TO anon, authenticated, service_role;
+GRANT ALL ON TABLE public.written_essays TO anon, authenticated, service_role;
+GRANT ALL ON TABLE public.tile_results TO anon, authenticated, service_role;
+GRANT ALL ON TABLE public.full_exam_results TO anon, authenticated, service_role;
