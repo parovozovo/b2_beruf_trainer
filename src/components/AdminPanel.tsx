@@ -2220,42 +2220,32 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 />
               </div>
 
-              <div className="flex items-center gap-4">
-                <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer font-bold">
-                  <input
-                    type="checkbox"
-                    checked={fbIsPremium}
-                    onChange={(e) => setFbIsPremium(e.target.checked)}
-                    className="accent-pink-500 w-4 h-4 rounded"
-                  />
-                  <span>Premium-Thema (isPremium)</span>
-                </label>
-
-                <div className="ml-auto flex items-center gap-2">
-                  {editingFbId && (
-                    <button
-                      type="button"
-                      onClick={handleCancelEditFb}
-                      className="py-2.5 px-4 glass-card hover:bg-slate-800 text-slate-300 font-bold rounded-xl text-xs"
-                    >
-                      Abbrechen
-                    </button>
-                  )}
+              <div className="flex items-center justify-end gap-2">
+                {editingFbId && (
                   <button
-                    type="submit"
-                    className="py-2.5 px-6 bg-pink-600 hover:bg-pink-500 text-white font-bold rounded-xl text-xs shadow-lg transition-colors flex items-center gap-1.5"
+                    type="button"
+                    onClick={handleCancelEditFb}
+                    className="py-2.5 px-4 glass-card hover:bg-slate-800 text-slate-300 font-bold rounded-xl text-xs"
                   >
-                    <Save className="w-3.5 h-3.5" /> {editingFbId ? 'Änderungen speichern' : 'Thema in Supabase БД speichern'}
+                    Abbrechen
                   </button>
-                </div>
+                )}
+                <button
+                  type="submit"
+                  className="py-2.5 px-6 bg-pink-600 hover:bg-pink-500 text-white font-bold rounded-xl text-xs shadow-lg transition-colors flex items-center gap-1.5"
+                >
+                  <Save className="w-3.5 h-3.5" /> {editingFbId ? 'Änderungen speichern' : 'Thema in Supabase БД speichern'}
+                </button>
               </div>
             </form>
           </div>
 
           <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-bold text-white">Vorhandene Q58 Themen ({forumsbeitragTopics.length})</h3>
-              {forumsbeitragTopics.length > 3 && (
+              <h3 className="text-base font-bold text-white">
+                Vorhandene Q58 Themen ({(forumsbeitragTopics || []).length})
+              </h3>
+              {(forumsbeitragTopics || []).length > 3 && (
                 <button
                   type="button"
                   onClick={() => setShowAllFbTopics(!showAllFbTopics)}
@@ -2267,7 +2257,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     </>
                   ) : (
                     <>
-                      <Eye className="w-3.5 h-3.5" /> Alle {forumsbeitragTopics.length} Themen anzeigen
+                      <Eye className="w-3.5 h-3.5" /> Alle {(forumsbeitragTopics || []).length} Themen anzeigen
                     </>
                   )}
                 </button>
@@ -2275,11 +2265,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             </div>
 
             <div className={`space-y-3 ${showAllFbTopics ? 'max-h-[550px] overflow-y-auto pr-1' : ''}`}>
-              {(showAllFbTopics ? forumsbeitragTopics : forumsbeitragTopics.slice(0, 3)).map((t) => (
+              {(showAllFbTopics ? (forumsbeitragTopics || []) : (forumsbeitragTopics || []).slice(0, 3)).map((t) => (
                 <div key={t.id} className="p-4 bg-slate-900/60 rounded-xl border border-slate-800 flex items-center justify-between gap-4">
                   <div className="flex-1">
-                    <div className="font-bold text-sm text-white flex items-center gap-2">
-                      {t.title} {t.isPremium && <span className="text-[10px] text-amber-400 bg-amber-500/20 px-2 py-0.5 rounded font-extrabold">PREMIUM</span>}
+                    <div className="font-bold text-sm text-white">
+                      {t.title}
                     </div>
                     <div className="text-xs text-slate-400 mt-1 line-clamp-2">{t.promptText}</div>
                   </div>
@@ -2352,8 +2342,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
             <div className="glass-panel p-4 rounded-2xl border border-slate-800 space-y-3">
               <div className="flex items-center justify-between">
-                <h4 className="text-xs font-bold text-slate-300">Themen Teil 2 ({sprechenTopics.sprecher2Topics.length})</h4>
-                {sprechenTopics.sprecher2Topics.length > 3 && (
+                <h4 className="text-xs font-bold text-slate-300">
+                  Themen Teil 2 ({(sprechenTopics?.sprecher2Topics || []).length})
+                </h4>
+                {(sprechenTopics?.sprecher2Topics || []).length > 3 && (
                   <button
                     type="button"
                     onClick={() => setShowAllSp2Topics(!showAllSp2Topics)}
@@ -2365,7 +2357,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       </>
                     ) : (
                       <>
-                        <Eye className="w-3 h-3" /> Alle {sprechenTopics.sprecher2Topics.length} anzeigen
+                        <Eye className="w-3 h-3" /> Alle {(sprechenTopics?.sprecher2Topics || []).length} anzeigen
                       </>
                     )}
                   </button>
@@ -2373,7 +2365,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               </div>
 
               <div className={`space-y-2.5 ${showAllSp2Topics ? 'max-h-[500px] overflow-y-auto pr-1' : ''}`}>
-                {(showAllSp2Topics ? sprechenTopics.sprecher2Topics : sprechenTopics.sprecher2Topics.slice(0, 3)).map((t) => (
+                {(showAllSp2Topics
+                  ? (sprechenTopics?.sprecher2Topics || [])
+                  : (sprechenTopics?.sprecher2Topics || []).slice(0, 3)
+                ).map((t) => (
                   <div key={t.id} className="p-3 bg-slate-900/60 rounded-xl border border-slate-800/80 flex items-center justify-between gap-3 text-xs">
                     <div className="flex-1">
                       <div className="font-bold text-white">{t.title}</div>
@@ -2444,8 +2439,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
             <div className="glass-panel p-4 rounded-2xl border border-slate-800 space-y-3">
               <div className="flex items-center justify-between">
-                <h4 className="text-xs font-bold text-slate-300">Situationen Teil 3 ({sprechenTopics.sprecher3Situations.length})</h4>
-                {sprechenTopics.sprecher3Situations.length > 3 && (
+                <h4 className="text-xs font-bold text-slate-300">
+                  Situationen Teil 3 ({(sprechenTopics?.sprecher3Situations || []).length})
+                </h4>
+                {(sprechenTopics?.sprecher3Situations || []).length > 3 && (
                   <button
                     type="button"
                     onClick={() => setShowAllSp3Situations(!showAllSp3Situations)}
@@ -2457,7 +2454,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       </>
                     ) : (
                       <>
-                        <Eye className="w-3 h-3" /> Alle {sprechenTopics.sprecher3Situations.length} anzeigen
+                        <Eye className="w-3 h-3" /> Alle {(sprechenTopics?.sprecher3Situations || []).length} anzeigen
                       </>
                     )}
                   </button>
@@ -2465,7 +2462,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               </div>
 
               <div className={`space-y-2.5 ${showAllSp3Situations ? 'max-h-[500px] overflow-y-auto pr-1' : ''}`}>
-                {(showAllSp3Situations ? sprechenTopics.sprecher3Situations : sprechenTopics.sprecher3Situations.slice(0, 3)).map((s) => (
+                {(showAllSp3Situations
+                  ? (sprechenTopics?.sprecher3Situations || [])
+                  : (sprechenTopics?.sprecher3Situations || []).slice(0, 3)
+                ).map((s) => (
                   <div key={s.id} className="p-3 bg-slate-900/60 rounded-xl border border-slate-800/80 flex items-center justify-between gap-3 text-xs">
                     <div className="flex-1">
                       <div className="font-bold text-white">{s.title}</div>
