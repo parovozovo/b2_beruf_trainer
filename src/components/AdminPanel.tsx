@@ -238,12 +238,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [fbTitle, setFbTitle] = useState('');
   const [fbPrompt, setFbPrompt] = useState('');
   const [fbIsPremium, setFbIsPremium] = useState(false);
+  const [editingFbId, setEditingFbId] = useState<string | null>(null);
+  const [showAllFbTopics, setShowAllFbTopics] = useState(false);
 
   // Sprechen Topic State
   const [sp2Title, setSp2Title] = useState('');
   const [sp2Prompt, setSp2Prompt] = useState('');
+  const [editingSp2Id, setEditingSp2Id] = useState<string | null>(null);
+  const [showAllSp2Topics, setShowAllSp2Topics] = useState(false);
+
   const [sp3Title, setSp3Title] = useState('');
   const [sp3Prompt, setSp3Prompt] = useState('');
+  const [editingSp3Id, setEditingSp3Id] = useState<string | null>(null);
+  const [showAllSp3Situations, setShowAllSp3Situations] = useState(false);
 
   // Active Modelltest & Variants Lookup
   const activeTest = modelltests.find((m) => m.id === selectedModelltestId) || modelltests[0];
@@ -785,21 +792,52 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const handleAddForumsbeitragTopic = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fbTitle.trim() || !fbPrompt.trim()) return;
-    const newTopic: ForumsbeitragTopic = {
-      id: `fb-${Date.now()}`,
-      title: fbTitle,
-      promptText: fbPrompt,
-      isPremium: fbIsPremium,
-    };
-    const res = await onSaveForumsbeitragTopics([...forumsbeitragTopics, newTopic]);
+
+    let updatedList: ForumsbeitragTopic[];
+    if (editingFbId) {
+      updatedList = forumsbeitragTopics.map((t) =>
+        t.id === editingFbId
+          ? { ...t, title: fbTitle, promptText: fbPrompt, isPremium: fbIsPremium }
+          : t
+      );
+    } else {
+      const newTopic: ForumsbeitragTopic = {
+        id: `fb-${Date.now()}`,
+        title: fbTitle,
+        promptText: fbPrompt,
+        isPremium: fbIsPremium,
+      };
+      updatedList = [...forumsbeitragTopics, newTopic];
+    }
+
+    const res = await onSaveForumsbeitragTopics(updatedList);
     if (res && res.success === false) {
       showToast(`Fehler beim Speichern in Supabase: ${res.error}`, 'error');
     } else {
       setFbTitle('');
       setFbPrompt('');
       setFbIsPremium(false);
-      showToast('Thema für Q58 Forenbeitrag in Supabase gespeichert!');
+      setEditingFbId(null);
+      showToast(
+        editingFbId
+          ? 'Thema für Q58 Forenbeitrag aktualisiert!'
+          : 'Thema für Q58 Forenbeitrag in Supabase gespeichert!'
+      );
     }
+  };
+
+  const handleEditForumsbeitragTopic = (t: ForumsbeitragTopic) => {
+    setEditingFbId(t.id);
+    setFbTitle(t.title);
+    setFbPrompt(t.promptText);
+    setFbIsPremium(!!t.isPremium);
+  };
+
+  const handleCancelEditFb = () => {
+    setEditingFbId(null);
+    setFbTitle('');
+    setFbPrompt('');
+    setFbIsPremium(false);
   };
 
   const handleDeleteForumsbeitragTopic = async (id: string) => {
@@ -815,10 +853,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const handleAddSp2Topic = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!sp2Title.trim() || !sp2Prompt.trim()) return;
-    const newTopic = { id: `sp2-${Date.now()}`, title: sp2Title, promptText: sp2Prompt };
+
+    let updatedSp2: Array<{ id: string; title: string; promptText: string }>;
+    if (editingSp2Id) {
+      updatedSp2 = sprechenTopics.sprecher2Topics.map((t) =>
+        t.id === editingSp2Id ? { ...t, title: sp2Title, promptText: sp2Prompt } : t
+      );
+    } else {
+      const newTopic = { id: `sp2-${Date.now()}`, title: sp2Title, promptText: sp2Prompt };
+      updatedSp2 = [...sprechenTopics.sprecher2Topics, newTopic];
+    }
+
     const updated = {
       ...sprechenTopics,
-      sprecher2Topics: [...sprechenTopics.sprecher2Topics, newTopic],
+      sprecher2Topics: updatedSp2,
     };
     const res = await onSaveSprechenTopics(updated);
     if (res && res.success === false) {
@@ -826,8 +874,25 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     } else {
       setSp2Title('');
       setSp2Prompt('');
-      showToast('Sprechen Teil 2 Thema in Supabase gespeichert!');
+      setEditingSp2Id(null);
+      showToast(
+        editingSp2Id
+          ? 'Sprechen Teil 2 Thema aktualisiert!'
+          : 'Sprechen Teil 2 Thema in Supabase gespeichert!'
+      );
     }
+  };
+
+  const handleEditSp2Topic = (t: { id: string; title: string; promptText: string }) => {
+    setEditingSp2Id(t.id);
+    setSp2Title(t.title);
+    setSp2Prompt(t.promptText);
+  };
+
+  const handleCancelEditSp2 = () => {
+    setEditingSp2Id(null);
+    setSp2Title('');
+    setSp2Prompt('');
   };
 
   const handleDeleteSp2Topic = async (id: string) => {
@@ -846,10 +911,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const handleAddSp3Situation = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!sp3Title.trim() || !sp3Prompt.trim()) return;
-    const newSit = { id: `sp3-${Date.now()}`, title: sp3Title, promptText: sp3Prompt };
+
+    let updatedSp3: Array<{ id: string; title: string; promptText: string }>;
+    if (editingSp3Id) {
+      updatedSp3 = sprechenTopics.sprecher3Situations.map((s) =>
+        s.id === editingSp3Id ? { ...s, title: sp3Title, promptText: sp3Prompt } : s
+      );
+    } else {
+      const newSit = { id: `sp3-${Date.now()}`, title: sp3Title, promptText: sp3Prompt };
+      updatedSp3 = [...sprechenTopics.sprecher3Situations, newSit];
+    }
+
     const updated = {
       ...sprechenTopics,
-      sprecher3Situations: [...sprechenTopics.sprecher3Situations, newSit],
+      sprecher3Situations: updatedSp3,
     };
     const res = await onSaveSprechenTopics(updated);
     if (res && res.success === false) {
@@ -857,8 +932,25 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     } else {
       setSp3Title('');
       setSp3Prompt('');
-      showToast('Sprechen Teil 3 Situation in Supabase gespeichert!');
+      setEditingSp3Id(null);
+      showToast(
+        editingSp3Id
+          ? 'Sprechen Teil 3 Situation aktualisiert!'
+          : 'Sprechen Teil 3 Situation in Supabase gespeichert!'
+      );
     }
+  };
+
+  const handleEditSp3Situation = (s: { id: string; title: string; promptText: string }) => {
+    setEditingSp3Id(s.id);
+    setSp3Title(s.title);
+    setSp3Prompt(s.promptText);
+  };
+
+  const handleCancelEditSp3 = () => {
+    setEditingSp3Id(null);
+    setSp3Title('');
+    setSp3Prompt('');
   };
 
   const handleDeleteSp3Situation = async (id: string) => {
@@ -2101,7 +2193,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         <div className="space-y-6">
           <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
             <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <Plus className="w-4 h-4 text-pink-400" /> Thema für Schreiben Q58 (Forenbeitrag) hinzufügen
+              {editingFbId ? <Edit3 className="w-4 h-4 text-amber-400" /> : <Plus className="w-4 h-4 text-pink-400" />}
+              {editingFbId ? 'Thema für Q58 bearbeiten' : 'Thema für Schreiben Q58 (Forenbeitrag) hinzufügen'}
             </h3>
 
             <form onSubmit={handleAddForumsbeitragTopic} className="space-y-4">
@@ -2138,30 +2231,76 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   <span>Premium-Thema (isPremium)</span>
                 </label>
 
-                <button
-                  type="submit"
-                  className="py-2.5 px-6 bg-pink-600 hover:bg-pink-500 text-white font-bold rounded-xl text-xs shadow-lg transition-colors ml-auto flex items-center gap-1.5"
-                >
-                  <Save className="w-3.5 h-3.5" /> Thema in Supabase БД speichern
-                </button>
+                <div className="ml-auto flex items-center gap-2">
+                  {editingFbId && (
+                    <button
+                      type="button"
+                      onClick={handleCancelEditFb}
+                      className="py-2.5 px-4 glass-card hover:bg-slate-800 text-slate-300 font-bold rounded-xl text-xs"
+                    >
+                      Abbrechen
+                    </button>
+                  )}
+                  <button
+                    type="submit"
+                    className="py-2.5 px-6 bg-pink-600 hover:bg-pink-500 text-white font-bold rounded-xl text-xs shadow-lg transition-colors flex items-center gap-1.5"
+                  >
+                    <Save className="w-3.5 h-3.5" /> {editingFbId ? 'Änderungen speichern' : 'Thema in Supabase БД speichern'}
+                  </button>
+                </div>
               </div>
             </form>
           </div>
 
           <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
-            <h3 className="text-base font-bold text-white">Vorhandene Q58 Themen ({forumsbeitragTopics.length})</h3>
-            <div className="space-y-3">
-              {forumsbeitragTopics.map((t) => (
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-white">Vorhandene Q58 Themen ({forumsbeitragTopics.length})</h3>
+              {forumsbeitragTopics.length > 3 && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllFbTopics(!showAllFbTopics)}
+                  className="px-3.5 py-1.5 glass-card hover:bg-slate-800 text-indigo-400 font-extrabold text-xs rounded-xl flex items-center gap-1.5 transition-all border border-slate-700"
+                >
+                  {showAllFbTopics ? (
+                    <>
+                      <EyeOff className="w-3.5 h-3.5" /> Ausblenden
+                    </>
+                  ) : (
+                    <>
+                      <Eye className="w-3.5 h-3.5" /> Alle {forumsbeitragTopics.length} Themen anzeigen
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
+
+            <div className={`space-y-3 ${showAllFbTopics ? 'max-h-[550px] overflow-y-auto pr-1' : ''}`}>
+              {(showAllFbTopics ? forumsbeitragTopics : forumsbeitragTopics.slice(0, 3)).map((t) => (
                 <div key={t.id} className="p-4 bg-slate-900/60 rounded-xl border border-slate-800 flex items-center justify-between gap-4">
-                  <div>
+                  <div className="flex-1">
                     <div className="font-bold text-sm text-white flex items-center gap-2">
-                      {t.title} {t.isPremium && <span className="text-[10px] text-amber-400 bg-amber-500/20 px-2 py-0.5 rounded">PREMIUM</span>}
+                      {t.title} {t.isPremium && <span className="text-[10px] text-amber-400 bg-amber-500/20 px-2 py-0.5 rounded font-extrabold">PREMIUM</span>}
                     </div>
-                    <div className="text-xs text-slate-400 mt-1">{t.promptText}</div>
+                    <div className="text-xs text-slate-400 mt-1 line-clamp-2">{t.promptText}</div>
                   </div>
-                  <button onClick={() => handleDeleteForumsbeitragTopic(t.id)} className="text-rose-400 hover:text-rose-300 p-1">
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => handleEditForumsbeitragTopic(t)}
+                      className="p-2 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 rounded-lg transition-colors"
+                      title="Thema bearbeiten"
+                    >
+                      <Edit3 className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteForumsbeitragTopic(t.id)}
+                      className="p-2 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors"
+                      title="Thema löschen"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -2176,7 +2315,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           <div className="space-y-4">
             <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Plus className="w-4 h-4 text-emerald-400" /> Thema für Sprechen Teil 2
+                {editingSp2Id ? <Edit3 className="w-4 h-4 text-amber-400" /> : <Plus className="w-4 h-4 text-emerald-400" />}
+                {editingSp2Id ? 'Thema Teil 2 bearbeiten' : 'Thema für Sprechen Teil 2'}
               </h3>
               <form onSubmit={handleAddSp2Topic} className="space-y-3">
                 <input
@@ -2193,25 +2333,73 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   placeholder="Aufgabenstellung..."
                   className="w-full p-3 glass-input rounded-xl text-xs"
                 />
-                <button type="submit" className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-lg flex items-center justify-center gap-1.5">
-                  <Save className="w-3.5 h-3.5" /> In Supabase БД speichern
-                </button>
+                <div className="flex items-center gap-2">
+                  {editingSp2Id && (
+                    <button
+                      type="button"
+                      onClick={handleCancelEditSp2}
+                      className="py-2 px-3 glass-card hover:bg-slate-800 text-slate-300 font-bold rounded-xl text-xs"
+                    >
+                      Abbrechen
+                    </button>
+                  )}
+                  <button type="submit" className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-lg flex items-center justify-center gap-1.5">
+                    <Save className="w-3.5 h-3.5" /> {editingSp2Id ? 'Änderungen speichern' : 'In Supabase БД speichern'}
+                  </button>
+                </div>
               </form>
             </div>
 
-            <div className="glass-panel p-4 rounded-2xl border border-slate-800 space-y-2">
-              <h4 className="text-xs font-bold text-slate-300">Themen Teil 2 ({sprechenTopics.sprecher2Topics.length})</h4>
-              {sprechenTopics.sprecher2Topics.map((t) => (
-                <div key={t.id} className="p-3 bg-slate-900/60 rounded-lg flex items-center justify-between text-xs">
-                  <div>
-                    <div className="font-bold text-white">{t.title}</div>
-                    <div className="text-slate-400 text-[11px]">{t.promptText}</div>
-                  </div>
-                  <button onClick={() => handleDeleteSp2Topic(t.id)} className="text-rose-400 p-1">
-                    <Trash2 className="w-4 h-4" />
+            <div className="glass-panel p-4 rounded-2xl border border-slate-800 space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold text-slate-300">Themen Teil 2 ({sprechenTopics.sprecher2Topics.length})</h4>
+                {sprechenTopics.sprecher2Topics.length > 3 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAllSp2Topics(!showAllSp2Topics)}
+                    className="px-2.5 py-1 glass-card hover:bg-slate-800 text-indigo-400 font-extrabold text-[11px] rounded-lg flex items-center gap-1 transition-all border border-slate-700"
+                  >
+                    {showAllSp2Topics ? (
+                      <>
+                        <EyeOff className="w-3 h-3" /> Ausblenden
+                      </>
+                    ) : (
+                      <>
+                        <Eye className="w-3 h-3" /> Alle {sprechenTopics.sprecher2Topics.length} anzeigen
+                      </>
+                    )}
                   </button>
-                </div>
-              ))}
+                )}
+              </div>
+
+              <div className={`space-y-2.5 ${showAllSp2Topics ? 'max-h-[500px] overflow-y-auto pr-1' : ''}`}>
+                {(showAllSp2Topics ? sprechenTopics.sprecher2Topics : sprechenTopics.sprecher2Topics.slice(0, 3)).map((t) => (
+                  <div key={t.id} className="p-3 bg-slate-900/60 rounded-xl border border-slate-800/80 flex items-center justify-between gap-3 text-xs">
+                    <div className="flex-1">
+                      <div className="font-bold text-white">{t.title}</div>
+                      <div className="text-slate-400 text-[11px] line-clamp-2 mt-0.5">{t.promptText}</div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleEditSp2Topic(t)}
+                        className="p-1.5 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 rounded-lg transition-colors"
+                        title="Thema bearbeiten"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteSp2Topic(t.id)}
+                        className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors"
+                        title="Thema löschen"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -2219,7 +2407,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           <div className="space-y-4">
             <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <Plus className="w-4 h-4 text-emerald-400" /> Situation für Sprechen Teil 3
+                {editingSp3Id ? <Edit3 className="w-4 h-4 text-amber-400" /> : <Plus className="w-4 h-4 text-emerald-400" />}
+                {editingSp3Id ? 'Situation Teil 3 bearbeiten' : 'Situation für Sprechen Teil 3'}
               </h3>
               <form onSubmit={handleAddSp3Situation} className="space-y-3">
                 <input
@@ -2236,25 +2425,73 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   placeholder="Aufgabenstellung / Planung..."
                   className="w-full p-3 glass-input rounded-xl text-xs"
                 />
-                <button type="submit" className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-lg flex items-center justify-center gap-1.5">
-                  <Save className="w-3.5 h-3.5" /> In Supabase БД speichern
-                </button>
+                <div className="flex items-center gap-2">
+                  {editingSp3Id && (
+                    <button
+                      type="button"
+                      onClick={handleCancelEditSp3}
+                      className="py-2 px-3 glass-card hover:bg-slate-800 text-slate-300 font-bold rounded-xl text-xs"
+                    >
+                      Abbrechen
+                    </button>
+                  )}
+                  <button type="submit" className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-lg flex items-center justify-center gap-1.5">
+                    <Save className="w-3.5 h-3.5" /> {editingSp3Id ? 'Änderungen speichern' : 'In Supabase БД speichern'}
+                  </button>
+                </div>
               </form>
             </div>
 
-            <div className="glass-panel p-4 rounded-2xl border border-slate-800 space-y-2">
-              <h4 className="text-xs font-bold text-slate-300">Situationen Teil 3 ({sprechenTopics.sprecher3Situations.length})</h4>
-              {sprechenTopics.sprecher3Situations.map((s) => (
-                <div key={s.id} className="p-3 bg-slate-900/60 rounded-lg flex items-center justify-between text-xs">
-                  <div>
-                    <div className="font-bold text-white">{s.title}</div>
-                    <div className="text-slate-400 text-[11px]">{s.promptText}</div>
-                  </div>
-                  <button onClick={() => handleDeleteSp3Situation(s.id)} className="text-rose-400 p-1">
-                    <Trash2 className="w-4 h-4" />
+            <div className="glass-panel p-4 rounded-2xl border border-slate-800 space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold text-slate-300">Situationen Teil 3 ({sprechenTopics.sprecher3Situations.length})</h4>
+                {sprechenTopics.sprecher3Situations.length > 3 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAllSp3Situations(!showAllSp3Situations)}
+                    className="px-2.5 py-1 glass-card hover:bg-slate-800 text-indigo-400 font-extrabold text-[11px] rounded-lg flex items-center gap-1 transition-all border border-slate-700"
+                  >
+                    {showAllSp3Situations ? (
+                      <>
+                        <EyeOff className="w-3 h-3" /> Ausblenden
+                      </>
+                    ) : (
+                      <>
+                        <Eye className="w-3 h-3" /> Alle {sprechenTopics.sprecher3Situations.length} anzeigen
+                      </>
+                    )}
                   </button>
-                </div>
-              ))}
+                )}
+              </div>
+
+              <div className={`space-y-2.5 ${showAllSp3Situations ? 'max-h-[500px] overflow-y-auto pr-1' : ''}`}>
+                {(showAllSp3Situations ? sprechenTopics.sprecher3Situations : sprechenTopics.sprecher3Situations.slice(0, 3)).map((s) => (
+                  <div key={s.id} className="p-3 bg-slate-900/60 rounded-xl border border-slate-800/80 flex items-center justify-between gap-3 text-xs">
+                    <div className="flex-1">
+                      <div className="font-bold text-white">{s.title}</div>
+                      <div className="text-slate-400 text-[11px] line-clamp-2 mt-0.5">{s.promptText}</div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleEditSp3Situation(s)}
+                        className="p-1.5 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10 rounded-lg transition-colors"
+                        title="Situation bearbeiten"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteSp3Situation(s.id)}
+                        className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors"
+                        title="Situation löschen"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
