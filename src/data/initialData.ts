@@ -128,13 +128,15 @@ export const INITIAL_MODELLTESTS: Modelltest[] = [
           id: 'l2-v1',
           title: 'Lesen Teil 2 - Betr. Arbeitsmedizin & Sicherheitsvorschriften',
           text1: `Abschnitt A: Betriebsärztliche Vorsorgeuntersuchungen\nGemäß ArbSchG ist der Arbeitgeber verpflichtet, allen Angestellten an Bildschirmarbeitsplätzen alle 3 Jahre eine kostenfreie betriebsärztliche Untersuchung der Augen anzubieten. Die Teilnahme ist freiwillig, wird jedoch vom Betriebsrat dringend empfohlen. Termine können im Intranet gebucht werden.`,
-          q6Correct: 'richtig',
+          q6Text: 'Die Teilnahme an der betriebsärztlichen Augenuntersuchung ist für Mitarbeiter an Bildschirmarbeitsplätzen verpflichtend.',
+          q6Correct: 'falsch',
           q7: {
             questionText: 'Wer trägt die Kosten für die Vorsorgeuntersuchung der Augen?',
             options: ['Der Arbeitnehmer selbst', 'Der Arbeitgeber vollständig', 'Die gesetzliche Krankenkasse'],
             correctIndex: 1
           },
           text2: `Abschnitt B: Brandschutz und Evakuierungsübung\nAm Donnerstag, den 14. Oktober, findet um 10:30 Uhr eine unangemeldete Räumungsübung im Hauptgebäude statt. Alle Mitarbeiter müssen beim Erklingen des Alarmsignals unverzüglich das Gebäude über die ausgeschilderten Notausgänge verlassen und sich am Sammelpunkt Parkplatz Süd einfinden. Aufzüge dürfen keinesfalls benutzt werden.`,
+          q8Text: 'Im Falle eines Feueralarms dürfen die Aufzüge zur schnellen Evakuierung genutzt werden.',
           q8Correct: 'falsch',
           q9: {
             questionText: 'Wie müssen sich Mitarbeiter im Alarmfall verhalten?',

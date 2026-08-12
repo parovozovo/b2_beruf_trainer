@@ -48,6 +48,7 @@ export interface Lesen2Variant {
   id: string;
   title: string;
   text1: string;
+  q6Text?: string; // Aussage/Fragetext 6
   q6Correct: 'richtig' | 'falsch';
   q7: {
     questionText: string;
@@ -55,6 +56,7 @@ export interface Lesen2Variant {
     correctIndex: number; // 0, 1, 2
   };
   text2: string;
+  q8Text?: string; // Aussage/Fragetext 8
   q8Correct: 'richtig' | 'falsch';
   q9: {
     questionText: string;
@@ -140,6 +142,8 @@ export interface HoerenSchreibenVariant {
   title: string;
   audioUrl?: string;
   scriptText: string;
+  q41Text?: string;
+  q41Options?: [string, string, string];
   q41Correct: 'a' | 'b' | 'c';
   fields: Array<{ label: string; key: string }>; // Q42-45 fields (e.g. Name, Telefonnummer...)
 }

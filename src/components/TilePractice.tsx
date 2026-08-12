@@ -515,9 +515,11 @@ const Lesen1UI: React.FC<{
 const Lesen2UI: React.FC<{
   variant: {
     text1: string;
+    q6Text?: string;
     q6Correct: string;
     q7: { questionText: string; options: [string, string, string]; correctIndex: number };
     text2: string;
+    q8Text?: string;
     q8Correct: string;
     q9: { questionText: string; options: [string, string, string]; correctIndex: number };
   };
@@ -534,7 +536,9 @@ const Lesen2UI: React.FC<{
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-slate-800">
           {/* Q6 Richtig / Falsch */}
           <div className="space-y-2">
-            <span className="text-xs font-bold text-slate-300">Frage 6: Richtig oder Falsch?</span>
+            <span className="text-xs font-bold text-slate-300">
+              Frage 6: {variant.q6Text || 'Die Teilnahme an der betriebsärztlichen Augenuntersuchung ist für Mitarbeiter an Bildschirmarbeitsplätzen verpflichtend.'}
+            </span>
             <div className="flex gap-2">
               {['richtig', 'falsch'].map((val) => (
                 <button
@@ -598,7 +602,9 @@ const Lesen2UI: React.FC<{
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-slate-800">
           {/* Q8 Richtig / Falsch */}
           <div className="space-y-2">
-            <span className="text-xs font-bold text-slate-300">Frage 8: Richtig oder Falsch?</span>
+            <span className="text-xs font-bold text-slate-300">
+              Frage 8: {variant.q8Text || 'Im Falle eines Feueralarms dürfen die Aufzüge zur schnellen Evakuierung genutzt werden.'}
+            </span>
             <div className="flex gap-2">
               {['richtig', 'falsch'].map((val) => (
                 <button

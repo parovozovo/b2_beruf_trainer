@@ -114,11 +114,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   });
 
   // Lesen 2 specific fields
-  const [vQ6Correct, setVQ6Correct] = useState<'richtig' | 'falsch'>('richtig');
+  const [vQ6Text, setVQ6Text] = useState('Die Teilnahme an der betriebsärztlichen Augenuntersuchung ist für Mitarbeiter an Bildschirmarbeitsplätzen verpflichtend.');
+  const [vQ6Correct, setVQ6Correct] = useState<'richtig' | 'falsch'>('falsch');
   const [vQ7Text, setVQ7Text] = useState('Wer trägt die Kosten?');
   const [vQ7Options, setVQ7Options] = useState<[string, string, string]>(['Arbeitnehmer', 'Arbeitgeber', 'Krankenkasse']);
   const [vQ7CorrectIndex, setVQ7CorrectIndex] = useState<number>(1);
 
+  const [vQ8Text, setVQ8Text] = useState('Im Falle eines Feueralarms dürfen die Aufzüge zur schnellen Evakuierung genutzt werden.');
   const [vQ8Correct, setVQ8Correct] = useState<'richtig' | 'falsch'>('falsch');
   const [vQ9Text, setVQ9Text] = useState('Verhalten im Alarmfall?');
   const [vQ9Options, setVQ9Options] = useState<[string, string, string]>(['Aufzug nutzen', 'Warten', 'Notausgang nutzen']);
@@ -174,8 +176,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     textWithGaps?: string;
     audioUrl?: string;
     correctAnswers?: Record<string, string>;
+    q6Text?: string;
     q6Correct?: 'richtig' | 'falsch';
     q7?: { questionText: string; options: [string, string, string]; correctIndex: number };
+    q8Text?: string;
     q8Correct?: 'richtig' | 'falsch';
     q9?: { questionText: string; options: [string, string, string]; correctIndex: number };
     questions?: QuestionABC[] | Hoeren1Question[];
@@ -201,14 +205,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         setVCorrectAnswersMap({ '1': 'A', '2': 'B', '3': 'C', '4': 'D', '5': 'E' });
       }
 
-      setVQ6Correct('richtig');
-      setVQ7Text('Frage 7 Text...');
-      setVQ7Options(['Option A', 'Option B', 'Option C']);
-      setVQ7CorrectIndex(0);
+      setVQ6Text('Die Teilnahme an der betriebsärztlichen Augenuntersuchung ist für Mitarbeiter an Bildschirmarbeitsplätzen verpflichtend.');
+      setVQ6Correct('falsch');
+      setVQ7Text('Wer trägt die Kosten?');
+      setVQ7Options(['Arbeitnehmer', 'Arbeitgeber', 'Krankenkasse']);
+      setVQ7CorrectIndex(1);
+      setVQ8Text('Im Falle eines Feueralarms dürfen die Aufzüge zur schnellen Evakuierung genutzt werden.');
       setVQ8Correct('falsch');
-      setVQ9Text('Frage 9 Text...');
-      setVQ9Options(['Option A', 'Option B', 'Option C']);
-      setVQ9CorrectIndex(0);
+      setVQ9Text('Verhalten im Alarmfall?');
+      setVQ9Options(['Aufzug nutzen', 'Warten', 'Notausgang nutzen']);
+      setVQ9CorrectIndex(2);
       setVQuestionsABCList([
         { id: 14, questionText: 'Beispielfrage 1', options: ['Antwort A', 'Antwort B', 'Antwort C'], correctIndex: 0 },
         { id: 15, questionText: 'Beispielfrage 2', options: ['Antwort A', 'Antwort B', 'Antwort C'], correctIndex: 1 },
@@ -234,12 +240,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         setVHeadingsBlock(found.headingsBlock || found.optionsAtoF || '');
         setVAudioUrl(found.audioUrl || '');
         setVCorrectAnswersMap(found.correctAnswers || {});
+        if (found.q6Text) setVQ6Text(found.q6Text);
+        else setVQ6Text('Die Teilnahme an der betriebsärztlichen Augenuntersuchung ist für Mitarbeiter an Bildschirmarbeitsplätzen verpflichtend.');
         if (found.q6Correct) setVQ6Correct(found.q6Correct);
         if (found.q7) {
           setVQ7Text(found.q7.questionText || '');
           setVQ7Options(found.q7.options || ['A', 'B', 'C']);
           setVQ7CorrectIndex(found.q7.correctIndex || 0);
         }
+        if (found.q8Text) setVQ8Text(found.q8Text);
+        else setVQ8Text('Im Falle eines Feueralarms dürfen die Aufzüge zur schnellen Evakuierung genutzt werden.');
         if (found.q8Correct) setVQ8Correct(found.q8Correct);
         if (found.q9) {
           setVQ9Text(found.q9.questionText || '');
@@ -435,9 +445,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         id: targetId,
         title: vTitle,
         text1: vText1,
+        q6Text: vQ6Text,
         q6Correct: vQ6Correct,
         q7: { questionText: vQ7Text, options: vQ7Options, correctIndex: vQ7CorrectIndex },
         text2: vText2 || vText1,
+        q8Text: vQ8Text,
         q8Correct: vQ8Correct,
         q9: { questionText: vQ9Text, options: vQ9Options, correctIndex: vQ9CorrectIndex },
       };
@@ -1068,7 +1080,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* Q6 */}
                     <div className="p-3 bg-slate-950/60 rounded-lg space-y-2 border border-slate-800">
-                      <span className="text-xs font-bold text-white">Frage 6 (Richtig / Falsch für Text 1):</span>
+                      <span className="text-xs font-bold text-white">Frage 6 (Aussage & Richtig / Falsch für Text 1):</span>
+                      <input
+                        type="text"
+                        value={vQ6Text}
+                        onChange={(e) => setVQ6Text(e.target.value)}
+                        placeholder="Aussage / Fragetext 6..."
+                        className="w-full px-2 py-1.5 glass-input rounded text-xs font-medium mb-1"
+                      />
                       <div className="flex gap-2">
                         {['richtig', 'falsch'].map((val) => (
                           <button
@@ -1122,7 +1141,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
                     {/* Q8 */}
                     <div className="p-3 bg-slate-950/60 rounded-lg space-y-2 border border-slate-800">
-                      <span className="text-xs font-bold text-white">Frage 8 (Richtig / Falsch für Text 2):</span>
+                      <span className="text-xs font-bold text-white">Frage 8 (Aussage & Richtig / Falsch für Text 2):</span>
+                      <input
+                        type="text"
+                        value={vQ8Text}
+                        onChange={(e) => setVQ8Text(e.target.value)}
+                        placeholder="Aussage / Fragetext 8..."
+                        className="w-full px-2 py-1.5 glass-input rounded text-xs font-medium mb-1"
+                      />
                       <div className="flex gap-2">
                         {['richtig', 'falsch'].map((val) => (
                           <button
