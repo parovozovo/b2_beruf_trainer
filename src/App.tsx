@@ -7,10 +7,12 @@ import {
   saveModelltestsAsync,
   getPromoCodesLocal,
   savePromoCodesAsync,
-  getForumsbeitragTopics,
-  saveForumsbeitragTopics,
-  getSprechenTopics,
-  saveSprechenTopics,
+  getForumsbeitragTopicsLocal,
+  saveForumsbeitragTopicsAsync,
+  fetchForumsbeitragTopicsAsync,
+  getSprechenTopicsLocal,
+  saveSprechenTopicsAsync,
+  fetchSprechenTopicsAsync,
   getTileResults,
   saveTileResult,
   clearTileResults,
@@ -30,7 +32,6 @@ import { LoginModal } from './components/LoginModal';
 import { PromoModal } from './components/PromoModal';
 import { PremiumLockedModal } from './components/PremiumLockedModal';
 import { UserProfileModal } from './components/UserProfileModal';
-import { Shield } from 'lucide-react';
 
 export function App() {
   const [currentUser, setCurrentUserTab] = useState<User | null>(getCurrentUser());
@@ -39,8 +40,8 @@ export function App() {
   // Application Data States
   const [modelltests, setModelltests] = useState<Modelltest[]>(getModelltestsLocal());
   const [promoCodes, setPromoCodes] = useState<PromoCode[]>(getPromoCodesLocal());
-  const [forumsbeitragTopics, setForumsbeitragTopics] = useState<ForumsbeitragTopic[]>(getForumsbeitragTopics());
-  const [sprechenTopics, setSprechenTopics] = useState(getSprechenTopics());
+  const [forumsbeitragTopics, setForumsbeitragTopics] = useState<ForumsbeitragTopic[]>(getForumsbeitragTopicsLocal());
+  const [sprechenTopics, setSprechenTopics] = useState(getSprechenTopicsLocal());
   const [tileResults, setTileResultsState] = useState<TileResult[]>(getTileResults());
   const [fullExamResults, setFullExamResultsState] = useState<FullExamResult[]>(getFullExamResults());
 
@@ -77,6 +78,12 @@ export function App() {
 
       const cloudPromos = await fetchPromoCodesAsync();
       setPromoCodes(cloudPromos);
+
+      const cloudFB = await fetchForumsbeitragTopicsAsync();
+      setForumsbeitragTopics(cloudFB);
+
+      const cloudSP = await fetchSprechenTopicsAsync();
+      setSprechenTopics(cloudSP);
     }
     loadCloudData();
   }, []);
@@ -89,17 +96,17 @@ export function App() {
 
   const handleSavePromoCodes = async (codes: PromoCode[]) => {
     setPromoCodes(codes);
-    await savePromoCodesAsync(codes);
+    return await savePromoCodesAsync(codes);
   };
 
-  const handleSaveForumsbeitragTopics = (topics: ForumsbeitragTopic[]) => {
+  const handleSaveForumsbeitragTopics = async (topics: ForumsbeitragTopic[]) => {
     setForumsbeitragTopics(topics);
-    saveForumsbeitragTopics(topics);
+    return await saveForumsbeitragTopicsAsync(topics);
   };
 
-  const handleSaveSprechenTopics = (topics: typeof sprechenTopics) => {
+  const handleSaveSprechenTopics = async (topics: typeof sprechenTopics) => {
     setSprechenTopics(topics);
-    saveSprechenTopics(topics);
+    return await saveSprechenTopicsAsync(topics);
   };
 
   // Auth Handlers
@@ -268,7 +275,6 @@ export function App() {
               />
             ) : (
               <div className="glass-panel p-10 rounded-3xl text-center max-w-md mx-auto my-12 border border-rose-500/30 space-y-4">
-                <Shield className="w-12 h-12 text-rose-400 mx-auto" />
                 <h3 className="text-xl font-bold text-white">Zugriff verweigert</h3>
                 <p className="text-xs text-slate-400">
                   Sie müssen als Administrator (luck34y@yahoo.com) angemeldet sein, um diesen Bereich zu öffnen.

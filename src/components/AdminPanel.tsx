@@ -44,17 +44,19 @@ interface AdminPanelProps {
   modelltests: Modelltest[];
   onSaveModelltests: (tests: Modelltest[]) => Promise<{ success: boolean; error?: string }> | void;
   promoCodes: PromoCode[];
-  onSavePromoCodes: (codes: PromoCode[]) => Promise<void> | void;
+  onSavePromoCodes: (codes: PromoCode[]) => Promise<{ success: boolean; error?: string }> | void;
   forumsbeitragTopics: ForumsbeitragTopic[];
-  onSaveForumsbeitragTopics: (topics: ForumsbeitragTopic[]) => void;
+  onSaveForumsbeitragTopics: (topics: ForumsbeitragTopic[]) => Promise<{ success: boolean; error?: string }> | void;
   sprechenTopics: {
+    sprecher1AQuestions: Array<{ id: string; title: string; promptText: string }>;
     sprecher2Topics: Array<{ id: string; title: string; promptText: string }>;
     sprecher3Situations: Array<{ id: string; title: string; promptText: string }>;
   };
   onSaveSprechenTopics: (topics: {
+    sprecher1AQuestions: Array<{ id: string; title: string; promptText: string }>;
     sprecher2Topics: Array<{ id: string; title: string; promptText: string }>;
     sprecher3Situations: Array<{ id: string; title: string; promptText: string }>;
-  }) => void;
+  }) => Promise<{ success: boolean; error?: string }> | void;
 }
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({
@@ -273,24 +275,24 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       },
     };
 
-    try {
-      await onSaveModelltests([...modelltests, newTest]);
+    const res = await onSaveModelltests([...modelltests, newTest]);
+    if (res && res.success === false) {
+      showToast(`Fehler beim Speichern in Supabase: ${res.error}`, 'error');
+    } else {
       setNewTestTitle('');
       setNewTestDesc('');
       setNewTestIsPremium(false);
       showToast('Neuer Modelltest wurde erfolgreich erstellt & in Supabase gespeichert!');
-    } catch {
-      showToast('Fehler beim Speichern in Supabase!', 'error');
     }
   };
 
   const handleDeleteModelltest = async (id: string) => {
     if (!confirm('Möchten Sie diesen Modelltest wirklich löschen?')) return;
-    try {
-      await onSaveModelltests(modelltests.filter((m) => m.id !== id));
+    const res = await onSaveModelltests(modelltests.filter((m) => m.id !== id));
+    if (res && res.success === false) {
+      showToast(`Fehler beim Löschen: ${res.error}`, 'error');
+    } else {
       showToast('Modelltest gelöscht.');
-    } catch {
-      showToast('Fehler beim Löschen.', 'error');
     }
   };
 
@@ -310,9 +312,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     e.preventDefault();
     if (!editingModelltest) return;
     const updated = modelltests.map((m) => (m.id === editingModelltest.id ? editingModelltest : m));
-    await onSaveModelltests(updated);
-    setEditingModelltest(null);
-    showToast('Modelltest-Eigenschaften gespeichert!');
+    const res = await onSaveModelltests(updated);
+    if (res && res.success === false) {
+      showToast(`Fehler: ${res.error}`, 'error');
+    } else {
+      setEditingModelltest(null);
+      showToast('Modelltest-Eigenschaften in Supabase gespeichert!');
+    }
   };
 
   // Delete Variant Handler
@@ -332,9 +338,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       };
     });
 
-    await onSaveModelltests(updatedTests as Modelltest[]);
-    setSelectedVariantId('new');
-    showToast('Variante gelöscht.');
+    const res = await onSaveModelltests(updatedTests as Modelltest[]);
+    if (res && res.success === false) {
+      showToast(`Fehler beim Löschen: ${res.error}`, 'error');
+    } else {
+      setSelectedVariantId('new');
+      showToast('Variante gelöscht.');
+    }
   };
 
   // Jump directly to editing a specific tile variant from the Modelltests list
@@ -540,24 +550,36 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       active: true,
     };
 
-    await onSavePromoCodes([...promoCodes, newCodeObj]);
-    setPromoCodeInput('');
-    showToast('Gutscheincode erfolgreich erstellt & gespeichert!');
+    const res = await onSavePromoCodes([...promoCodes, newCodeObj]);
+    if (res && res.success === false) {
+      showToast(`Fehler beim Speichern in Supabase: ${res.error}`, 'error');
+    } else {
+      setPromoCodeInput('');
+      showToast('Gutscheincode erfolgreich erstellt & in Supabase gespeichert!');
+    }
   };
 
   const handleTogglePromoActive = async (id: string) => {
     const updated = promoCodes.map((c) => (c.id === id ? { ...c, active: !c.active } : c));
-    await onSavePromoCodes(updated);
-    showToast('Gutscheincode-Status geändert.');
+    const res = await onSavePromoCodes(updated);
+    if (res && res.success === false) {
+      showToast(`Fehler: ${res.error}`, 'error');
+    } else {
+      showToast('Gutscheincode-Status geändert.');
+    }
   };
 
   const handleDeletePromoCode = async (id: string) => {
-    await onSavePromoCodes(promoCodes.filter((c) => c.id !== id));
-    showToast('Gutscheincode gelöscht.');
+    const res = await onSavePromoCodes(promoCodes.filter((c) => c.id !== id));
+    if (res && res.success === false) {
+      showToast(`Fehler: ${res.error}`, 'error');
+    } else {
+      showToast('Gutscheincode gelöscht.');
+    }
   };
 
   // Forumsbeitrag Topics Handlers
-  const handleAddForumsbeitragTopic = (e: React.FormEvent) => {
+  const handleAddForumsbeitragTopic = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fbTitle.trim() || !fbPrompt.trim()) return;
     const newTopic: ForumsbeitragTopic = {
@@ -566,59 +588,87 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       promptText: fbPrompt,
       isPremium: fbIsPremium,
     };
-    onSaveForumsbeitragTopics([...forumsbeitragTopics, newTopic]);
-    setFbTitle('');
-    setFbPrompt('');
-    setFbIsPremium(false);
-    showToast('Thema für Forenbeitrag hinzugefügt!');
+    const res = await onSaveForumsbeitragTopics([...forumsbeitragTopics, newTopic]);
+    if (res && res.success === false) {
+      showToast(`Fehler beim Speichern in Supabase: ${res.error}`, 'error');
+    } else {
+      setFbTitle('');
+      setFbPrompt('');
+      setFbIsPremium(false);
+      showToast('Thema für Q58 Forenbeitrag in Supabase gespeichert!');
+    }
   };
 
-  const handleDeleteForumsbeitragTopic = (id: string) => {
-    onSaveForumsbeitragTopics(forumsbeitragTopics.filter((t) => t.id !== id));
-    showToast('Thema gelöscht.');
+  const handleDeleteForumsbeitragTopic = async (id: string) => {
+    const res = await onSaveForumsbeitragTopics(forumsbeitragTopics.filter((t) => t.id !== id));
+    if (res && res.success === false) {
+      showToast(`Fehler: ${res.error}`, 'error');
+    } else {
+      showToast('Thema gelöscht.');
+    }
   };
 
   // Sprechen Topics Handlers
-  const handleAddSp2Topic = (e: React.FormEvent) => {
+  const handleAddSp2Topic = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!sp2Title.trim() || !sp2Prompt.trim()) return;
     const newTopic = { id: `sp2-${Date.now()}`, title: sp2Title, promptText: sp2Prompt };
-    onSaveSprechenTopics({
+    const updated = {
       ...sprechenTopics,
       sprecher2Topics: [...sprechenTopics.sprecher2Topics, newTopic],
-    });
-    setSp2Title('');
-    setSp2Prompt('');
-    showToast('Sprechen Teil 2 Thema hinzugefügt!');
+    };
+    const res = await onSaveSprechenTopics(updated);
+    if (res && res.success === false) {
+      showToast(`Fehler beim Speichern in Supabase: ${res.error}`, 'error');
+    } else {
+      setSp2Title('');
+      setSp2Prompt('');
+      showToast('Sprechen Teil 2 Thema in Supabase gespeichert!');
+    }
   };
 
-  const handleDeleteSp2Topic = (id: string) => {
-    onSaveSprechenTopics({
+  const handleDeleteSp2Topic = async (id: string) => {
+    const updated = {
       ...sprechenTopics,
       sprecher2Topics: sprechenTopics.sprecher2Topics.filter((t) => t.id !== id),
-    });
-    showToast('Thema gelöscht.');
+    };
+    const res = await onSaveSprechenTopics(updated);
+    if (res && res.success === false) {
+      showToast(`Fehler: ${res.error}`, 'error');
+    } else {
+      showToast('Thema gelöscht.');
+    }
   };
 
-  const handleAddSp3Situation = (e: React.FormEvent) => {
+  const handleAddSp3Situation = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!sp3Title.trim() || !sp3Prompt.trim()) return;
     const newSit = { id: `sp3-${Date.now()}`, title: sp3Title, promptText: sp3Prompt };
-    onSaveSprechenTopics({
+    const updated = {
       ...sprechenTopics,
       sprecher3Situations: [...sprechenTopics.sprecher3Situations, newSit],
-    });
-    setSp3Title('');
-    setSp3Prompt('');
-    showToast('Sprechen Teil 3 Situation hinzugefügt!');
+    };
+    const res = await onSaveSprechenTopics(updated);
+    if (res && res.success === false) {
+      showToast(`Fehler beim Speichern in Supabase: ${res.error}`, 'error');
+    } else {
+      setSp3Title('');
+      setSp3Prompt('');
+      showToast('Sprechen Teil 3 Situation in Supabase gespeichert!');
+    }
   };
 
-  const handleDeleteSp3Situation = (id: string) => {
-    onSaveSprechenTopics({
+  const handleDeleteSp3Situation = async (id: string) => {
+    const updated = {
       ...sprechenTopics,
       sprecher3Situations: sprechenTopics.sprecher3Situations.filter((s) => s.id !== id),
-    });
-    showToast('Situation gelöscht.');
+    };
+    const res = await onSaveSprechenTopics(updated);
+    if (res && res.success === false) {
+      showToast(`Fehler: ${res.error}`, 'error');
+    } else {
+      showToast('Situation gelöscht.');
+    }
   };
 
   // Export / Import JSON Data
@@ -641,8 +691,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         const parsed = JSON.parse(event.target?.result as string);
         if (parsed.modelltests) await onSaveModelltests(parsed.modelltests);
         if (parsed.promoCodes) await onSavePromoCodes(parsed.promoCodes);
-        if (parsed.forumsbeitragTopics) onSaveForumsbeitragTopics(parsed.forumsbeitragTopics);
-        if (parsed.sprechenTopics) onSaveSprechenTopics(parsed.sprechenTopics);
+        if (parsed.forumsbeitragTopics) await onSaveForumsbeitragTopics(parsed.forumsbeitragTopics);
+        if (parsed.sprechenTopics) await onSaveSprechenTopics(parsed.sprechenTopics);
         showToast('Daten erfolgreich importiert!');
       } catch {
         showToast('Fehler beim Importieren der JSON-Datei!', 'error');
@@ -687,7 +737,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               )}
             </h1>
             <p className="text-xs text-slate-400">
-              Visueller Editor für alle 12 Prüfungsteile. Alle Änderungen werden direkt in Supabase gespeichert.
+              Visueller Editor für alle 12 Prüfungsteile, Gutscheine, Schreiben & Sprechen. Alle Änderungen werden direkt in Supabase gespeichert.
             </p>
           </div>
         </div>
@@ -1472,9 +1522,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               <div className="pt-5">
                 <button
                   type="submit"
-                  className="w-full py-2.5 px-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs shadow-lg transition-colors"
+                  className="w-full py-2.5 px-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs shadow-lg transition-colors flex items-center justify-center gap-1.5"
                 >
-                  Code erstellen & speichern
+                  <Save className="w-3.5 h-3.5" /> Code erstellen & in БД speichern
                 </button>
               </div>
             </form>
@@ -1569,9 +1619,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
                 <button
                   type="submit"
-                  className="py-2.5 px-6 bg-pink-600 hover:bg-pink-500 text-white font-bold rounded-xl text-xs shadow-lg transition-colors ml-auto"
+                  className="py-2.5 px-6 bg-pink-600 hover:bg-pink-500 text-white font-bold rounded-xl text-xs shadow-lg transition-colors ml-auto flex items-center gap-1.5"
                 >
-                  Thema hinzufügen
+                  <Save className="w-3.5 h-3.5" /> Thema in Supabase БД speichern
                 </button>
               </div>
             </form>
@@ -1622,8 +1672,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   placeholder="Aufgabenstellung..."
                   className="w-full p-3 glass-input rounded-xl text-xs"
                 />
-                <button type="submit" className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-lg">
-                  Hinzufügen
+                <button type="submit" className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-lg flex items-center justify-center gap-1.5">
+                  <Save className="w-3.5 h-3.5" /> In Supabase БД speichern
                 </button>
               </form>
             </div>
@@ -1665,8 +1715,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   placeholder="Aufgabenstellung / Planung..."
                   className="w-full p-3 glass-input rounded-xl text-xs"
                 />
-                <button type="submit" className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-lg">
-                  Hinzufügen
+                <button type="submit" className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-lg flex items-center justify-center gap-1.5">
+                  <Save className="w-3.5 h-3.5" /> In Supabase БД speichern
                 </button>
               </form>
             </div>

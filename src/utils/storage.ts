@@ -33,7 +33,9 @@ export function setCurrentUser(user: User | null): void {
   }
 }
 
-// ASYNC CLOUD & LOCAL STORAGE HANDLERS WITH SUPABASE SYNC
+// ==========================================
+// 1. MODELLTESTS SUPABASE CLOUD SYNC
+// ==========================================
 
 export async function fetchModelltestsAsync(): Promise<Modelltest[]> {
   if (isSupabaseConfigured) {
@@ -52,11 +54,9 @@ export async function fetchModelltestsAsync(): Promise<Modelltest[]> {
         return tests;
       } else if (!error && data && data.length === 0) {
         await seedInitialDataToSupabase();
-      } else if (error) {
-        console.error('Supabase fetch error:', error.message);
       }
     } catch (e) {
-      console.warn('Supabase fetch connection error:', e);
+      console.warn('Supabase fetch error for modelltests:', e);
     }
   }
   return getModelltestsLocal();
@@ -81,9 +81,8 @@ export function saveModelltestsLocal(tests: Modelltest[]): void {
 
 export async function saveModelltestsAsync(tests: Modelltest[]): Promise<{ success: boolean; error?: string }> {
   saveModelltestsLocal(tests);
-
   if (!isSupabaseConfigured) {
-    return { success: false, error: 'Supabase URL / ANON_KEY is not configured in Vercel environment variables.' };
+    return { success: false, error: 'VITE_SUPABASE_ANON_KEY is missing in Vercel Environment Variables.' };
   }
 
   try {
@@ -98,16 +97,19 @@ export async function saveModelltestsAsync(tests: Modelltest[]): Promise<{ succe
       });
 
       if (error) {
-        console.error('Supabase upsert error for mt:', mt.id, error.message);
         return { success: false, error: `Supabase Error (${error.code || 'RLS'}): ${error.message}` };
       }
     }
     return { success: true };
   } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : 'Unknown connection error';
+    const msg = e instanceof Error ? e.message : 'Verbindungsfehler zu Supabase';
     return { success: false, error: msg };
   }
 }
+
+// ==========================================
+// 2. PROMO CODES SUPABASE CLOUD SYNC
+// ==========================================
 
 export async function fetchPromoCodesAsync(): Promise<PromoCode[]> {
   if (isSupabaseConfigured) {
@@ -127,8 +129,8 @@ export async function fetchPromoCodesAsync(): Promise<PromoCode[]> {
         savePromoCodesLocal(codes);
         return codes;
       }
-    } catch {
-      // Fallback
+    } catch (e) {
+      console.warn('Supabase fetch error for promo codes:', e);
     }
   }
   return getPromoCodesLocal();
@@ -151,29 +153,62 @@ export function savePromoCodesLocal(codes: PromoCode[]): void {
   localStorage.setItem(KEYS.PROMO_CODES, JSON.stringify(codes));
 }
 
-export async function savePromoCodesAsync(codes: PromoCode[]): Promise<void> {
+export async function savePromoCodesAsync(codes: PromoCode[]): Promise<{ success: boolean; error?: string }> {
   savePromoCodesLocal(codes);
-  if (isSupabaseConfigured) {
-    try {
-      for (const pc of codes) {
-        await supabase.from('promo_codes').upsert({
-          id: pc.id,
-          code: pc.code,
-          duration_days: pc.durationDays,
-          max_uses: pc.maxUses,
-          used_count: pc.usedCount,
-          created_date: pc.createdDate,
-          used_by_emails: pc.usedByEmails,
-          active: pc.active,
-        });
+  if (!isSupabaseConfigured) {
+    return { success: false, error: 'VITE_SUPABASE_ANON_KEY is missing in Vercel Environment Variables.' };
+  }
+
+  try {
+    for (const pc of codes) {
+      const { error } = await supabase.from('promo_codes').upsert({
+        id: pc.id,
+        code: pc.code,
+        duration_days: pc.durationDays,
+        max_uses: pc.maxUses,
+        used_count: pc.usedCount,
+        created_date: pc.createdDate,
+        used_by_emails: pc.usedByEmails,
+        active: pc.active,
+      });
+
+      if (error) {
+        return { success: false, error: `Supabase Error: ${error.message}` };
       }
-    } catch {
-      // Ignore
     }
+    return { success: true };
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : 'Verbindungsfehler';
+    return { success: false, error: msg };
   }
 }
 
-export function getForumsbeitragTopics(): ForumsbeitragTopic[] {
+// ==========================================
+// 3. FORUMSBEITRAG TOPICS (Q58) SUPABASE SYNC
+// ==========================================
+
+export async function fetchForumsbeitragTopicsAsync(): Promise<ForumsbeitragTopic[]> {
+  if (isSupabaseConfigured) {
+    try {
+      const { data, error } = await supabase.from('forumsbeitrag_topics').select('*');
+      if (!error && data && data.length > 0) {
+        const topics: ForumsbeitragTopic[] = data.map((item: Record<string, unknown>) => ({
+          id: String(item.id),
+          title: String(item.title),
+          promptText: String(item.prompt_text),
+          isPremium: Boolean(item.is_premium),
+        }));
+        saveForumsbeitragTopicsLocal(topics);
+        return topics;
+      }
+    } catch (e) {
+      console.warn('Supabase fetch error for forumsbeitrag topics:', e);
+    }
+  }
+  return getForumsbeitragTopicsLocal();
+}
+
+export function getForumsbeitragTopicsLocal(): ForumsbeitragTopic[] {
   const data = localStorage.getItem(KEYS.FORUMSBEITRAG_TOPICS);
   if (!data) {
     localStorage.setItem(KEYS.FORUMSBEITRAG_TOPICS, JSON.stringify(INITIAL_FORUMSBEITRAG_TOPICS));
@@ -186,11 +221,74 @@ export function getForumsbeitragTopics(): ForumsbeitragTopic[] {
   }
 }
 
-export function saveForumsbeitragTopics(topics: ForumsbeitragTopic[]): void {
+export function saveForumsbeitragTopicsLocal(topics: ForumsbeitragTopic[]): void {
   localStorage.setItem(KEYS.FORUMSBEITRAG_TOPICS, JSON.stringify(topics));
 }
 
-export function getSprechenTopics() {
+export async function saveForumsbeitragTopicsAsync(topics: ForumsbeitragTopic[]): Promise<{ success: boolean; error?: string }> {
+  saveForumsbeitragTopicsLocal(topics);
+  if (!isSupabaseConfigured) {
+    return { success: false, error: 'Supabase nicht konfiguriert.' };
+  }
+
+  try {
+    for (const fb of topics) {
+      const { error } = await supabase.from('forumsbeitrag_topics').upsert({
+        id: fb.id,
+        title: fb.title,
+        prompt_text: fb.promptText,
+        is_premium: fb.isPremium,
+      });
+
+      if (error) {
+        return { success: false, error: `Supabase Error: ${error.message}` };
+      }
+    }
+    return { success: true };
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : 'Verbindungsfehler';
+    return { success: false, error: msg };
+  }
+}
+
+// ==========================================
+// 4. SPRECHEN TOPICS (TEIL 2 & 3) SUPABASE SYNC
+// ==========================================
+
+export async function fetchSprechenTopicsAsync(): Promise<typeof INITIAL_SPRECHEN_TOPICS> {
+  if (isSupabaseConfigured) {
+    try {
+      const { data, error } = await supabase.from('sprechen_topics').select('*');
+      if (!error && data && data.length > 0) {
+        const p2 = data.filter((item: Record<string, unknown>) => item.type === 'part2').map((item: Record<string, unknown>) => ({
+          id: String(item.id),
+          title: String(item.title),
+          promptText: String(item.prompt_text),
+        }));
+
+        const p3 = data.filter((item: Record<string, unknown>) => item.type === 'part3').map((item: Record<string, unknown>) => ({
+          id: String(item.id),
+          title: String(item.title),
+          promptText: String(item.prompt_text),
+        }));
+
+        const combined = {
+          ...INITIAL_SPRECHEN_TOPICS,
+          sprecher2Topics: p2.length > 0 ? p2 : INITIAL_SPRECHEN_TOPICS.sprecher2Topics,
+          sprecher3Situations: p3.length > 0 ? p3 : INITIAL_SPRECHEN_TOPICS.sprecher3Situations,
+        };
+
+        saveSprechenTopicsLocal(combined);
+        return combined;
+      }
+    } catch (e) {
+      console.warn('Supabase fetch error for sprechen topics:', e);
+    }
+  }
+  return getSprechenTopicsLocal();
+}
+
+export function getSprechenTopicsLocal(): typeof INITIAL_SPRECHEN_TOPICS {
   const data = localStorage.getItem(KEYS.SPRECHEN_TOPICS);
   if (!data) {
     localStorage.setItem(KEYS.SPRECHEN_TOPICS, JSON.stringify(INITIAL_SPRECHEN_TOPICS));
@@ -203,9 +301,47 @@ export function getSprechenTopics() {
   }
 }
 
-export function saveSprechenTopics(topics: typeof INITIAL_SPRECHEN_TOPICS): void {
+export function saveSprechenTopicsLocal(topics: typeof INITIAL_SPRECHEN_TOPICS): void {
   localStorage.setItem(KEYS.SPRECHEN_TOPICS, JSON.stringify(topics));
 }
+
+export async function saveSprechenTopicsAsync(topics: typeof INITIAL_SPRECHEN_TOPICS): Promise<{ success: boolean; error?: string }> {
+  saveSprechenTopicsLocal(topics);
+  if (!isSupabaseConfigured) {
+    return { success: false, error: 'Supabase nicht konfiguriert.' };
+  }
+
+  try {
+    for (const t of topics.sprecher2Topics) {
+      const { error } = await supabase.from('sprechen_topics').upsert({
+        id: t.id,
+        type: 'part2',
+        title: t.title,
+        prompt_text: t.promptText,
+      });
+      if (error) return { success: false, error: error.message };
+    }
+
+    for (const s of topics.sprecher3Situations) {
+      const { error } = await supabase.from('sprechen_topics').upsert({
+        id: s.id,
+        type: 'part3',
+        title: s.title,
+        prompt_text: s.promptText,
+      });
+      if (error) return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : 'Verbindungsfehler';
+    return { success: false, error: msg };
+  }
+}
+
+// ==========================================
+// 5. ESSAYS, RESULTS & STATS
+// ==========================================
 
 export function getWrittenEssays(userId?: string): WrittenEssayRecord[] {
   const data = localStorage.getItem(KEYS.WRITTEN_ESSAYS);
@@ -223,6 +359,20 @@ export function saveWrittenEssay(essay: WrittenEssayRecord): void {
   const essays = getWrittenEssays();
   essays.unshift(essay);
   localStorage.setItem(KEYS.WRITTEN_ESSAYS, JSON.stringify(essays));
+  if (isSupabaseConfigured) {
+    (async () => {
+      try {
+        await supabase.from('written_essays').upsert({
+          id: essay.id,
+          user_id: essay.userId,
+          essay_type: essay.type,
+          topic_title: essay.topicTitle,
+          text: essay.text,
+          char_count: essay.charCount,
+        });
+      } catch {}
+    })();
+  }
 }
 
 export function deleteWrittenEssay(id: string): void {
@@ -245,6 +395,20 @@ export function saveTileResult(result: TileResult): void {
   const results = getTileResults();
   results.unshift(result);
   localStorage.setItem(KEYS.TILE_RESULTS, JSON.stringify(results));
+  if (isSupabaseConfigured) {
+    (async () => {
+      try {
+        await supabase.from('tile_results').insert({
+          user_id: result.userId,
+          tile_type: result.tileType,
+          modelltest_id: result.modelltestId,
+          variant_id: result.variantId,
+          score: result.score,
+          max_score: result.maxScore,
+        });
+      } catch {}
+    })();
+  }
 }
 
 export function clearTileResults(): void {
@@ -267,6 +431,20 @@ export function saveFullExamResult(result: FullExamResult): void {
   const results = getFullExamResults();
   results.unshift(result);
   localStorage.setItem(KEYS.FULL_EXAM_RESULTS, JSON.stringify(results));
+  if (isSupabaseConfigured) {
+    (async () => {
+      try {
+        await supabase.from('full_exam_results').upsert({
+          id: result.id,
+          user_id: result.userId,
+          total_score: result.totalScore,
+          max_total_score: result.maxTotalScore,
+          passed: result.passed,
+          tile_breakdown: result.tileBreakdown,
+        });
+      } catch {}
+    })();
+  }
 }
 
 // SEEDER FOR INITIAL DATA INTO SUPABASE CLOUD DATABASE
