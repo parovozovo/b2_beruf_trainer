@@ -86,6 +86,17 @@ export async function saveModelltestsAsync(tests: Modelltest[]): Promise<{ succe
   }
 
   try {
+    const activeIds = new Set(tests.map((t) => t.id));
+    const { data: dbRows } = await supabase.from('modelltests').select('id');
+    if (dbRows && dbRows.length > 0) {
+      for (const row of dbRows) {
+        const idStr = String(row.id);
+        if (!activeIds.has(idStr)) {
+          await supabase.from('modelltests').delete().eq('id', idStr);
+        }
+      }
+    }
+
     for (const mt of tests) {
       const { error } = await supabase.from('modelltests').upsert({
         id: mt.id,
@@ -160,6 +171,17 @@ export async function savePromoCodesAsync(codes: PromoCode[]): Promise<{ success
   }
 
   try {
+    const activeIds = new Set(codes.map((c) => c.id));
+    const { data: dbRows } = await supabase.from('promo_codes').select('id');
+    if (dbRows && dbRows.length > 0) {
+      for (const row of dbRows) {
+        const idStr = String(row.id);
+        if (!activeIds.has(idStr)) {
+          await supabase.from('promo_codes').delete().eq('id', idStr);
+        }
+      }
+    }
+
     for (const pc of codes) {
       const { error } = await supabase.from('promo_codes').upsert({
         id: pc.id,
@@ -232,6 +254,17 @@ export async function saveForumsbeitragTopicsAsync(topics: ForumsbeitragTopic[])
   }
 
   try {
+    const activeIds = new Set(topics.map((t) => t.id));
+    const { data: dbRows } = await supabase.from('forumsbeitrag_topics').select('id');
+    if (dbRows && dbRows.length > 0) {
+      for (const row of dbRows) {
+        const idStr = String(row.id);
+        if (!activeIds.has(idStr)) {
+          await supabase.from('forumsbeitrag_topics').delete().eq('id', idStr);
+        }
+      }
+    }
+
     for (const fb of topics) {
       const { error } = await supabase.from('forumsbeitrag_topics').upsert({
         id: fb.id,
@@ -312,6 +345,19 @@ export async function saveSprechenTopicsAsync(topics: typeof INITIAL_SPRECHEN_TO
   }
 
   try {
+    const activeIds = new Set([
+      ...topics.sprecher2Topics.map((t) => t.id),
+      ...topics.sprecher3Situations.map((s) => s.id),
+    ]);
+    const { data: dbRows } = await supabase.from('sprechen_topics').select('id');
+    if (dbRows && dbRows.length > 0) {
+      for (const row of dbRows) {
+        const idStr = String(row.id);
+        if (!activeIds.has(idStr)) {
+          await supabase.from('sprechen_topics').delete().eq('id', idStr);
+        }
+      }
+    }
     for (const t of topics.sprecher2Topics) {
       const { error } = await supabase.from('sprechen_topics').upsert({
         id: t.id,

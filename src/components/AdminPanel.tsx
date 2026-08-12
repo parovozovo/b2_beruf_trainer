@@ -576,8 +576,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       if (res && res.success === false) {
         showToast(`Fehler beim Speichern in Supabase: ${res.error}`, 'error');
       } else {
-        setSelectedVariantId('new');
-        showToast('Prüfungsvariante erfolgreich in Supabase & lokal gespeichert!');
+        setSelectedVariantId(targetId);
+        showToast(`Variante "${vTitle}" erfolgreich in Supabase & lokal gespeichert!`);
       }
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'Fehler beim Speichern';
@@ -1520,9 +1520,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               <div className="flex items-center gap-3">
                 <button
                   type="submit"
-                  className="px-6 py-3.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-extrabold rounded-xl text-xs shadow-lg transition-colors flex items-center gap-2"
+                  className="px-6 py-3.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-extrabold rounded-xl text-xs sm:text-sm shadow-lg transition-colors flex items-center gap-2"
                 >
-                  <Save className="w-4 h-4" /> Variante in Supabase БД speichern
+                  <Save className="w-4 h-4" />
+                  {selectedVariantId === 'new'
+                    ? 'Neue Variante erstellen & in БД speichern'
+                    : `Variante "${vTitle}" (ID: ${selectedVariantId}) überschreiben & speichern`}
                 </button>
 
                 <button

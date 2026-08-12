@@ -453,30 +453,30 @@ const Lesen1UI: React.FC<{
   const options = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div className="space-y-4">
-        <div className="p-4 bg-slate-900/60 rounded-xl border border-slate-800 text-xs text-slate-200 leading-relaxed whitespace-pre-wrap">
-          <h4 className="font-bold text-indigo-400 mb-2">Situationen (Personen 1-5):</h4>
+      <div className="space-y-5">
+        <div className="p-5 sm:p-6 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-lg text-sm sm:text-base text-slate-100 leading-relaxed whitespace-pre-wrap font-sans">
+          <h4 className="font-extrabold text-indigo-400 mb-3 text-sm uppercase tracking-wider">Situationen (Personen 1-5):</h4>
           {variant.textBlock}
         </div>
 
         {/* Answer Pickers */}
-        <div className="space-y-2">
-          <h4 className="font-bold text-xs text-slate-300">Wählen Sie den passenden Buchstaben (A-H) für jede Person:</h4>
+        <div className="space-y-3">
+          <h4 className="font-extrabold text-sm text-slate-200">Wählen Sie den passenden Buchstaben (A-H) für jede Person:</h4>
           {['1', '2', '3', '4', '5'].map((num) => {
             const correct = variant.correctAnswers[num];
             const userVal = userAnswers[num] || '';
             const isCorrect = userVal.toUpperCase() === correct?.toUpperCase();
 
             return (
-              <div key={num} className="flex items-center gap-3 p-2 bg-slate-900/40 rounded-xl border border-slate-800">
-                <span className="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-300 font-bold flex items-center justify-center text-xs">
+              <div key={num} className="flex items-center gap-3 p-3 bg-slate-900/80 rounded-xl border border-slate-700">
+                <span className="w-9 h-9 rounded-lg bg-indigo-500/25 text-indigo-300 font-extrabold flex items-center justify-center text-sm shrink-0">
                   {num}
                 </span>
                 <select
                   value={userVal}
                   disabled={submitted}
                   onChange={(e) => onAnswerChange(num, e.target.value)}
-                  className="px-3 py-1.5 glass-input rounded-lg text-xs font-bold"
+                  className="px-3.5 py-2 glass-input rounded-xl text-sm font-bold text-white"
                 >
                   <option value="">-- Option wählen --</option>
                   {options.map((opt) => (
@@ -485,13 +485,13 @@ const Lesen1UI: React.FC<{
                 </select>
 
                 {submitted && (
-                  <div className="flex items-center gap-1 text-xs">
+                  <div className="flex items-center gap-1 text-sm ml-auto">
                     {isCorrect ? (
-                      <span className="text-emerald-400 flex items-center gap-1 font-bold">
+                      <span className="text-emerald-400 flex items-center gap-1 font-extrabold">
                         <CheckCircle className="w-4 h-4" /> Richtig
                       </span>
                     ) : (
-                      <span className="text-rose-400 flex items-center gap-1 font-bold">
+                      <span className="text-rose-400 flex items-center gap-1 font-extrabold">
                         <XCircle className="w-4 h-4" /> Korrekt: {correct}
                       </span>
                     )}
@@ -503,8 +503,8 @@ const Lesen1UI: React.FC<{
         </div>
       </div>
 
-      <div className="p-4 bg-slate-900/60 rounded-xl border border-slate-800 text-xs text-slate-300 leading-relaxed whitespace-pre-wrap font-mono">
-        <h4 className="font-bold text-indigo-400 mb-2">Anzeigen (A-H):</h4>
+      <div className="p-5 sm:p-6 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-lg text-sm sm:text-base text-slate-100 leading-relaxed whitespace-pre-wrap font-sans">
+        <h4 className="font-extrabold text-indigo-400 mb-3 text-sm uppercase tracking-wider">Anzeigen (A-H):</h4>
         {variant.headingsBlock}
       </div>
     </div>
@@ -530,13 +530,13 @@ const Lesen2UI: React.FC<{
   return (
     <div className="space-y-6">
       {/* Block 1: Text 1 + Q6 & Q7 */}
-      <div className="p-4 bg-slate-900/60 rounded-xl border border-slate-800 space-y-4">
-        <div className="text-xs text-slate-200 leading-relaxed whitespace-pre-wrap">{variant.text1}</div>
+      <div className="p-5 sm:p-6 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-lg space-y-5">
+        <div className="text-sm sm:text-base text-slate-100 leading-relaxed whitespace-pre-wrap font-sans">{variant.text1}</div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-slate-800">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-4 border-t border-slate-800">
           {/* Q6 Richtig / Falsch */}
-          <div className="space-y-2">
-            <span className="text-xs font-bold text-slate-300">
+          <div className="space-y-2.5">
+            <span className="text-sm font-extrabold text-white leading-snug block">
               Frage 6: {variant.q6Text || 'Die Teilnahme an der betriebsärztlichen Augenuntersuchung ist für Mitarbeiter an Bildschirmarbeitsplätzen verpflichtend.'}
             </span>
             <div className="flex gap-2">
@@ -545,8 +545,8 @@ const Lesen2UI: React.FC<{
                   key={val}
                   disabled={submitted}
                   onClick={() => onAnswerChange('6', val)}
-                  className={`flex-1 py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
-                    userAnswers['6'] === val ? 'bg-indigo-600 text-white' : 'glass-card text-slate-400'
+                  className={`flex-1 py-2 rounded-xl text-xs sm:text-sm font-extrabold uppercase transition-all ${
+                    userAnswers['6'] === val ? 'bg-indigo-600 text-white shadow-lg' : 'glass-card text-slate-300'
                   }`}
                 >
                   {val}
@@ -554,40 +554,40 @@ const Lesen2UI: React.FC<{
               ))}
             </div>
             {submitted && (
-              <div className="text-xs">
+              <div className="text-xs sm:text-sm">
                 {userAnswers['6'] === variant.q6Correct ? (
-                  <span className="text-emerald-400 font-bold">✓ Richtig</span>
+                  <span className="text-emerald-400 font-extrabold">✓ Richtig</span>
                 ) : (
-                  <span className="text-rose-400 font-bold">✗ Korrekt: {variant.q6Correct}</span>
+                  <span className="text-rose-400 font-extrabold">✗ Korrekt: {variant.q6Correct}</span>
                 )}
               </div>
             )}
           </div>
 
           {/* Q7 ABC */}
-          <div className="space-y-2">
-            <span className="text-xs font-bold text-slate-300">Frage 7: {variant.q7.questionText}</span>
-            <div className="space-y-1">
+          <div className="space-y-2.5">
+            <span className="text-sm font-extrabold text-white leading-snug block">Frage 7: {variant.q7.questionText}</span>
+            <div className="space-y-1.5">
               {variant.q7.options.map((opt, idx) => (
-                <label key={idx} className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                <label key={idx} className="flex items-center gap-2.5 text-xs sm:text-sm text-slate-200 cursor-pointer p-1 rounded hover:bg-slate-800/40">
                   <input
                     type="radio"
                     name="q7"
                     disabled={submitted}
                     checked={userAnswers['7'] === String(idx)}
                     onChange={() => onAnswerChange('7', String(idx))}
-                    className="accent-indigo-500"
+                    className="accent-indigo-500 w-4 h-4"
                   />
                   <span>{['a', 'b', 'c'][idx]}) {opt}</span>
                 </label>
               ))}
             </div>
             {submitted && (
-              <div className="text-xs">
+              <div className="text-xs sm:text-sm">
                 {userAnswers['7'] === String(variant.q7.correctIndex) ? (
-                  <span className="text-emerald-400 font-bold">✓ Richtig</span>
+                  <span className="text-emerald-400 font-extrabold">✓ Richtig</span>
                 ) : (
-                  <span className="text-rose-400 font-bold">✗ Korrekt: {['a', 'b', 'c'][variant.q7.correctIndex]}</span>
+                  <span className="text-rose-400 font-extrabold">✗ Korrekt: {['a', 'b', 'c'][variant.q7.correctIndex]}</span>
                 )}
               </div>
             )}
@@ -596,13 +596,13 @@ const Lesen2UI: React.FC<{
       </div>
 
       {/* Block 2: Text 2 + Q8 & Q9 */}
-      <div className="p-4 bg-slate-900/60 rounded-xl border border-slate-800 space-y-4">
-        <div className="text-xs text-slate-200 leading-relaxed whitespace-pre-wrap">{variant.text2}</div>
+      <div className="p-5 sm:p-6 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-lg space-y-5">
+        <div className="text-sm sm:text-base text-slate-100 leading-relaxed whitespace-pre-wrap font-sans">{variant.text2}</div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-3 border-t border-slate-800">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-4 border-t border-slate-800">
           {/* Q8 Richtig / Falsch */}
-          <div className="space-y-2">
-            <span className="text-xs font-bold text-slate-300">
+          <div className="space-y-2.5">
+            <span className="text-sm font-extrabold text-white leading-snug block">
               Frage 8: {variant.q8Text || 'Im Falle eines Feueralarms dürfen die Aufzüge zur schnellen Evakuierung genutzt werden.'}
             </span>
             <div className="flex gap-2">
@@ -611,8 +611,8 @@ const Lesen2UI: React.FC<{
                   key={val}
                   disabled={submitted}
                   onClick={() => onAnswerChange('8', val)}
-                  className={`flex-1 py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
-                    userAnswers['8'] === val ? 'bg-indigo-600 text-white' : 'glass-card text-slate-400'
+                  className={`flex-1 py-2 rounded-xl text-xs sm:text-sm font-extrabold uppercase transition-all ${
+                    userAnswers['8'] === val ? 'bg-indigo-600 text-white shadow-lg' : 'glass-card text-slate-300'
                   }`}
                 >
                   {val}
@@ -620,40 +620,40 @@ const Lesen2UI: React.FC<{
               ))}
             </div>
             {submitted && (
-              <div className="text-xs">
+              <div className="text-xs sm:text-sm">
                 {userAnswers['8'] === variant.q8Correct ? (
-                  <span className="text-emerald-400 font-bold">✓ Richtig</span>
+                  <span className="text-emerald-400 font-extrabold">✓ Richtig</span>
                 ) : (
-                  <span className="text-rose-400 font-bold">✗ Korrekt: {variant.q8Correct}</span>
+                  <span className="text-rose-400 font-extrabold">✗ Korrekt: {variant.q8Correct}</span>
                 )}
               </div>
             )}
           </div>
 
           {/* Q9 ABC */}
-          <div className="space-y-2">
-            <span className="text-xs font-bold text-slate-300">Frage 9: {variant.q9.questionText}</span>
-            <div className="space-y-1">
+          <div className="space-y-2.5">
+            <span className="text-sm font-extrabold text-white leading-snug block">Frage 9: {variant.q9.questionText}</span>
+            <div className="space-y-1.5">
               {variant.q9.options.map((opt, idx) => (
-                <label key={idx} className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                <label key={idx} className="flex items-center gap-2.5 text-xs sm:text-sm text-slate-200 cursor-pointer p-1 rounded hover:bg-slate-800/40">
                   <input
                     type="radio"
                     name="q9"
                     disabled={submitted}
                     checked={userAnswers['9'] === String(idx)}
                     onChange={() => onAnswerChange('9', String(idx))}
-                    className="accent-indigo-500"
+                    className="accent-indigo-500 w-4 h-4"
                   />
                   <span>{['a', 'b', 'c'][idx]}) {opt}</span>
                 </label>
               ))}
             </div>
             {submitted && (
-              <div className="text-xs">
+              <div className="text-xs sm:text-sm">
                 {userAnswers['9'] === String(variant.q9.correctIndex) ? (
-                  <span className="text-emerald-400 font-bold">✓ Richtig</span>
+                  <span className="text-emerald-400 font-extrabold">✓ Richtig</span>
                 ) : (
-                  <span className="text-rose-400 font-bold">✗ Korrekt: {['a', 'b', 'c'][variant.q9.correctIndex]}</span>
+                  <span className="text-rose-400 font-extrabold">✗ Korrekt: {['a', 'b', 'c'][variant.q9.correctIndex]}</span>
                 )}
               </div>
             )}
@@ -675,30 +675,30 @@ const Lesen3UI: React.FC<{
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div className="space-y-4">
-        <div className="p-4 bg-slate-900/60 rounded-xl border border-slate-800 text-xs text-slate-200 leading-relaxed whitespace-pre-wrap">
-          <h4 className="font-bold text-indigo-400 mb-2">Texte (Text 1 & Text 2):</h4>
-          <div className="mb-3 font-semibold">{variant.text1}</div>
-          <div className="font-semibold">{variant.text2}</div>
+      <div className="space-y-5">
+        <div className="p-5 sm:p-6 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-lg text-sm sm:text-base text-slate-100 leading-relaxed whitespace-pre-wrap font-sans">
+          <h4 className="font-extrabold text-indigo-400 mb-3 text-sm uppercase tracking-wider">Texte (Text 1 & Text 2):</h4>
+          <div className="mb-4 font-normal">{variant.text1}</div>
+          <div className="font-normal">{variant.text2}</div>
         </div>
 
-        <div className="space-y-2">
-          <h4 className="font-bold text-xs text-slate-300">Wählen Sie den passenden Buchstaben (A-F oder X):</h4>
+        <div className="space-y-3">
+          <h4 className="font-extrabold text-sm text-slate-200">Wählen Sie den passenden Buchstaben (A-F oder X):</h4>
           {['10', '11', '12', '13'].map((num) => {
             const correct = variant.correctAnswers[num];
             const userVal = userAnswers[num] || '';
             const isCorrect = userVal.toUpperCase() === correct?.toUpperCase();
 
             return (
-              <div key={num} className="flex items-center gap-3 p-2 bg-slate-900/40 rounded-xl border border-slate-800">
-                <span className="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-300 font-bold flex items-center justify-center text-xs">
+              <div key={num} className="flex items-center gap-3 p-3 bg-slate-900/80 rounded-xl border border-slate-700">
+                <span className="w-9 h-9 rounded-lg bg-indigo-500/25 text-indigo-300 font-extrabold flex items-center justify-center text-sm shrink-0">
                   {num}
                 </span>
                 <select
                   value={userVal}
                   disabled={submitted}
                   onChange={(e) => onAnswerChange(num, e.target.value)}
-                  className="px-3 py-1.5 glass-input rounded-lg text-xs font-bold"
+                  className="px-3.5 py-2 glass-input rounded-xl text-sm font-bold text-white"
                 >
                   <option value="">-- Option --</option>
                   {options.map((opt) => (
@@ -707,11 +707,11 @@ const Lesen3UI: React.FC<{
                 </select>
 
                 {submitted && (
-                  <div className="flex items-center gap-1 text-xs">
+                  <div className="flex items-center gap-1 text-sm ml-auto">
                     {isCorrect ? (
-                      <span className="text-emerald-400 font-bold">✓ Richtig</span>
+                      <span className="text-emerald-400 font-extrabold">✓ Richtig</span>
                     ) : (
-                      <span className="text-rose-400 font-bold">✗ Korrekt: {correct}</span>
+                      <span className="text-rose-400 font-extrabold">✗ Korrekt: {correct}</span>
                     )}
                   </div>
                 )}
@@ -721,8 +721,8 @@ const Lesen3UI: React.FC<{
         </div>
       </div>
 
-      <div className="p-4 bg-slate-900/60 rounded-xl border border-slate-800 text-xs text-slate-300 leading-relaxed whitespace-pre-wrap font-mono">
-        <h4 className="font-bold text-indigo-400 mb-2">Optionen (A-F + X falls keine Lösung):</h4>
+      <div className="p-5 sm:p-6 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-lg text-sm sm:text-base text-slate-100 leading-relaxed whitespace-pre-wrap font-sans">
+        <h4 className="font-extrabold text-indigo-400 mb-3 text-sm uppercase tracking-wider">Optionen (A-F + X falls keine Lösung):</h4>
         {variant.optionsAtoF}
       </div>
     </div>
@@ -746,7 +746,7 @@ const GenericABCQuestionsUI: React.FC<{
       {variant.audioUrl !== undefined || variant.scriptText ? (
         <AudioPlayerBlock audioUrl={variant.audioUrl} scriptText={variant.scriptText} />
       ) : variant.protocolText ? (
-        <div className="p-4 bg-slate-900/60 rounded-xl border border-slate-800 text-xs text-slate-200 leading-relaxed whitespace-pre-wrap">
+        <div className="p-5 sm:p-6 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-lg text-sm sm:text-base text-slate-100 leading-relaxed whitespace-pre-wrap font-sans">
           {variant.protocolText}
         </div>
       ) : null}
@@ -757,20 +757,20 @@ const GenericABCQuestionsUI: React.FC<{
           const isCorrect = uVal === String(q.correctIndex);
 
           return (
-            <div key={q.id} className="p-4 bg-slate-900/40 rounded-xl border border-slate-800 space-y-2">
-              <div className="font-bold text-xs text-slate-200">
+            <div key={q.id} className="p-4 sm:p-5 bg-slate-900/80 rounded-2xl border border-slate-700/80 space-y-3">
+              <div className="font-extrabold text-sm sm:text-base text-white">
                 Frage {q.id}: {q.questionText}
               </div>
-              <div className="space-y-1 pl-2">
+              <div className="space-y-2 pl-2">
                 {q.options.map((opt, idx) => (
-                  <label key={idx} className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                  <label key={idx} className="flex items-center gap-2.5 text-xs sm:text-sm text-slate-200 cursor-pointer p-1 rounded hover:bg-slate-800/40">
                     <input
                       type="radio"
                       name={`q-${q.id}`}
                       disabled={submitted}
                       checked={uVal === String(idx)}
                       onChange={() => onAnswerChange(String(q.id), String(idx))}
-                      className="accent-indigo-500"
+                      className="accent-indigo-500 w-4 h-4"
                     />
                     <span>{['a', 'b', 'c'][idx]}) {opt}</span>
                   </label>
@@ -778,14 +778,14 @@ const GenericABCQuestionsUI: React.FC<{
               </div>
 
               {submitted && (
-                <div className="text-xs pt-1">
+                <div className="text-xs sm:text-sm pt-1">
                   {isCorrect ? (
-                    <span className="text-emerald-400 font-bold flex items-center gap-1">
-                      <CheckCircle className="w-3.5 h-3.5" /> Richtig
+                    <span className="text-emerald-400 font-extrabold flex items-center gap-1">
+                      <CheckCircle className="w-4 h-4" /> Richtig
                     </span>
                   ) : (
-                    <span className="text-rose-400 font-bold flex items-center gap-1">
-                      <XCircle className="w-3.5 h-3.5" /> Richtige Antwort: {['a', 'b', 'c'][q.correctIndex]}
+                    <span className="text-rose-400 font-extrabold flex items-center gap-1">
+                      <XCircle className="w-4 h-4" /> Richtige Antwort: {['a', 'b', 'c'][q.correctIndex]}
                     </span>
                   )}
                 </div>
@@ -811,8 +811,8 @@ const LesenSchreibenUI: React.FC<{
 }> = ({ variant, userAnswers, onAnswerChange, submitted }) => {
   return (
     <div className="space-y-6">
-      <div className="p-4 bg-slate-900/60 rounded-xl border border-slate-800 text-xs text-slate-200 leading-relaxed whitespace-pre-wrap">
-        <h4 className="font-bold text-indigo-400 mb-2">E-Mail-Korrespondenz (Q19-21):</h4>
+      <div className="p-5 sm:p-6 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-lg text-sm sm:text-base text-slate-100 leading-relaxed whitespace-pre-wrap font-sans">
+        <h4 className="font-extrabold text-indigo-400 mb-3 text-sm uppercase tracking-wider">E-Mail-Korrespondenz (Q19-21):</h4>
         {variant.emailsText}
       </div>
 
@@ -822,20 +822,20 @@ const LesenSchreibenUI: React.FC<{
           const isCorrect = uVal === String(q.correctIndex);
 
           return (
-            <div key={q.id} className="p-4 bg-slate-900/40 rounded-xl border border-slate-800 space-y-2">
-              <div className="font-bold text-xs text-slate-200">
+            <div key={q.id} className="p-4 sm:p-5 bg-slate-900/80 rounded-2xl border border-slate-700/80 space-y-3">
+              <div className="font-extrabold text-sm sm:text-base text-white">
                 Frage {q.id}: {q.questionText}
               </div>
-              <div className="space-y-1 pl-2">
+              <div className="space-y-2 pl-2">
                 {q.options.map((opt, idx) => (
-                  <label key={idx} className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                  <label key={idx} className="flex items-center gap-2.5 text-xs sm:text-sm text-slate-200 cursor-pointer p-1 rounded hover:bg-slate-800/40">
                     <input
                       type="radio"
                       name={`q-${q.id}`}
                       disabled={submitted}
                       checked={uVal === String(idx)}
                       onChange={() => onAnswerChange(String(q.id), String(idx))}
-                      className="accent-indigo-500"
+                      className="accent-indigo-500 w-4 h-4"
                     />
                     <span>{['a', 'b', 'c'][idx]}) {opt}</span>
                   </label>
