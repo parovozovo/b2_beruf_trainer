@@ -1549,7 +1549,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               <div className="flex items-center gap-3">
                 <button
                   type="submit"
-                  className="px-6 py-3.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-extrabold rounded-xl text-xs sm:text-sm shadow-lg transition-colors flex items-center gap-2"
+                  className="px-6 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold rounded-xl text-xs sm:text-sm shadow-md transition-colors flex items-center gap-2"
                 >
                   <Save className="w-4 h-4" />
                   {selectedVariantId === 'new'

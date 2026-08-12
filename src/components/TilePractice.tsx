@@ -223,7 +223,7 @@ export const TilePractice: React.FC<TilePracticeProps> = ({
                 onClick={() => handleSelectTileType(t.type)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                   selectedTileType === t.type
-                    ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-md'
+                    ? 'bg-indigo-600 text-white shadow-md font-extrabold'
                     : 'bg-slate-900/80 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
                 }`}
               >
@@ -403,7 +403,7 @@ export const TilePractice: React.FC<TilePracticeProps> = ({
             ) : (
               <button
                 onClick={handleSubmitAnswers}
-                className="px-6 py-3.5 bg-gradient-to-r from-indigo-500 via-purple-600 to-pink-500 hover:from-indigo-400 hover:to-pink-400 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/25 transition-all flex items-center gap-2 text-sm"
+                className="px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-xl shadow-md transition-all flex items-center gap-2 text-sm sm:text-base"
               >
                 Antworten überprüfen <ArrowRight className="w-4 h-4" />
               </button>

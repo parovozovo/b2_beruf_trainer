@@ -57,7 +57,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 onClose();
                 onOpenLoginModal();
               }}
-              className="w-full py-3 px-4 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-bold rounded-xl text-xs shadow-lg"
+              className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-xl text-xs shadow-md"
             >
               Anmelden / Registrieren
             </button>
@@ -95,7 +95,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
         {/* User Info Header */}
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 bg-gradient-to-tr from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center text-white font-extrabold text-xl shadow-lg border border-indigo-400/30">
+          <div className="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-extrabold text-xl shadow-md border border-indigo-400/30">
             {currentUser.name.slice(0, 2).toUpperCase()}
           </div>
           <div>

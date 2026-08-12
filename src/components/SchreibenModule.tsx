@@ -260,7 +260,7 @@ export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
 
                 <button
                   onClick={handleCopyForAI}
-                  className="px-4 py-2.5 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-lg transition-all"
+                  className="px-4 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-extrabold rounded-xl text-xs flex items-center gap-2 shadow-md transition-colors"
                 >
                   {copied ? (
                     <>

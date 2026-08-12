@@ -245,7 +245,7 @@ export const FullExamMode: React.FC<FullExamModeProps> = ({
 
           <button
             onClick={handleStartExam}
-            className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-extrabold rounded-2xl shadow-xl shadow-purple-600/30 transition-all flex items-center justify-center gap-2 text-base sm:text-lg uppercase tracking-wide"
+            className="w-full py-4 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 text-base sm:text-lg uppercase tracking-wide"
           >
             <Timer className="w-6 h-6" /> Prüfung jetzt starten
           </button>

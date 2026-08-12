@@ -66,7 +66,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div className="flex flex-wrap items-center gap-3 pt-2">
             <button
               onClick={() => onSelectMode('full_exam')}
-              className="px-6 py-3.5 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-extrabold rounded-2xl shadow-lg shadow-indigo-500/25 transition-all text-xs sm:text-sm flex items-center gap-2"
+              className="px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-2xl shadow-md transition-all text-xs sm:text-sm flex items-center gap-2"
             >
               <Timer className="w-4 h-4" /> Prüfungssimulation starten
             </button>
@@ -182,7 +182,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     </div>
                     <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"
+                        className="h-full bg-indigo-600 rounded-full"
                         style={{ width: `${pct || 0}%` }}
                       />
                     </div>
