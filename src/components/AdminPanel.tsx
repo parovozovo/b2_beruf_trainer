@@ -1097,7 +1097,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     }
   };
 
-  // Export / Import JSON Data
+  // Export Full Backup JSON
   const handleExportDataJSON = () => {
     const data = { modelltests, promoCodes, forumsbeitragTopics, sprechenTopics };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -1106,6 +1106,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     a.href = url;
     a.download = `b2-trainer-backup-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
+  };
+
+  // Export Single Modelltest JSON
+  const handleExportSingleModelltestJSON = (mt: Modelltest) => {
+    const blob = new Blob([JSON.stringify(mt, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const sanitizedTitle = (mt.title || 'modelltest').toLowerCase().replace(/[^a-z0-9]/g, '-');
+    a.download = `modelltest-${sanitizedTitle}.json`;
+    a.click();
+    showToast(`Modelltest "${mt.title}" als JSON exportiert!`);
   };
 
   const handleImportDataJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -2193,6 +2205,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         className="px-3 py-1.5 bg-indigo-600/30 text-indigo-300 hover:bg-indigo-600/50 rounded-lg text-xs font-semibold flex items-center gap-1 border border-indigo-500/40"
                       >
                         <Edit3 className="w-3.5 h-3.5" /> Bearbeiten
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleExportSingleModelltestJSON(mt)}
+                        className="px-3 py-1.5 glass-card hover:bg-slate-800 text-emerald-300 text-xs font-semibold rounded-lg border border-emerald-500/40 flex items-center gap-1"
+                        title="Diesen Modelltest als JSON exportieren"
+                      >
+                        <Download className="w-3.5 h-3.5" /> Export (JSON)
                       </button>
 
                       <button
