@@ -19,6 +19,7 @@ import type {
   Sprachbausteine1Variant,
   Sprachbausteine2Variant,
 } from '../types';
+import { AudioPlayerBlock } from './TilePractice';
 import {
   Shield,
   Plus,
@@ -1045,15 +1046,25 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               </div>
 
               {selectedTileType.startsWith('hoeren') && (
-                <div>
-                  <label className="block text-xs text-slate-400 mb-1">Audio MP3 URL</label>
+                <div className="space-y-3">
+                  <label className="block text-xs font-extrabold text-indigo-600 dark:text-indigo-400">
+                    Audio MP3 URL (Supabase Storage / Web URL)
+                  </label>
                   <input
                     type="text"
                     value={vAudioUrl}
                     onChange={(e) => setVAudioUrl(e.target.value)}
-                    placeholder="https://example.com/audio.mp3"
+                    placeholder="https://<your-project>.supabase.co/storage/v1/object/public/audio-files/audio.mp3"
                     className="w-full px-3 py-2 glass-input rounded-xl text-xs font-mono"
                   />
+                  {vAudioUrl && (
+                    <div className="pt-1">
+                      <span className="block text-[11px] font-extrabold text-indigo-600 dark:text-indigo-400 mb-1.5">
+                        ▶️ Live-Vorschau (Admin Audio-Test & Tempo-Steuerung):
+                      </span>
+                      <AudioPlayerBlock audioUrl={vAudioUrl} scriptText={vText1} autoShowScript={false} />
+                    </div>
+                  )}
                 </div>
               )}
 

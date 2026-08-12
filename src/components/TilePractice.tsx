@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { Modelltest, TileType, User } from '../types';
-import { Crown, CheckCircle, XCircle, Volume2, HelpCircle, ArrowRight, RotateCcw, Award, Layers } from 'lucide-react';
+import { Crown, CheckCircle, XCircle, Volume2, HelpCircle, ArrowRight, RotateCcw, Award, Layers, FileText, ChevronDown } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 interface TilePracticeProps {
@@ -417,26 +417,94 @@ export const TilePractice: React.FC<TilePracticeProps> = ({
 
 /* --- TILE SUB-COMPONENTS --- */
 
-const AudioPlayerBlock: React.FC<{ audioUrl?: string; scriptText?: string }> = ({ audioUrl, scriptText }) => {
+export const AudioPlayerBlock: React.FC<{
+  audioUrl?: string;
+  scriptText?: string;
+  autoShowScript?: boolean;
+}> = ({ audioUrl, scriptText, autoShowScript = false }) => {
+  const audioRef = React.useRef<HTMLAudioElement | null>(null);
+  const [playbackRate, setPlaybackRate] = React.useState<number>(1.0);
+  const [showScript, setShowScript] = React.useState<boolean>(autoShowScript || !audioUrl);
+
+  const handleSpeedChange = (rate: number) => {
+    setPlaybackRate(rate);
+    if (audioRef.current) {
+      audioRef.current.playbackRate = rate;
+    }
+  };
+
   return (
-    <div className="p-4 bg-slate-900/80 rounded-xl border border-slate-800 space-y-3">
+    <div className="p-4 sm:p-5 glass-panel rounded-2xl border border-slate-300 dark:border-slate-800 space-y-4 shadow-sm">
       {audioUrl ? (
-        <div className="flex items-center gap-3">
-          <Volume2 className="w-5 h-5 text-indigo-400 shrink-0" />
-          <audio controls className="w-full h-10 accent-indigo-500">
+        <div className="space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                <Volume2 className="w-4 h-4" />
+              </div>
+              <span className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white">
+                Audio-Wiedergabe (Hörtext)
+              </span>
+            </div>
+
+            {/* SPEED CONTROLLER PILLS (0.8x, 1.0x, 1.2x) */}
+            <div className="flex items-center gap-1.5 self-start sm:self-auto">
+              <span className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 mr-1">Tempo:</span>
+              {[0.8, 1.0, 1.2].map((rate) => (
+                <button
+                  key={rate}
+                  type="button"
+                  onClick={() => handleSpeedChange(rate)}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all ${
+                    playbackRate === rate
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  {rate}x
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <audio
+            ref={audioRef}
+            controls
+            key={audioUrl}
+            onPlay={() => {
+              if (audioRef.current) audioRef.current.playbackRate = playbackRate;
+            }}
+            className="w-full h-11 rounded-xl accent-indigo-600"
+          >
             <source src={audioUrl} type="audio/mp3" />
             Ihr Browser unterstützt das Audio-Element nicht.
           </audio>
         </div>
       ) : (
-        <div className="text-xs text-slate-400 italic flex items-center gap-2">
-          <Volume2 className="w-4 h-4 text-slate-500" /> Keine Audiodateien vorhanden. Transkript wird angezeigt:
+        <div className="p-3.5 bg-amber-500/10 rounded-xl border border-amber-500/20 text-xs sm:text-sm text-slate-800 dark:text-slate-200 font-semibold flex items-center gap-2">
+          <Volume2 className="w-4.5 h-4.5 text-amber-500 shrink-0" />
+          <span>Keine MP3-Audiodatei hinterlegt. (Transkript zum Lesen verfügbar)</span>
         </div>
       )}
 
+      {/* COLLAPSIBLE TRANSCRIPT / SKRIPT TOGGLE BUTTON */}
       {scriptText && (
-        <div className="p-3 bg-slate-950/60 rounded-lg text-xs text-slate-300 font-mono leading-relaxed whitespace-pre-wrap max-h-48 overflow-y-auto">
-          {scriptText}
+        <div className="pt-2 border-t border-slate-200 dark:border-slate-800/80">
+          <button
+            type="button"
+            onClick={() => setShowScript(!showScript)}
+            className="text-xs sm:text-sm font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1.5"
+          >
+            <FileText className="w-4 h-4" />
+            <span>{showScript ? '📜 Transkript / Skript ausblenden' : '📜 Transkript / Skript anzeigen'}</span>
+            <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showScript ? 'rotate-180' : ''}`} />
+          </button>
+
+          {showScript && (
+            <div className="mt-3 p-4 bg-slate-100 dark:bg-slate-900/90 rounded-xl text-xs sm:text-sm text-slate-900 dark:text-slate-100 leading-relaxed font-sans whitespace-pre-wrap max-h-64 overflow-y-auto border border-slate-300 dark:border-slate-800 shadow-inner">
+              {scriptText}
+            </div>
+          )}
         </div>
       )}
     </div>
