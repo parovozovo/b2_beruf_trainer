@@ -1154,7 +1154,7 @@ const Hoeren2UI: React.FC<{
 
 // Hoeren und Schreiben UI
 const HoerenSchreibenUI: React.FC<{
-  variant: { audioUrl?: string; scriptText: string; q41Correct: string; fields: Array<{ label: string; key: string }> };
+  variant: { audioUrl?: string; scriptText: string; q41Text?: string; q41Options?: [string, string, string]; q41Correct: string; fields: Array<{ label: string; key: string }> };
   userAnswers: Record<string, string>;
   onAnswerChange: (key: string, val: string) => void;
   submitted: boolean;
@@ -1164,34 +1164,39 @@ const HoerenSchreibenUI: React.FC<{
       <AudioPlayerBlock audioUrl={variant.audioUrl} scriptText={variant.scriptText} />
 
       {/* Q41 */}
-      <div className="p-4 bg-slate-900/40 rounded-xl border border-slate-800 space-y-2">
-        <div className="font-bold text-xs text-slate-200">
-          Frage 41: Grund für den Anruf
+      <div className="p-4 sm:p-5 bg-slate-900/40 rounded-2xl border border-slate-800 space-y-3">
+        <div className="font-extrabold text-xs sm:text-sm text-slate-200">
+          Frage 41: {variant.q41Text || 'Grund für den Anruf (Der Anrufer macht ein/eine):'}
         </div>
-        <div className="flex gap-2">
-          {[
-            { id: 'a', label: 'a Angebot' },
-            { id: 'b', label: 'b Bestellung/Buchung' },
-            { id: 'c', label: 'c Beschwerde' },
-          ].map((item) => (
-            <button
-              key={item.id}
-              disabled={submitted}
-              onClick={() => onAnswerChange('41', item.id)}
-              className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all ${
-                userAnswers['41'] === item.id ? 'bg-indigo-600 text-white' : 'glass-card text-slate-400'
-              }`}
-            >
-              {item.label}
-            </button>
-          ))}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          {(['a', 'b', 'c'] as const).map((optKey, idx) => {
+            const defaultLabels = ['a Angebot', 'b Bestellung/Buchung', 'c Beschwerde'];
+            const customOption = variant.q41Options && variant.q41Options[idx];
+            const label = customOption ? `${optKey}) ${customOption}` : defaultLabels[idx];
+            const isSelected = userAnswers['41'] === optKey;
+
+            return (
+              <button
+                key={optKey}
+                disabled={submitted}
+                onClick={() => onAnswerChange('41', optKey)}
+                className={`py-2.5 px-3.5 rounded-xl text-xs font-extrabold transition-all border ${
+                  isSelected
+                    ? 'bg-indigo-600 text-white border-indigo-500 shadow-md ring-2 ring-indigo-500/30'
+                    : 'glass-card text-slate-300 border-slate-700/80 hover:border-slate-600'
+                }`}
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
         {submitted && (
           <div className="text-xs pt-1">
             {userAnswers['41'] === variant.q41Correct ? (
-              <span className="text-emerald-400 font-bold">✓ Richtig</span>
+              <span className="text-emerald-400 font-extrabold flex items-center gap-1">✓ Richtig</span>
             ) : (
-              <span className="text-rose-400 font-bold">✗ Richtige Antwort: {variant.q41Correct}</span>
+              <span className="text-rose-400 font-extrabold">✗ Richtige Antwort: {variant.q41Correct?.toUpperCase()}</span>
             )}
           </div>
         )}

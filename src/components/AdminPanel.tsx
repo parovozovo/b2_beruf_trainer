@@ -219,6 +219,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [vHoeren1QuestionsList, setVHoeren1QuestionsList] = useState<Hoeren1Question[]>([]);
 
   // Hoeren Schreiben specific
+  const [vQ41Text, setVQ41Text] = useState('Der Anrufer macht ein/eine:');
+  const [vQ41Options, setVQ41Options] = useState<[string, string, string]>(['Angebot', 'Bestellung / Buchung', 'Beschwerde']);
   const [vQ41Correct, setVQ41Correct] = useState<'a' | 'b' | 'c'>('a');
 
   // Lesen Schreiben Beschwerde prompt
@@ -335,6 +337,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         { id: 26, type: 'richtig_falsch', questionText: 'Aussage 26 (Richtig oder Falsch)', correct: 'richtig' },
         { id: 27, type: 'choice', questionText: 'Frage 27 (Mehrfachauswahl)', options: ['Option A', 'Option B', 'Option C'], correct: 2 },
       ]);
+      setVQ41Text('Der Anrufer macht ein/eine:');
+      setVQ41Options(['Angebot', 'Bestellung / Buchung', 'Beschwerde']);
       setVQ41Correct('a');
       setVBeschwerdePrompt('');
       setVSb1GapsMap({ 46: 'geehrte', 47: 'ausgeschriebene', 48: 'verfüge', 49: 'Verfügung', 50: 'Einladung', 51: 'freundlichen' });
@@ -377,7 +381,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             setVQuestionsABCList(found.questions as QuestionABC[]);
           }
         }
-        if (found.q41Correct) setVQ41Correct(found.q41Correct);
+        const hsFound = found as unknown as Partial<HoerenSchreibenVariant>;
+        if (hsFound.q41Text) setVQ41Text(hsFound.q41Text);
+        else setVQ41Text('Der Anrufer macht ein/eine:');
+        if (hsFound.q41Options && Array.isArray(hsFound.q41Options)) {
+          setVQ41Options(hsFound.q41Options as [string, string, string]);
+        } else {
+          setVQ41Options(['Angebot', 'Bestellung / Buchung', 'Beschwerde']);
+        }
+        if (hsFound.q41Correct) setVQ41Correct(hsFound.q41Correct);
         if (found.beschwerdeTopicText) setVBeschwerdePrompt(found.beschwerdeTopicText);
         if (found.extraDistractors) setVSb1DistractorsStr(found.extraDistractors.join(', '));
       }
@@ -690,6 +702,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         title: vTitle,
         audioUrl: vAudioUrl || undefined,
         scriptText: vText1,
+        q41Text: vQ41Text,
+        q41Options: vQ41Options,
         q41Correct: vQ41Correct,
         fields: [
           { label: 'Name des Anrufers', key: 'name' },
@@ -1830,21 +1844,64 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 <div className="p-4 bg-slate-900/60 rounded-xl border border-slate-800 space-y-4">
                   <h4 className="text-xs font-bold text-indigo-400">Frage 41 (Mehrfachauswahl a, b, c) & Notizfelder 42–45:</h4>
                   
-                  <div className="p-3 bg-slate-950/60 rounded-lg space-y-2 border border-slate-800">
-                    <span className="text-xs font-bold text-white">Frage 41 Korrekte Antwort:</span>
-                    <div className="flex gap-3">
-                      {['a', 'b', 'c'].map((opt) => (
-                        <button
-                          key={opt}
-                          type="button"
-                          onClick={() => setVQ41Correct(opt as 'a' | 'b' | 'c')}
-                          className={`flex-1 py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
-                            vQ41Correct === opt ? 'bg-indigo-600 text-white shadow-md' : 'glass-card text-slate-400'
-                          }`}
-                        >
-                          Option {opt.toUpperCase()}
-                        </button>
-                      ))}
+                  <div className="p-4 bg-slate-950/60 rounded-xl space-y-4 border border-slate-800">
+                    <div>
+                      <label className="block text-[11px] text-slate-400 font-bold mb-1">
+                        Fragetext für Q41:
+                      </label>
+                      <input
+                        type="text"
+                        value={vQ41Text}
+                        onChange={(e) => setVQ41Text(e.target.value)}
+                        placeholder="Der Anrufer macht ein/eine:"
+                        className="w-full px-3 py-1.5 glass-input rounded-xl text-xs font-medium"
+                      />
+                    </div>
+
+                    <div className="space-y-3">
+                      <label className="block text-[11px] text-slate-400 font-bold">
+                        Optionen für Frage 41 (a, b, c) & Richtige Antwort wählen:
+                      </label>
+                      
+                      {(['a', 'b', 'c'] as const).map((optKey, optIdx) => {
+                        const isCorrect = vQ41Correct === optKey;
+                        const optionText = vQ41Options[optIdx] || '';
+
+                        return (
+                          <div key={optKey} className="p-3 bg-slate-900/80 rounded-xl border border-slate-800 flex flex-col sm:flex-row sm:items-center gap-3">
+                            {/* Selection Button */}
+                            <button
+                              type="button"
+                              onClick={() => setVQ41Correct(optKey)}
+                              className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 shrink-0 border ${
+                                isCorrect
+                                  ? 'bg-emerald-600 text-white border-emerald-500 shadow-md ring-2 ring-emerald-500/30'
+                                  : 'glass-card text-slate-400 border-slate-700 hover:text-white hover:border-slate-600'
+                              }`}
+                            >
+                              <span className="w-5 h-5 rounded-full bg-slate-950/40 flex items-center justify-center text-[10px] font-black">
+                                {optKey.toUpperCase()}
+                              </span>
+                              <span>{isCorrect ? `✓ ${optKey}) ${optionText || 'Option'} (RICHTIG)` : `${optKey}) ${optionText || 'Option'}`}</span>
+                            </button>
+
+                            {/* Option Label Text Input */}
+                            <div className="flex-1">
+                              <input
+                                type="text"
+                                value={optionText}
+                                onChange={(e) => {
+                                  const newOpts = [...vQ41Options] as [string, string, string];
+                                  newOpts[optIdx] = e.target.value;
+                                  setVQ41Options(newOpts);
+                                }}
+                                className="w-full px-3 py-1.5 glass-input rounded-xl text-xs font-bold"
+                                placeholder={optIdx === 0 ? 'a) Angebot' : optIdx === 1 ? 'b) Bestellung / Buchung' : 'c) Beschwerde'}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
 
