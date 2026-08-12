@@ -6,7 +6,7 @@ import { getWrittenEssays, saveWrittenEssay, deleteWrittenEssay } from '../utils
 interface SchreibenModuleProps {
   modelltests: Modelltest[];
   forumsbeitragTopics: ForumsbeitragTopic[];
-  currentUser: User;
+  currentUser: User | null;
 }
 
 export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
@@ -30,8 +30,8 @@ export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
   const [history, setHistory] = useState<WrittenEssayRecord[]>([]);
 
   useEffect(() => {
-    setHistory(getWrittenEssays(currentUser.id));
-  }, [currentUser.id]);
+    setHistory(getWrittenEssays(currentUser?.id));
+  }, [currentUser?.id]);
 
   // Handle task selection setup
   const handleStartBeschwerde = () => {
@@ -99,7 +99,7 @@ export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
     if (!userText.trim() || !activeTopic) return;
     const newRecord: WrittenEssayRecord = {
       id: `essay-${Date.now()}`,
-      userId: currentUser.id,
+      userId: currentUser?.id || 'guest',
       date: new Date().toISOString(),
       type: taskType,
       topicTitle: activeTopic.title,
@@ -107,7 +107,7 @@ export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
       charCount,
     };
     saveWrittenEssay(newRecord);
-    setHistory(getWrittenEssays(currentUser.id));
+    setHistory(getWrittenEssays(currentUser?.id));
     alert('Ihre schriftliche Arbeit wurde erfolgreich gespeichert!');
   };
 
@@ -121,7 +121,7 @@ export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
 
   const handleDeleteRecord = (id: string) => {
     deleteWrittenEssay(id);
-    setHistory(getWrittenEssays(currentUser.id));
+    setHistory(getWrittenEssays(currentUser?.id));
   };
 
   return (

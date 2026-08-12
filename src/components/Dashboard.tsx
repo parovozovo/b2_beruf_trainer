@@ -1,9 +1,9 @@
 import React from 'react';
 import type { User, TileResult, FullExamResult, TileType } from '../types';
-import { Dumbbell, Timer, FileEdit, Mic, Sparkles, CheckCircle2, RotateCcw, TrendingUp, Award, Clock } from 'lucide-react';
+import { Dumbbell, Timer, FileEdit, Mic, Sparkles, RotateCcw, TrendingUp, Award, Clock } from 'lucide-react';
 
 interface DashboardProps {
-  currentUser: User;
+  currentUser: User | null;
   onSelectMode: (tab: string) => void;
   tileResults: TileResult[];
   fullExamResults: FullExamResult[];
@@ -44,230 +44,183 @@ export const Dashboard: React.FC<DashboardProps> = ({
     tileAccuracy[r.tileType].correct += r.score;
   });
 
+  const userName = currentUser ? currentUser.name : 'Gast';
+  const isPremium = currentUser ? currentUser.isPremium : false;
+
   return (
     <div className="space-y-8 animate-fadeIn">
-      {/* Welcome Hero Banner */}
-      <div className="relative overflow-hidden glass-panel rounded-3xl p-6 sm:p-8 border border-indigo-500/20 shadow-2xl">
-        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative z-10 max-w-3xl space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 rounded-full text-xs font-semibold">
-            <Sparkles className="w-3.5 h-3.5" /> Prüfungstrainer Deutsch B2 Beruf
+      {/* Welcome Banner */}
+      <div className="relative overflow-hidden rounded-3xl glass-panel p-8 border border-indigo-500/30">
+        <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative z-10 space-y-4 max-w-2xl">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-500/20 text-indigo-300 rounded-full text-xs font-semibold border border-indigo-500/30">
+            <Sparkles className="w-3.5 h-3.5" /> Willkommen beim Deutsch B2 Beruf Trainer
           </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
-            Willkommen, {currentUser.name}! 👋
+          <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white">
+            Guten Tag, {userName}! 👋
           </h1>
-          <p className="text-sm sm:text-base text-slate-300 leading-relaxed">
-            Ihr interaktiver Trainer für die gezielte Vorbereitung auf alle Prüfungsteile: Lesen, Hören, Sprachbausteine, Schreiben und Sprechen mit Zeitmessung und realistischen Prüfungsformaten.
+          <p className="text-sm text-slate-300 leading-relaxed">
+            Bereiten Sie sich gezielt auf die Prüfung Deutsch B2 Beruf vor. Wählen Sie Einzelteile zum Üben oder starten Sie eine vollständige Simulation mit Zeitmessung.
+          </p>
+
+          <div className="flex flex-wrap items-center gap-3 pt-2">
+            <button
+              onClick={() => onSelectMode('full_exam')}
+              className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-bold rounded-2xl shadow-lg shadow-indigo-500/25 transition-all text-xs flex items-center gap-2"
+            >
+              <Timer className="w-4 h-4" /> Prüfungssimulation starten
+            </button>
+            <button
+              onClick={() => onSelectMode('tile_practice')}
+              className="px-6 py-3 glass-card hover:bg-slate-800 text-slate-200 font-bold rounded-2xl border border-slate-700/60 transition-all text-xs flex items-center gap-2"
+            >
+              <Dumbbell className="w-4 h-4 text-indigo-400" /> Einzelteile trainieren
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Feature Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: Tile Practice */}
+        <div
+          onClick={() => onSelectMode('tile_practice')}
+          className="glass-panel p-6 rounded-2xl border border-slate-800 hover:border-indigo-500/50 cursor-pointer transition-all group"
+        >
+          <div className="w-12 h-12 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <Dumbbell className="w-6 h-6" />
+          </div>
+          <h3 className="text-base font-bold text-white mb-1 group-hover:text-indigo-300 transition-colors">
+            Teile-Training
+          </h3>
+          <p className="text-xs text-slate-400 leading-relaxed">
+            Lesen 1–4, Hören 1–4, Sprachbausteine 1–2 gezielt mit sofortiger Auswertung üben.
+          </p>
+        </div>
+
+        {/* Card 2: Full Exam */}
+        <div
+          onClick={() => onSelectMode('full_exam')}
+          className="glass-panel p-6 rounded-2xl border border-slate-800 hover:border-indigo-500/50 cursor-pointer transition-all group relative overflow-hidden"
+        >
+          <div className="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <Award className="w-6 h-6" />
+          </div>
+          <h3 className="text-base font-bold text-white mb-1 group-hover:text-amber-300 transition-colors flex items-center gap-2">
+            Komplettprüfung {isPremium && <Sparkles className="w-4 h-4 text-amber-400" />}
+          </h3>
+          <p className="text-xs text-slate-400 leading-relaxed">
+            Realistischer Test aller 57 Fragen im originalen Telc B2 Beruf Format mit Countdown.
+          </p>
+        </div>
+
+        {/* Card 3: Schreiben */}
+        <div
+          onClick={() => onSelectMode('schreiben')}
+          className="glass-panel p-6 rounded-2xl border border-slate-800 hover:border-indigo-500/50 cursor-pointer transition-all group"
+        >
+          <div className="w-12 h-12 rounded-xl bg-pink-500/20 text-pink-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <FileEdit className="w-6 h-6" />
+          </div>
+          <h3 className="text-base font-bold text-white mb-1 group-hover:text-pink-300 transition-colors">
+            Schreiben (Q58)
+          </h3>
+          <p className="text-xs text-slate-400 leading-relaxed">
+            Beschwerdebriefe und Forenbeiträge verfassen mit Kopierfunktion für KI-Korrektur.
+          </p>
+        </div>
+
+        {/* Card 4: Sprechen */}
+        <div
+          onClick={() => onSelectMode('sprechen')}
+          className="glass-panel p-6 rounded-2xl border border-slate-800 hover:border-indigo-500/50 cursor-pointer transition-all group"
+        >
+          <div className="w-12 h-12 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <Mic className="w-6 h-6" />
+          </div>
+          <h3 className="text-base font-bold text-white mb-1 group-hover:text-emerald-300 transition-colors">
+            Sprechen (1A, 2, 3)
+          </h3>
+          <p className="text-xs text-slate-400 leading-relaxed">
+            Präsentationen und Diskussionen mit Rund-Timer und Akustik-Signal üben.
           </p>
         </div>
       </div>
 
-      {/* Main Modes Grid */}
-      <div>
-        <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-          <Award className="w-5 h-5 text-indigo-400" /> Wählen Sie Ihren Trainingsmodus
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Mode 1: Training */}
-          <div
-            onClick={() => onSelectMode('training')}
-            className="glass-card rounded-2xl p-5 cursor-pointer hover:border-indigo-500/50 group flex flex-col justify-between"
-          >
-            <div>
-              <div className="w-12 h-12 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform border border-indigo-500/30">
-                <Dumbbell className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold text-white mb-1 group-hover:text-indigo-300 transition-colors">
-                Trainingsmodus
-              </h3>
-              <p className="text-xs text-slate-400 leading-relaxed mb-4">
-                Gezieltes Üben einzelner Prüfungsteile (Lesen 1-4, Hören 1-4, Sprachbausteine 1-2). Ergebnisse werden gespeichert und können zurückgesetzt werden.
-              </p>
-            </div>
-            <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-indigo-400 font-semibold">
-              <span>Zu den Übungen</span> →
-            </div>
-          </div>
-
-          {/* Mode 2: Exam */}
-          <div
-            onClick={() => onSelectMode('exam')}
-            className="glass-card rounded-2xl p-5 cursor-pointer hover:border-purple-500/50 group flex flex-col justify-between"
-          >
-            <div>
-              <div className="w-12 h-12 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform border border-purple-500/30">
-                <Timer className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold text-white mb-1 group-hover:text-purple-300 transition-colors">
-                Prüfungssimulation
-              </h3>
-              <p className="text-xs text-slate-400 leading-relaxed mb-4">
-                Vollständiger Testlauf (Fragen 1-57, ohne Q21 & Q58). Mit Timer. Ergebnis wird erst nach 100% Absolvierung ausgewertet.
-              </p>
-            </div>
-            <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-purple-400 font-semibold">
-              <span>Prüfung starten</span> →
-            </div>
-          </div>
-
-          {/* Mode 3: Schreiben */}
-          <div
-            onClick={() => onSelectMode('schreiben')}
-            className="glass-card rounded-2xl p-5 cursor-pointer hover:border-pink-500/50 group flex flex-col justify-between"
-          >
-            <div>
-              <div className="w-12 h-12 rounded-xl bg-pink-500/20 text-pink-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform border border-pink-500/30">
-                <FileEdit className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold text-white mb-1 group-hover:text-pink-300 transition-colors">
-                Modul Schreiben
-              </h3>
-              <p className="text-xs text-slate-400 leading-relaxed mb-4">
-                Verfassen von Beschwerdebriefen (Q21) und Forenbeiträgen (Q58). Zeichen- & Zeilenzähler, Timer, Speicherung und Kopierfunktion für KI.
-              </p>
-            </div>
-            <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-pink-400 font-semibold">
-              <span>Schreiben üben</span> →
-            </div>
-          </div>
-
-          {/* Mode 4: Sprechen */}
-          <div
-            onClick={() => onSelectMode('sprechen')}
-            className="glass-card rounded-2xl p-5 cursor-pointer hover:border-emerald-500/50 group flex flex-col justify-between"
-          >
-            <div>
-              <div className="w-12 h-12 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform border border-emerald-500/30">
-                <Mic className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold text-white mb-1 group-hover:text-emerald-300 transition-colors">
-                Modul Sprechen
-              </h3>
-              <p className="text-xs text-slate-400 leading-relaxed mb-4">
-                Vorbereitung auf den mündlichen Teil: Teil 1A (2 Min.), Teil 2 (3 Min.), Teil 3 (2 Min.). Großes Timer-Display mit Akustiksignal.
-              </p>
-            </div>
-            <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-emerald-400 font-semibold">
-              <span>Sprechen trainieren</span> →
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Training Statistics Overview */}
-      <div className="glass-panel rounded-2xl p-6 border border-slate-800 space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
-          <div>
-            <h3 className="text-lg font-bold text-white flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-indigo-400" /> Trainingsstatistik
+      {/* Progress & Stats Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-indigo-400" /> Fortschritt im Teile-Training
             </h3>
-            <p className="text-xs text-slate-400">Fortschritt und Erfolgsquote nach Prüfungsteil</p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="text-xs text-slate-400">
-              Absolvierte Übungen: <span className="font-bold text-white">{startedCount}</span>
-            </div>
             {startedCount > 0 && (
               <button
                 onClick={onResetTrainingStats}
-                className="px-3 py-1.5 glass-card hover:bg-rose-500/20 text-rose-300 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors border border-rose-500/30"
+                className="text-xs text-slate-400 hover:text-slate-200 flex items-center gap-1"
               >
                 <RotateCcw className="w-3.5 h-3.5" /> Statistik zurücksetzen
               </button>
             )}
           </div>
-        </div>
 
-        {/* Tile Breakdown Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          {(Object.keys(TILE_NAMES) as TileType[]).map((tileKey) => {
-            const stat = tileAccuracy[tileKey];
-            const pct = stat && stat.total > 0 ? Math.round((stat.correct / stat.total) * 100) : null;
+          {startedCount === 0 ? (
+            <div className="p-8 text-center text-slate-500 text-xs">
+              Noch keine absolvierten Einzelteile. Starten Sie Ihr erstes Training im Bereich "Training"!
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {(Object.keys(TILE_NAMES) as TileType[]).map((tType) => {
+                const stat = tileAccuracy[tType];
+                const pct = stat && stat.total > 0 ? Math.round((stat.correct / stat.total) * 100) : null;
 
-            return (
-              <div key={tileKey} className="p-3 bg-slate-900/60 rounded-xl border border-slate-800 flex flex-col justify-between">
-                <div className="text-xs font-semibold text-slate-300 mb-2 truncate">
-                  {TILE_NAMES[tileKey]}
-                </div>
-                {pct !== null ? (
-                  <div>
-                    <div className="flex items-center justify-between text-xs mb-1">
-                      <span className="text-slate-400">Erfolgsquote:</span>
-                      <span className={`font-bold ${pct >= 60 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                        {pct}%
-                      </span>
+                return (
+                  <div key={tType} className="p-3 bg-slate-900/60 rounded-xl border border-slate-800/80 text-xs space-y-1">
+                    <div className="flex justify-between font-semibold text-slate-300">
+                      <span>{TILE_NAMES[tType]}</span>
+                      <span>{pct !== null ? `${pct}%` : '—'}</span>
                     </div>
                     <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
                       <div
-                        className={`h-full transition-all ${pct >= 60 ? 'bg-emerald-500' : 'bg-rose-500'}`}
-                        style={{ width: `${pct}%` }}
+                        className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"
+                        style={{ width: `${pct || 0}%` }}
                       />
                     </div>
                   </div>
-                ) : (
-                  <div className="text-[11px] text-slate-500 italic">Noch nicht absolviert</div>
-                )}
-              </div>
-            );
-          })}
+                );
+              })}
+            </div>
+          )}
         </div>
-      </div>
 
-      {/* Full Exam Mode History */}
-      <div className="glass-panel rounded-2xl p-6 border border-slate-800 space-y-4">
-        <h3 className="text-lg font-bold text-white flex items-center gap-2">
-          <Clock className="w-5 h-5 text-purple-400" /> Historie der Prüfungssimulationen
-        </h3>
+        {/* Recent Full Exams History */}
+        <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
+          <h3 className="text-base font-bold text-white flex items-center gap-2">
+            <Clock className="w-4 h-4 text-amber-400" /> Letzte Prüfungsergebnisse
+          </h3>
 
-        {fullExamResults.length === 0 ? (
-          <p className="text-xs text-slate-400 italic py-4 text-center">
-            Sie haben noch keine vollständige Prüfungssimulation durchgeführt.
-          </p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-slate-300">
-              <thead className="bg-slate-900/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
-                <tr>
-                  <th className="p-3">Datum</th>
-                  <th className="p-3">Ergebnis</th>
-                  <th className="p-3">Status</th>
-                  <th className="p-3">Details</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60">
-                {fullExamResults.map((res) => {
-                  const pct = Math.round((res.totalScore / res.maxTotalScore) * 100);
-                  return (
-                    <tr key={res.id} className="hover:bg-slate-900/40 transition-colors">
-                      <td className="p-3 text-slate-400">{new Date(res.date).toLocaleString('de-DE')}</td>
-                      <td className="p-3 font-bold text-white">
-                        {res.totalScore} / {res.maxTotalScore} ({pct}%)
-                      </td>
-                      <td className="p-3">
-                        {pct >= 60 ? (
-                          <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded font-semibold flex items-center gap-1 w-max">
-                            <CheckCircle2 className="w-3 h-3" /> Bestanden
-                          </span>
-                        ) : (
-                          <span className="px-2 py-0.5 bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded font-semibold w-max">
-                            Nicht bestanden
-                          </span>
-                        )}
-                      </td>
-                      <td className="p-3 text-slate-400">
-                        {res.tileBreakdown.length} Prüfungsteile absolviert
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+          {fullExamResults.length === 0 ? (
+            <div className="p-8 text-center text-slate-500 text-xs">
+              Keine abgelegten Prüfungssimulationen vorhanden.
+            </div>
+          ) : (
+            <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+              {fullExamResults.map((r, idx) => (
+                <div key={idx} className="p-3 bg-slate-900/60 rounded-xl border border-slate-800/80 text-xs space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-white">Ergebnis: {r.totalScore} / {r.maxTotalScore}</span>
+                    <span className={`px-2 py-0.5 rounded font-bold text-[10px] ${r.passed ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'}`}>
+                      {r.passed ? 'Bestanden' : 'Nicht bestanden'}
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-slate-500">
+                    {new Date(r.date).toLocaleDateString('de-DE')}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

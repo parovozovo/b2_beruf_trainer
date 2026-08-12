@@ -1,11 +1,11 @@
 import React from 'react';
-import { BookOpen, Layers, Award, Edit3, Mic, UserCheck } from 'lucide-react';
+import { BookOpen, Layers, Award, Edit3, Mic, LogIn } from 'lucide-react';
 import type { User } from '../types';
 
 interface NavbarProps {
   currentTab: string;
   onSelectTab: (tab: string) => void;
-  currentUser: User;
+  currentUser: User | null;
   onOpenLoginModal: () => void;
   onOpenUserProfileModal: () => void;
 }
@@ -100,26 +100,27 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Right Action: User Account & Profile Drawer */}
           <div className="flex items-center gap-2">
-            <button
-              onClick={onOpenUserProfileModal}
-              className="px-3.5 py-1.5 glass-card hover:bg-slate-800 text-white text-xs font-bold rounded-xl border border-slate-700/60 flex items-center gap-2 transition-all shadow-sm"
-            >
-              <div className="w-6 h-6 rounded-lg bg-indigo-500/20 text-indigo-300 font-bold flex items-center justify-center text-[10px]">
-                {currentUser.name.slice(0, 2).toUpperCase()}
-              </div>
-              <span className="hidden sm:inline max-w-[100px] truncate">{currentUser.name}</span>
-              {currentUser.isPremium && (
-                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-              )}
-            </button>
-
-            <button
-              onClick={onOpenLoginModal}
-              className="p-2 text-slate-400 hover:text-white rounded-xl transition-colors sm:hidden"
-              title="Anmelden / Profil"
-            >
-              <UserCheck className="w-5 h-5" />
-            </button>
+            {currentUser ? (
+              <button
+                onClick={onOpenUserProfileModal}
+                className="px-3.5 py-1.5 glass-card hover:bg-slate-800 text-white text-xs font-bold rounded-xl border border-slate-700/60 flex items-center gap-2 transition-all shadow-sm"
+              >
+                <div className="w-6 h-6 rounded-lg bg-indigo-500/20 text-indigo-300 font-bold flex items-center justify-center text-[10px]">
+                  {currentUser.name.slice(0, 2).toUpperCase()}
+                </div>
+                <span className="hidden sm:inline max-w-[100px] truncate">{currentUser.name}</span>
+                {currentUser.isPremium && (
+                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                )}
+              </button>
+            ) : (
+              <button
+                onClick={onOpenLoginModal}
+                className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center gap-1.5"
+              >
+                <LogIn className="w-3.5 h-3.5" /> Anmelden
+              </button>
+            )}
           </div>
         </div>
       </header>

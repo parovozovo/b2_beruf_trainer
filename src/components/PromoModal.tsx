@@ -6,7 +6,7 @@ import confetti from 'canvas-confetti';
 interface PromoModalProps {
   isOpen: boolean;
   onClose: () => void;
-  currentUser: User;
+  currentUser: User | null;
   promoCodes: PromoCode[];
   onApplyPromo: (code: PromoCode) => void;
 }
@@ -47,7 +47,7 @@ export const PromoModal: React.FC<PromoModalProps> = ({
       return;
     }
 
-    if (foundCode.usedByEmails.includes(currentUser.email)) {
+    if (currentUser && foundCode.usedByEmails.includes(currentUser.email)) {
       setError('Sie haben diesen Code bereits eingelöst.');
       return;
     }

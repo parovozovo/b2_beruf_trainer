@@ -5,7 +5,7 @@ import confetti from 'canvas-confetti';
 
 interface TilePracticeProps {
   modelltests: Modelltest[];
-  currentUser: User;
+  currentUser: User | null;
   onSaveResult: (result: { tileType: TileType; modelltestId: string; variantId: string; score: number; maxScore: number }) => void;
   onOpenPremiumLockedModal: () => void;
 }
@@ -44,7 +44,7 @@ export const TilePractice: React.FC<TilePracticeProps> = ({
 
   const handleSelectModelltest = (testId: string) => {
     const targetTest = modelltests.find((m) => m.id === testId);
-    if (targetTest?.isPremium && !currentUser.isPremium) {
+    if (targetTest?.isPremium && (!currentUser || !currentUser.isPremium)) {
       onOpenPremiumLockedModal();
       return;
     }

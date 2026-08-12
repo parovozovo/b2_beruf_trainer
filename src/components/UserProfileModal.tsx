@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
-import { X, Shield, Key, LogOut, CheckCircle, Sparkles } from 'lucide-react';
+import { X, Shield, Key, LogOut, CheckCircle, Sparkles, LogIn } from 'lucide-react';
 import type { User, PromoCode } from '../types';
 import { supabase, isSupabaseConfigured } from '../utils/supabase';
 
 interface UserProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
-  currentUser: User;
+  currentUser: User | null;
   onLogout: () => void;
+  onOpenLoginModal: () => void;
   onNavigateToAdmin?: () => void;
   promoCodes: PromoCode[];
   onRedeemPromoCode: (code: string) => void;
@@ -18,6 +19,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   onClose,
   currentUser,
   onLogout,
+  onOpenLoginModal,
   onNavigateToAdmin,
   promoCodes: _promoCodes,
   onRedeemPromoCode,
@@ -26,6 +28,44 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   const [redeemSuccessMsg, setRedeemSuccessMsg] = useState<string | null>(null);
 
   if (!isOpen) return null;
+
+  if (!currentUser) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
+        <div className="relative w-full max-w-md p-6 glass-panel rounded-2xl border border-slate-700/60 shadow-2xl space-y-4 text-center">
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+
+          <div className="w-16 h-16 bg-indigo-500/20 text-indigo-400 rounded-3xl flex items-center justify-center mx-auto border border-indigo-500/30">
+            <LogIn className="w-8 h-8" />
+          </div>
+
+          <div>
+            <h3 className="text-lg font-bold text-white">Gast (Nicht angemeldet)</h3>
+            <p className="text-xs text-slate-400 mt-1">
+              Sie nutzen den Trainer derzeit als Gast. Melden Sie sich an, um Ihren Lernfortschritt dauerhaft zu speichern.
+            </p>
+          </div>
+
+          <div className="pt-2">
+            <button
+              onClick={() => {
+                onClose();
+                onOpenLoginModal();
+              }}
+              className="w-full py-3 px-4 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white font-bold rounded-xl text-xs shadow-lg"
+            >
+              Anmelden / Registrieren
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleRedeem = (e: React.FormEvent) => {
     e.preventDefault();

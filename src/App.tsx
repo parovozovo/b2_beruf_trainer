@@ -18,7 +18,6 @@ import {
   saveFullExamResult,
   fetchModelltestsAsync,
   fetchPromoCodesAsync,
-  DEFAULT_USER,
 } from './utils/storage';
 import { Navbar } from './components/Navbar';
 import { Dashboard } from './components/Dashboard';
@@ -34,7 +33,7 @@ import { UserProfileModal } from './components/UserProfileModal';
 import { Shield } from 'lucide-react';
 
 export function App() {
-  const [currentUser, setCurrentUserTab] = useState<User>(getCurrentUser());
+  const [currentUser, setCurrentUserTab] = useState<User | null>(getCurrentUser());
   const [currentTab, setCurrentTab] = useState<string>('dashboard');
 
   // Application Data States
@@ -57,7 +56,7 @@ export function App() {
       const path = window.location.pathname;
       const hash = window.location.hash;
       if (path.includes('admin-beruf') || hash.includes('admin-beruf')) {
-        if (currentUser.role === 'admin') {
+        if (currentUser?.role === 'admin') {
           setCurrentTab('admin');
         } else {
           setIsLoginModalOpen(true);
@@ -114,14 +113,19 @@ export function App() {
   };
 
   const handleLogout = () => {
-    setCurrentUserTab(DEFAULT_USER);
-    setCurrentUser(DEFAULT_USER);
+    setCurrentUserTab(null);
+    setCurrentUser(null);
     setCurrentTab('dashboard');
     window.location.hash = '';
   };
 
   // Promo Code Redemption
   const handleRedeemPromoCode = (codeStr: string) => {
+    if (!currentUser) {
+      setIsLoginModalOpen(true);
+      return;
+    }
+
     const found = promoCodes.find(
       (c) => c.code.toUpperCase() === codeStr.toUpperCase() && c.active && c.usedCount < c.maxUses
     );
@@ -161,7 +165,7 @@ export function App() {
   }) => {
     const record: TileResult = {
       ...result,
-      userId: currentUser.id,
+      userId: currentUser?.id || 'guest',
       completedAt: new Date().toISOString(),
     };
     saveTileResult(record);
@@ -177,7 +181,7 @@ export function App() {
   }) => {
     const record: FullExamResult = {
       id: `fe-${Date.now()}`,
-      userId: currentUser.id,
+      userId: currentUser?.id || 'guest',
       date: new Date().toISOString(),
       totalScore: result.totalScore,
       maxTotalScore: result.maxTotalScore,
@@ -251,7 +255,7 @@ export function App() {
 
         {currentTab === 'admin' && (
           <div>
-            {currentUser.role === 'admin' ? (
+            {currentUser?.role === 'admin' ? (
               <AdminPanel
                 modelltests={modelltests}
                 onSaveModelltests={handleSaveModelltests}
@@ -318,6 +322,7 @@ export function App() {
         onClose={() => setIsUserProfileModalOpen(false)}
         currentUser={currentUser}
         onLogout={handleLogout}
+        onOpenLoginModal={() => setIsLoginModalOpen(true)}
         onNavigateToAdmin={() => {
           setCurrentTab('admin');
           window.location.hash = 'admin-beruf';

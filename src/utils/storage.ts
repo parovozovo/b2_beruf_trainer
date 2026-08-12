@@ -13,44 +13,25 @@ const KEYS = {
   TILE_RESULTS: 'b2_tile_results',
 };
 
-// Default Demo User (German UI)
-export const DEFAULT_USER: User = {
-  id: 'user-demo-1',
-  name: 'Alex (Teilnehmer)',
-  email: 'student@example.de',
-  role: 'user',
-  isPremium: false,
-  premiumExpiresAt: null,
-  dailyExamAttemptsRemaining: 2,
-};
+// Admin Email identifier
+export const ADMIN_EMAIL = 'luck34y@yahoo.com';
 
-export const ADMIN_CREDENTIALS = {
-  email: 'luck34y@yahoo.com',
-  password: 'AdminB2Pass2026!',
-};
-
-export const DEFAULT_ADMIN_USER: User = {
-  id: 'admin-luck34y',
-  name: 'Administrator (Lucky)',
-  email: ADMIN_CREDENTIALS.email,
-  role: 'admin',
-  isPremium: true,
-  premiumExpiresAt: '2099-12-31T23:59:59.000Z',
-  dailyExamAttemptsRemaining: 999,
-};
-
-export function getCurrentUser(): User {
+export function getCurrentUser(): User | null {
   const data = localStorage.getItem(KEYS.CURRENT_USER);
-  if (!data) return DEFAULT_USER;
+  if (!data) return null;
   try {
     return JSON.parse(data);
   } catch {
-    return DEFAULT_USER;
+    return null;
   }
 }
 
-export function setCurrentUser(user: User): void {
-  localStorage.setItem(KEYS.CURRENT_USER, JSON.stringify(user));
+export function setCurrentUser(user: User | null): void {
+  if (!user) {
+    localStorage.removeItem(KEYS.CURRENT_USER);
+  } else {
+    localStorage.setItem(KEYS.CURRENT_USER, JSON.stringify(user));
+  }
 }
 
 // ASYNC CLOUD & LOCAL STORAGE HANDLERS WITH SUPABASE SYNC
@@ -70,12 +51,12 @@ export async function fetchModelltestsAsync(): Promise<Modelltest[]> {
         }));
         saveModelltestsLocal(tests);
         return tests;
-      } else if (data && data.length === 0) {
-        // Seed initial tests into Supabase if empty!
+      } else if (!error && data && data.length === 0) {
+        // Seed initial tests into Supabase if DB table is empty
         await seedInitialDataToSupabase();
       }
-    } catch {
-      // Fallback
+    } catch (e) {
+      console.warn('Supabase fetch error, fallback to local storage:', e);
     }
   }
   return getModelltestsLocal();
@@ -103,7 +84,7 @@ export async function saveModelltestsAsync(tests: Modelltest[]): Promise<void> {
   if (isSupabaseConfigured) {
     try {
       for (const mt of tests) {
-        await supabase.from('modelltests').upsert({
+        const { error } = await supabase.from('modelltests').upsert({
           id: mt.id,
           title: mt.title,
           description: mt.description,
@@ -111,9 +92,12 @@ export async function saveModelltestsAsync(tests: Modelltest[]): Promise<void> {
           is_hidden: mt.isHidden || false,
           variants: mt.variants,
         });
+        if (error) {
+          console.error('Supabase save error for modelltest:', mt.id, error.message);
+        }
       }
-    } catch {
-      // Error ignored, saved locally
+    } catch (e) {
+      console.error('Supabase connection error:', e);
     }
   }
 }
@@ -314,7 +298,7 @@ export async function seedInitialDataToSupabase(): Promise<void> {
         is_premium: fb.isPremium,
       });
     }
-  } catch {
-    // Ignore seed errors
+  } catch (e) {
+    console.error('Seed error:', e);
   }
 }

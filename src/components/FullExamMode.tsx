@@ -5,7 +5,7 @@ import confetti from 'canvas-confetti';
 
 interface FullExamModeProps {
   modelltests: Modelltest[];
-  currentUser: User;
+  currentUser: User | null;
   onSaveFullExamResult: (result: { totalScore: number; maxTotalScore: number; passed: boolean; tileBreakdown: Array<{ tileType: TileType; score: number; maxScore: number }> }) => void;
   onOpenPremiumLockedModal: () => void;
 }
@@ -38,7 +38,7 @@ export const FullExamMode: React.FC<FullExamModeProps> = ({
   // Generate random exam variants from available modelltests
   const handleStartExam = () => {
     // Check non-premium limit if applicable
-    if (!currentUser.isPremium && currentUser.dailyExamAttemptsRemaining <= 0) {
+    if (!currentUser || (!currentUser.isPremium && currentUser.dailyExamAttemptsRemaining <= 0)) {
       onOpenPremiumLockedModal();
       return;
     }
