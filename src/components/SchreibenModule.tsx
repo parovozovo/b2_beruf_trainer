@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import type { Modelltest, ForumsbeitragTopic, WrittenEssayRecord, User } from '../types';
-import { FileEdit, Timer, Copy, Trash2, CheckCircle2, History, FileText, RotateCcw, Shuffle } from 'lucide-react';
+import { FileEdit, Timer, Copy, Trash2, CheckCircle2, History, FileText, RotateCcw, Shuffle, ChevronDown, BookOpen, Lightbulb, Plus } from 'lucide-react';
 import { FormattedText } from './FormattedText';
 import { getWrittenEssays, saveWrittenEssay, deleteWrittenEssay } from '../utils/storage';
 
@@ -16,6 +16,79 @@ interface ActiveTopicState {
   emailsText?: string;
   promptText: string;
 }
+
+// B2 Redemittel Dataset for Quick Insertion
+const REDEMITTEL_DATA = {
+  beschwerde: [
+    {
+      category: '📌 Anrede & Grund des Schreibens',
+      phrases: [
+        'Sehr geehrte Damen und Herren,',
+        'Sehr geehrte Frau Schneider, / Sehr geehrter Herr Miller,',
+        'ich beziehe mich auf unsere E-Mail-Korrespondenz vom [Datum].',
+        'leider muss ich mich heute mit einer dringenden Beschwerde an Sie wenden.',
+        'hiermit möchte ich meine große Unzufriedenheit bezüglich der Lieferung ausdrücken.',
+      ],
+    },
+    {
+      category: '⚠️ Problem schildern & Mängel benennen',
+      phrases: [
+        'Entgegen unserer ausdrücklichen Vereinbarung wurden die Waren bisher nicht geliefert.',
+        'Für unser Unternehmen ist diese Verzögerung mit erheblichen Unannehmlichkeiten verbunden.',
+        'Die gelieferte Ware entspricht keineswegs den von Ihnen zugesicherten Qualitätsstandards.',
+      ],
+    },
+    {
+      category: '🎯 Forderung & Fristsetzung',
+      phrases: [
+        'Ich fordere Sie daher nachdrücklich auf, bis spätestens zum [Datum] eine Ersatzlieferung zu veranlassen.',
+        'Wir bitten Sie, uns einen angemessenen Preisnachlass von 15 % zu gewähren.',
+        'Bitte bestätigen Sie mir den neuen Liefertermin umgehend schriftlich.',
+      ],
+    },
+    {
+      category: '⚡️ Konsequenzen & Schluss',
+      phrases: [
+        'Sollte die Frist ergebnislos verstreichen, sehen wir uns gezwungen, vom Vertrag zurückzutreten.',
+        'In diesem Fall behalten wir uns rechtliche Schritte sowie Schadensersatzansprüche vor.',
+        'Ich erwarte Ihre umgehende Rückmeldung.\nMit freundlichen Grüßen',
+      ],
+    },
+  ],
+  forumsbeitrag: [
+    {
+      category: '📌 Einleitung & Bezugnahme',
+      phrases: [
+        'Ich habe den Forumsbeitrag zum Thema mit großem Interesse gelesen und möchte mich dazu äußern.',
+        'Das Thema spielt heutzutage in vielen Unternehmen eine zentral wichtige Rolle.',
+      ],
+    },
+    {
+      category: '💭 Eigene Meinung & Erfahrung',
+      phrases: [
+        'Meiner Meinung nach ist es von entscheidender Bedeutung, dass...',
+        'Ich stehe diesem Vorschlag sehr positiv / eher skeptisch gegenüber, weil...',
+        'Aus meiner persönlichen Erfahrung im Betrieb kann ich bestätigen, dass...',
+      ],
+    },
+    {
+      category: '⚖️ Argumente & Beispiele',
+      phrases: [
+        'Ein wesentlicher Vorteil besteht darin, dass die Mitarbeiter dadurch motivierter arbeiten.',
+        'Auf der anderen Seite sollte man bedenken, dass höhere Kosten entstehen könnten.',
+        'Als konkretes Beispiel lässt sich anführen, dass...',
+      ],
+    },
+    {
+      category: '💡 Vorschläge & Fazit',
+      phrases: [
+        'Um ein ausgewogenes Verhältnis zu schaffen, schlage ich vor, dass...',
+        'Ein sinnvoller Kompromiss wäre die Einführung eines hybriden Arbeitsmodells.',
+        'Zusammenfassend lässt sich sagen, dass eine flexible Regelung für alle Beteiligten von Vorteil ist.',
+      ],
+    },
+  ],
+};
 
 export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
   modelltests,
@@ -73,6 +146,12 @@ export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
   // Active topic state
   const [activeTopic, setActiveTopic] = useState<ActiveTopicState | null>(null);
 
+  // Spoiler state for Beschwerdebrief Q21 (user asked to hide it under spoiler for Q21)
+  const [showBeschwerdePrompt, setShowBeschwerdePrompt] = useState(false);
+
+  // Redemittel Cheat Sheet drawer toggle
+  const [showRedemittel, setShowRedemittel] = useState(true);
+
   // Editor & Timer state
   const [userText, setUserText] = useState('');
   const [isTimerRunning, setIsTimerRunning] = useState(true);
@@ -105,6 +184,7 @@ export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
     }
     setUserText('');
     setIsTimerRunning(true);
+    setShowBeschwerdePrompt(false);
   }, [taskType, beschwerdeTopics, allForumsTopics]);
 
   // Select specific topic from dropdown
@@ -128,6 +208,7 @@ export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
     }
     setUserText('');
     setIsTimerRunning(true);
+    setShowBeschwerdePrompt(false);
   };
 
   // Select random topic
@@ -151,6 +232,7 @@ export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
     }
     setUserText('');
     setIsTimerRunning(true);
+    setShowBeschwerdePrompt(false);
   };
 
   // Timer countdown
@@ -171,6 +253,27 @@ export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
   const wordCount = userText.trim() ? userText.trim().split(/\s+/).length : 0;
   const lineCount = userText ? userText.split('\n').length : 0;
   const charCount = userText.length;
+
+  // Word count target logic (Target: 150-200 words)
+  const targetMinWords = 150;
+  const wordProgressPercent = Math.min(100, Math.round((wordCount / targetMinWords) * 100));
+
+  let progressBadge = { text: '⚠️ Unter 100 Wörtern', color: 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/30' };
+  if (wordCount >= 150 && wordCount <= 200) {
+    progressBadge = { text: '🌟 Perfekte B2-Zielanzahl (150–200 Wörter)', color: 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/30' };
+  } else if (wordCount > 200) {
+    progressBadge = { text: '✨ Ausführlicher Text (>200 Wörter)', color: 'bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border-indigo-500/30' };
+  } else if (wordCount >= 100) {
+    progressBadge = { text: '👍 Gute Länge (100–150 Wörter)', color: 'bg-sky-500/20 text-sky-700 dark:text-sky-300 border-sky-500/30' };
+  }
+
+  // Insert Redemittel phrase into userText
+  const handleInsertPhrase = (phrase: string) => {
+    setUserText((prev) => {
+      if (!prev.trim()) return phrase;
+      return prev + (prev.endsWith('\n') ? '' : '\n') + phrase;
+    });
+  };
 
   const handleSaveEssay = () => {
     if (!userText.trim() || !activeTopic) return;
@@ -271,7 +374,7 @@ export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
             className="px-3.5 py-2 glass-card hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 border border-slate-300 dark:border-slate-700 shrink-0 transition-colors"
           >
             <Shuffle className="w-4 h-4 text-pink-500" />
-            <span>Zufällige Thema auslosen</span>
+            <span>Zufälliges Thema auslosen</span>
           </button>
         </div>
       </div>
@@ -279,7 +382,7 @@ export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
       {/* Main Editor Interface */}
       {activeTopic && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left Column: Context, E-Mails & ALWAYS VISIBLE PROMPT (5 cols) */}
+          {/* Left Column: Context, E-Mails & Task Prompt (5 cols) */}
           <div className="lg:col-span-5 space-y-4">
             <div className="glass-panel p-5 rounded-2xl border border-slate-300 dark:border-slate-800 space-y-4 shadow-sm">
               <div className="flex items-center justify-between gap-2 flex-wrap pb-2 border-b border-slate-200 dark:border-slate-800">
@@ -303,15 +406,37 @@ export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
                 </div>
               ) : null}
 
-              {/* ALWAYS VISIBLE AUFGABENSTELLUNG & LEITPUNKTE (NO ACCORDION / NO SPOILER) */}
-              <div className="space-y-2 pt-1">
-                <h4 className="text-xs font-black text-pink-600 dark:text-pink-400 uppercase tracking-wider flex items-center gap-1.5">
-                  📝 Aufgabenstellung & Leitpunkte ({taskType === 'beschwerde' ? 'Frage 21' : 'Frage 58'}):
-                </h4>
-                <div className="p-4 bg-pink-500/10 dark:bg-pink-950/30 rounded-2xl border-2 border-pink-500/30 text-xs sm:text-sm text-slate-900 dark:text-slate-100 font-semibold leading-relaxed whitespace-pre-wrap shadow-sm">
-                  {activeTopic.promptText}
+              {/* AUFGABENSTELLUNG: HELD UNDER SPOILER FOR BESCHWERDEBRIEF (Q21), ALWAYS VISIBLE FOR FORENBEITRAG (Q58) */}
+              {taskType === 'beschwerde' ? (
+                <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setShowBeschwerdePrompt(!showBeschwerdePrompt)}
+                    className="w-full text-xs font-black text-pink-600 dark:text-pink-400 hover:underline flex items-center justify-between p-3 rounded-xl bg-pink-500/10 border border-pink-500/20 transition-all"
+                  >
+                    <span className="flex items-center gap-2">
+                      <BookOpen className="w-4 h-4" /> Aufgabenstellung & Leitpunkte (Frage 21)
+                    </span>
+                    <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showBeschwerdePrompt ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {showBeschwerdePrompt && (
+                    <div className="mt-2.5 p-4 bg-pink-500/10 dark:bg-pink-950/30 rounded-2xl border-2 border-pink-500/30 text-xs sm:text-sm text-slate-900 dark:text-slate-100 font-semibold leading-relaxed whitespace-pre-wrap shadow-sm">
+                      {activeTopic.promptText}
+                    </div>
+                  )}
                 </div>
-              </div>
+              ) : (
+                /* FORENBEITRAG Q58 PROMPT IS ALWAYS VISIBLE */
+                <div className="space-y-2 pt-1">
+                  <h4 className="text-xs font-black text-pink-600 dark:text-pink-400 uppercase tracking-wider flex items-center gap-1.5">
+                    📝 Aufgabenstellung & Themenbeschreibung (Frage 58):
+                  </h4>
+                  <div className="p-4 bg-pink-500/10 dark:bg-pink-950/30 rounded-2xl border-2 border-pink-500/30 text-xs sm:text-sm text-slate-900 dark:text-slate-100 font-semibold leading-relaxed whitespace-pre-wrap shadow-sm">
+                    {activeTopic.promptText}
+                  </div>
+                </div>
+              )}
 
               {/* LIVE TIMER BAR */}
               <div className="pt-2 flex items-center justify-between text-xs font-mono text-amber-600 dark:text-amber-400 bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">
@@ -341,29 +466,42 @@ export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
             </div>
           </div>
 
-          {/* Right Column: Writing Area (7 cols) */}
+          {/* Right Column: Writing Area + Progress Bar + Redemittel (7 cols) */}
           <div className="lg:col-span-7 space-y-4">
-            <div className="glass-panel p-5 rounded-2xl border border-slate-300 dark:border-slate-800 space-y-4 shadow-sm flex flex-col h-full justify-between">
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-black text-slate-900 dark:text-slate-200 uppercase tracking-wider">
-                    Ihr Text (auf Deutsch):
-                  </label>
-                  <span className="text-[11px] font-extrabold text-slate-500">
-                    Zielumfang: ~150-200 Wörter
+            <div className="glass-panel p-5 rounded-2xl border border-slate-300 dark:border-slate-800 space-y-4 shadow-sm flex flex-col justify-between">
+              
+              {/* IDEA 2: VISUAL WORD COUNT PROGRESS BAR */}
+              <div className="space-y-1.5 p-3.5 bg-slate-100 dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-inner">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <span className="font-black text-slate-800 dark:text-slate-200">
+                    📊 Wortanzahl-Fortschritt (Ziel: 150–200 Wörter):
+                  </span>
+                  <span className={`px-2.5 py-0.5 rounded-lg font-black text-[11px] border ${progressBadge.color}`}>
+                    {progressBadge.text} ({wordCount} / {targetMinWords})
                   </span>
                 </div>
+                <div className="w-full bg-slate-200 dark:bg-slate-800 h-3 rounded-full overflow-hidden p-0.5 border border-slate-300 dark:border-slate-700">
+                  <div
+                    className={`h-full rounded-full transition-all duration-300 ${
+                      wordCount >= 150 ? 'bg-gradient-to-r from-emerald-500 to-teal-400' : wordCount >= 100 ? 'bg-gradient-to-r from-sky-500 to-blue-500' : 'bg-gradient-to-r from-amber-500 to-orange-400'
+                    }`}
+                    style={{ width: `${wordProgressPercent}%` }}
+                  />
+                </div>
+              </div>
 
+              {/* Textarea */}
+              <div className="space-y-2">
                 <textarea
                   value={userText}
                   onChange={(e) => setUserText(e.target.value)}
-                  rows={18}
+                  rows={15}
                   placeholder={
                     taskType === 'beschwerde'
                       ? 'Sehr geehrte Frau Schneider / Sehr geehrte Damen und Herren,\n\nich beziehe mich auf Ihre E-Mail bezüglich...'
                       : 'Sehr geehrte Foren-Mitglieder / Liebe Kolleginnen und Kollegen,\n\nich habe Ihren Beitrag zum Thema gelesen und möchte mich dazu äußern...'
                   }
-                  className="w-full p-4 glass-input rounded-2xl text-sm font-sans leading-relaxed focus:ring-2 focus:ring-pink-500 border border-slate-300 dark:border-slate-700 min-h-[380px]"
+                  className="w-full p-4 glass-input rounded-2xl text-sm font-sans leading-relaxed focus:ring-2 focus:ring-pink-500 border border-slate-300 dark:border-slate-700 min-h-[350px]"
                 />
               </div>
 
@@ -401,6 +539,52 @@ export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
                 </button>
               </div>
             </div>
+
+            {/* IDEA 3: TELC B2 REDEMITTEL CHEAT SHEET PANEL */}
+            <div className="glass-panel p-5 rounded-2xl border border-slate-300 dark:border-slate-800 space-y-3 shadow-sm">
+              <button
+                type="button"
+                onClick={() => setShowRedemittel(!showRedemittel)}
+                className="w-full flex items-center justify-between text-xs font-black text-indigo-600 dark:text-indigo-400 hover:underline"
+              >
+                <span className="flex items-center gap-2">
+                  <Lightbulb className="w-4.5 h-4.5 text-amber-500" />
+                  💡 Telc B2 Formulierungsbausteine & Redemittel ({taskType === 'beschwerde' ? 'Beschwerdebrief' : 'Forenbeitrag'})
+                </span>
+                <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showRedemittel ? 'rotate-180' : ''}`} />
+              </button>
+
+              {showRedemittel && (
+                <div className="pt-2 space-y-4">
+                  {(taskType === 'beschwerde' ? REDEMITTEL_DATA.beschwerde : REDEMITTEL_DATA.forumsbeitrag).map((cat, catIdx) => (
+                    <div key={catIdx} className="space-y-2">
+                      <h5 className="text-[11px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                        {cat.category}
+                      </h5>
+                      <div className="grid grid-cols-1 gap-1.5">
+                        {cat.phrases.map((phrase, pIdx) => (
+                          <div
+                            key={pIdx}
+                            className="p-2.5 bg-slate-100 dark:bg-slate-900/90 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 text-xs text-slate-800 dark:text-slate-200 hover:border-indigo-500/50 transition-all group"
+                          >
+                            <span className="font-medium font-sans">{phrase}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleInsertPhrase(phrase)}
+                              className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[11px] font-extrabold flex items-center gap-1 shrink-0 shadow-sm transition-all"
+                              title="In Ihren Text einfügen"
+                            >
+                              <Plus className="w-3 h-3" /> Einfügen
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
           </div>
         </div>
       )}
