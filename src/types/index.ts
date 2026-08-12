@@ -197,7 +197,7 @@ export interface ForumsbeitragTopic {
   id: string;
   title: string;
   promptText: string;
-  isPremium: boolean;
+  isPremium?: boolean;
 }
 
 export interface SprechenTopic {

@@ -38,6 +38,7 @@ import {
   CheckCircle,
   AlertTriangle,
   RefreshCw,
+  X,
 } from 'lucide-react';
 import { isSupabaseConfigured } from '../utils/supabase';
 
@@ -251,6 +252,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [sp3Prompt, setSp3Prompt] = useState('');
   const [editingSp3Id, setEditingSp3Id] = useState<string | null>(null);
   const [showAllSp3Situations, setShowAllSp3Situations] = useState(false);
+
+  // Bulk Import Modal State
+  const [showBulkImportModal, setShowBulkImportModal] = useState(false);
+  const [bulkImportTarget, setBulkImportTarget] = useState<'fb' | 'sp2' | 'sp3'>('fb');
+  const [bulkImportText, setBulkImportText] = useState('');
+  const [parsedBulkTopics, setParsedBulkTopics] = useState<Array<{ title: string; promptText: string }>>([]);
 
   // Active Modelltest & Variants Lookup
   const activeTest = modelltests.find((m) => m.id === selectedModelltestId) || modelltests[0];
@@ -963,6 +970,116 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       showToast(`Fehler: ${res.error}`, 'error');
     } else {
       showToast('Situation gelöscht.');
+    }
+  };
+
+  // --- BULK IMPORT HANDLERS ---
+  const handleOpenBulkImport = (target: 'fb' | 'sp2' | 'sp3') => {
+    setBulkImportTarget(target);
+    setBulkImportText('');
+    setParsedBulkTopics([]);
+    setShowBulkImportModal(true);
+  };
+
+  const handleParseBulkText = (text: string) => {
+    setBulkImportText(text);
+    if (!text.trim()) {
+      setParsedBulkTopics([]);
+      return;
+    }
+
+    const items: Array<{ title: string; promptText: string }> = [];
+
+    // Regex match for blocks starting with Thema: "..." or Situation: "..." or Topic: "..." or ### "..."
+    const regex = /(?:Thema|Situation|Titel|Topic|###):\s*["'«“]?(.*?)["'»”]?\n([\s\S]*?)(?=(?:Thema|Situation|Titel|Topic|###):\s*["'«“]?|$)/gi;
+    let match;
+
+    while ((match = regex.exec(text)) !== null) {
+      const title = match[1].trim();
+      const promptText = match[2].trim();
+      if (title && promptText) {
+        items.push({ title, promptText });
+      }
+    }
+
+    // Fallback: If no "Thema:" header found, split by double newlines \n\n
+    if (items.length === 0) {
+      const blocks = text.split(/\n\s*\n/);
+      for (const block of blocks) {
+        const lines = block.trim().split('\n').map((l) => l.trim()).filter(Boolean);
+        if (lines.length >= 2) {
+          let title = lines[0]
+            .replace(/^(Thema|Situation|Titel|Topic|###):\s*["'«“]?/i, '')
+            .replace(/["'»”]?$/i, '')
+            .trim();
+          const promptText = lines.slice(1).join('\n').trim();
+          if (title && promptText) {
+            items.push({ title, promptText });
+          }
+        }
+      }
+    }
+
+    setParsedBulkTopics(items);
+  };
+
+  const handleConfirmBulkImport = async () => {
+    if (parsedBulkTopics.length === 0) return;
+
+    if (bulkImportTarget === 'fb') {
+      const newItems: ForumsbeitragTopic[] = parsedBulkTopics.map((t, idx) => ({
+        id: `fb-bulk-${Date.now()}-${idx}`,
+        title: t.title,
+        promptText: t.promptText,
+      }));
+      const updated = [...forumsbeitragTopics, ...newItems];
+      const res = await onSaveForumsbeitragTopics(updated);
+      if (res && res.success === false) {
+        showToast(`Fehler: ${res.error}`, 'error');
+      } else {
+        showToast(`${newItems.length} Q58 Themen erfolgreich in Supabase importiert!`);
+        setShowBulkImportModal(false);
+        setBulkImportText('');
+        setParsedBulkTopics([]);
+      }
+    } else if (bulkImportTarget === 'sp2') {
+      const newItems = parsedBulkTopics.map((t, idx) => ({
+        id: `sp2-bulk-${Date.now()}-${idx}`,
+        title: t.title,
+        promptText: t.promptText,
+      }));
+      const updated = {
+        ...sprechenTopics,
+        sprecher2Topics: [...sprechenTopics.sprecher2Topics, ...newItems],
+      };
+      const res = await onSaveSprechenTopics(updated);
+      if (res && res.success === false) {
+        showToast(`Fehler: ${res.error}`, 'error');
+      } else {
+        showToast(`${newItems.length} Sprechen Teil 2 Themen erfolgreich in Supabase importiert!`);
+        setShowBulkImportModal(false);
+        setBulkImportText('');
+        setParsedBulkTopics([]);
+      }
+    } else if (bulkImportTarget === 'sp3') {
+      const newItems = parsedBulkTopics.map((t, idx) => ({
+        id: `sp3-bulk-${Date.now()}-${idx}`,
+        title: t.title,
+        promptText: t.promptText,
+      }));
+      const updated = {
+        ...sprechenTopics,
+        sprecher3Situations: [...sprechenTopics.sprecher3Situations, ...newItems],
+      };
+      const res = await onSaveSprechenTopics(updated);
+      if (res && res.success === false) {
+        showToast(`Fehler: ${res.error}`, 'error');
+      } else {
+        showToast(`${newItems.length} Sprechen Teil 3 Situationen erfolgreich in Supabase importiert!`);
+        setShowBulkImportModal(false);
+        setBulkImportText('');
+        setParsedBulkTopics([]);
+      }
     }
   };
 
@@ -2192,10 +2309,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       {activeTab === 'forumsbeitrag' && (
         <div className="space-y-6">
           <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              {editingFbId ? <Edit3 className="w-4 h-4 text-amber-400" /> : <Plus className="w-4 h-4 text-pink-400" />}
-              {editingFbId ? 'Thema für Q58 bearbeiten' : 'Thema für Schreiben Q58 (Forenbeitrag) hinzufügen'}
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                {editingFbId ? <Edit3 className="w-4 h-4 text-amber-400" /> : <Plus className="w-4 h-4 text-pink-400" />}
+                {editingFbId ? 'Thema für Q58 bearbeiten' : 'Thema für Schreiben Q58 (Forenbeitrag) hinzufügen'}
+              </h3>
+              <button
+                type="button"
+                onClick={() => handleOpenBulkImport('fb')}
+                className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs rounded-xl flex items-center gap-1.5 shadow-md transition-all"
+              >
+                <Upload className="w-3.5 h-3.5" /> ⚡️ Massen-Import (Масовий імпорт)
+              </button>
+            </div>
 
             <form onSubmit={handleAddForumsbeitragTopic} className="space-y-4">
               <div>
@@ -2304,10 +2430,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           {/* Sprechen Teil 2 */}
           <div className="space-y-4">
             <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                {editingSp2Id ? <Edit3 className="w-4 h-4 text-amber-400" /> : <Plus className="w-4 h-4 text-emerald-400" />}
-                {editingSp2Id ? 'Thema Teil 2 bearbeiten' : 'Thema für Sprechen Teil 2'}
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  {editingSp2Id ? <Edit3 className="w-4 h-4 text-amber-400" /> : <Plus className="w-4 h-4 text-emerald-400" />}
+                  {editingSp2Id ? 'Thema Teil 2 bearbeiten' : 'Thema für Sprechen Teil 2'}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => handleOpenBulkImport('sp2')}
+                  className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-[11px] rounded-lg flex items-center gap-1 shadow-md transition-all"
+                >
+                  <Upload className="w-3 h-3" /> ⚡️ Massen-Import
+                </button>
+              </div>
               <form onSubmit={handleAddSp2Topic} className="space-y-3">
                 <input
                   type="text"
@@ -2401,10 +2536,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           {/* Sprechen Teil 3 */}
           <div className="space-y-4">
             <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                {editingSp3Id ? <Edit3 className="w-4 h-4 text-amber-400" /> : <Plus className="w-4 h-4 text-emerald-400" />}
-                {editingSp3Id ? 'Situation Teil 3 bearbeiten' : 'Situation für Sprechen Teil 3'}
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  {editingSp3Id ? <Edit3 className="w-4 h-4 text-amber-400" /> : <Plus className="w-4 h-4 text-emerald-400" />}
+                  {editingSp3Id ? 'Situation Teil 3 bearbeiten' : 'Situation für Sprechen Teil 3'}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => handleOpenBulkImport('sp3')}
+                  className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-[11px] rounded-lg flex items-center gap-1 shadow-md transition-all"
+                >
+                  <Upload className="w-3 h-3" /> ⚡️ Massen-Import
+                </button>
+              </div>
               <form onSubmit={handleAddSp3Situation} className="space-y-3">
                 <input
                   type="text"
@@ -2492,6 +2636,128 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- BULK IMPORT MODAL --- */}
+      {showBulkImportModal && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-slate-900 border border-slate-700 rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+            {/* Header */}
+            <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/50">
+              <div>
+                <h3 className="font-extrabold text-base text-white flex items-center gap-2">
+                  <Upload className="w-5 h-5 text-indigo-400" /> ⚡️ Massen-Import (Масовий імпорт тем)
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  Kopieren Sie den Text mit mehreren Themen direkt aus Ihrem Dokument / ChatGPT.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowBulkImportModal(false)}
+                className="w-8 h-8 rounded-full glass-card flex items-center justify-center text-slate-400 hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Target selector */}
+            <div className="p-3 bg-slate-950/30 border-b border-slate-800 flex gap-2 justify-center flex-wrap">
+              <button
+                type="button"
+                onClick={() => setBulkImportTarget('fb')}
+                className={`px-4 py-1.5 rounded-xl text-xs font-extrabold transition-all ${
+                  bulkImportTarget === 'fb' ? 'bg-pink-600 text-white shadow-md' : 'glass-card text-slate-400'
+                }`}
+              >
+                📝 Schreiben Q58 (Forenbeiträge)
+              </button>
+              <button
+                type="button"
+                onClick={() => setBulkImportTarget('sp2')}
+                className={`px-4 py-1.5 rounded-xl text-xs font-extrabold transition-all ${
+                  bulkImportTarget === 'sp2' ? 'bg-emerald-600 text-white shadow-md' : 'glass-card text-slate-400'
+                }`}
+              >
+                🎙 Sprechen Teil 2
+              </button>
+              <button
+                type="button"
+                onClick={() => setBulkImportTarget('sp3')}
+                className={`px-4 py-1.5 rounded-xl text-xs font-extrabold transition-all ${
+                  bulkImportTarget === 'sp3' ? 'bg-indigo-600 text-white shadow-md' : 'glass-card text-slate-400'
+                }`}
+              >
+                💬 Sprechen Teil 3
+              </button>
+            </div>
+
+            {/* Body */}
+            <div className="p-5 overflow-y-auto space-y-4 flex-1">
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                  Fügen Sie hier Ihren unstrukturierten oder strukturierten Text ein:
+                </label>
+                <textarea
+                  value={bulkImportText}
+                  onChange={(e) => handleParseBulkText(e.target.value)}
+                  rows={7}
+                  placeholder={`Format-Beispiel:\n\nThema: "Ärztliche Krankmeldung"\nAlle Mitarbeiterinnen und Mitarbeiter in Ihrer Firma sollen im Krankheitsfall...\n\nThema: "Jobticket"\nAn dem kommenden Jahr sollen alle Mitarbeiterinnen...`}
+                  className="w-full p-4 glass-input rounded-2xl text-xs font-mono leading-relaxed"
+                />
+              </div>
+
+              {/* Parsed Preview List */}
+              {parsedBulkTopics.length > 0 ? (
+                <div className="space-y-3 pt-2 border-t border-slate-800">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-extrabold text-emerald-400 flex items-center gap-1.5">
+                      <CheckCircle className="w-4 h-4" /> Erkannt: {parsedBulkTopics.length} Themen bereit zum Import!
+                    </span>
+                    <span className="text-[11px] text-slate-400">Vorschau unten:</span>
+                  </div>
+
+                  <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+                    {parsedBulkTopics.map((t, idx) => (
+                      <div key={idx} className="p-3 bg-slate-950/70 border border-slate-800 rounded-xl space-y-1">
+                        <div className="font-extrabold text-xs text-white">
+                          #{idx + 1}: {t.title}
+                        </div>
+                        <div className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">
+                          {t.promptText}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : bulkImportText.trim() ? (
+                <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-300">
+                  ⚠️ Keines der Themen konnte automatisch erkannt werden. Stellen Sie sicher, dass jedes Thema mit <code className="bg-slate-900 px-1 rounded">Thema: "Titel"</code> або порожнім рядком між блоками.
+                </div>
+              ) : null}
+            </div>
+
+            {/* Footer */}
+            <div className="p-4 border-t border-slate-800 flex items-center justify-between bg-slate-950/50">
+              <button
+                type="button"
+                onClick={() => setShowBulkImportModal(false)}
+                className="px-5 py-2 glass-card text-slate-300 font-bold rounded-xl text-xs hover:bg-slate-800"
+              >
+                Abbrechen
+              </button>
+
+              <button
+                type="button"
+                disabled={parsedBulkTopics.length === 0}
+                onClick={handleConfirmBulkImport}
+                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-extrabold rounded-xl text-xs shadow-lg transition-all flex items-center gap-2"
+              >
+                <Save className="w-4 h-4" /> 🚀 {parsedBulkTopics.length} Themen in Supabase speichern
+              </button>
             </div>
           </div>
         </div>
