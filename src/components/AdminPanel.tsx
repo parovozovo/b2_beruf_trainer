@@ -60,6 +60,40 @@ interface AdminPanelProps {
   }) => Promise<{ success: boolean; error?: string }> | void;
 }
 
+const FormattingToolbar: React.FC<{
+  onFormat: (tagType: 'bold' | 'italic' | 'underline') => void;
+}> = ({ onFormat }) => {
+  return (
+    <div className="flex items-center gap-1.5 mb-1.5 p-1 bg-slate-200 dark:bg-slate-900 rounded-lg border border-slate-300 dark:border-slate-800 text-xs">
+      <span className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 px-1">Formatieren:</span>
+      <button
+        type="button"
+        onClick={() => onFormat('bold')}
+        className="px-2 py-0.5 font-black bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded border border-slate-300 dark:border-slate-700 hover:bg-indigo-600 hover:text-white transition-colors"
+        title="Markierten Text Fett machen (**text**)"
+      >
+        <b>B</b> (Fett)
+      </button>
+      <button
+        type="button"
+        onClick={() => onFormat('italic')}
+        className="px-2 py-0.5 font-serif italic bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded border border-slate-300 dark:border-slate-700 hover:bg-indigo-600 hover:text-white transition-colors"
+        title="Markierten Text Kursiv machen (*text*)"
+      >
+        <i>I</i> (Kursiv)
+      </button>
+      <button
+        type="button"
+        onClick={() => onFormat('underline')}
+        className="px-2 py-0.5 font-bold underline bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded border border-slate-300 dark:border-slate-700 hover:bg-indigo-600 hover:text-white transition-colors"
+        title="Markierten Text Unterstreichen (<u>text</u>)"
+      >
+        <u>U</u> (Unterstrichen)
+      </button>
+    </div>
+  );
+};
+
 export const AdminPanel: React.FC<AdminPanelProps> = ({
   modelltests,
   onSaveModelltests,
@@ -78,6 +112,45 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const showToast = (text: string, type: 'success' | 'error' = 'success') => {
     setToastMessage({ type, text });
     setTimeout(() => setToastMessage(null), 5000);
+  };
+
+  const text1Ref = React.useRef<HTMLTextAreaElement | null>(null);
+  const text2Ref = React.useRef<HTMLTextAreaElement | null>(null);
+  const headingsRef = React.useRef<HTMLTextAreaElement | null>(null);
+
+  const handleFormatText = (
+    ref: React.RefObject<HTMLTextAreaElement | null>,
+    value: string,
+    setValue: (val: string) => void,
+    tagType: 'bold' | 'italic' | 'underline'
+  ) => {
+    const el = ref.current;
+    if (!el) return;
+    const start = el.selectionStart;
+    const end = el.selectionEnd;
+    const selected = value.substring(start, end) || 'Text';
+
+    let prefix = '';
+    let suffix = '';
+
+    if (tagType === 'bold') {
+      prefix = '**';
+      suffix = '**';
+    } else if (tagType === 'italic') {
+      prefix = '*';
+      suffix = '*';
+    } else if (tagType === 'underline') {
+      prefix = '<u>';
+      suffix = '</u>';
+    }
+
+    const nextVal = value.substring(0, start) + prefix + selected + suffix + value.substring(end);
+    setValue(nextVal);
+
+    setTimeout(() => {
+      el.focus();
+      el.setSelectionRange(start + prefix.length, end + prefix.length);
+    }, 50);
   };
 
   // New Modelltest form state
@@ -1080,10 +1153,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     {selectedTileType === 'sprachbausteine_1' && 'Bewerbungsschreiben mit Lücken [46]–[51]'}
                     {selectedTileType === 'sprachbausteine_2' && 'Mitteilung mit Lücken [52]–[57]'}
                   </label>
+                  <FormattingToolbar onFormat={(tag) => handleFormatText(text1Ref, vText1, setVText1, tag)} />
                   <textarea
+                    ref={text1Ref}
                     value={vText1}
                     onChange={(e) => setVText1(e.target.value)}
-                    rows={6}
+                    rows={7}
                     className="w-full p-3 glass-input rounded-xl text-xs font-sans"
                   />
                 </div>
@@ -1091,10 +1166,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 {selectedTileType === 'lesen_2' && (
                   <div>
                     <label className="block text-xs font-extrabold text-indigo-600 dark:text-indigo-400 mb-1">Text 2</label>
+                    <FormattingToolbar onFormat={(tag) => handleFormatText(text2Ref, vText2, setVText2, tag)} />
                     <textarea
+                      ref={text2Ref}
                       value={vText2}
                       onChange={(e) => setVText2(e.target.value)}
-                      rows={6}
+                      rows={7}
                       className="w-full p-3 glass-input rounded-xl text-xs font-sans"
                     />
                   </div>
@@ -1107,10 +1184,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       {selectedTileType === 'lesen_3' && 'Antworten / Forenbeiträge (A–F)'}
                       {selectedTileType === 'hoeren_2' && 'Aussagen (A–G)'}
                     </label>
+                    <FormattingToolbar onFormat={(tag) => handleFormatText(headingsRef, vHeadingsBlock, setVHeadingsBlock, tag)} />
                     <textarea
+                      ref={headingsRef}
                       value={vHeadingsBlock}
                       onChange={(e) => setVHeadingsBlock(e.target.value)}
-                      rows={6}
+                      rows={7}
                       className="w-full p-3 glass-input rounded-xl text-xs font-sans"
                     />
                   </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { Modelltest, ForumsbeitragTopic, WrittenEssayRecord, User } from '../types';
 import { FileEdit, Timer, Copy, Trash2, CheckCircle2, History, FileText, RotateCcw, ChevronDown } from 'lucide-react';
+import { FormattedText } from './FormattedText';
 import { getWrittenEssays, saveWrittenEssay, deleteWrittenEssay } from '../utils/storage';
 
 interface SchreibenModuleProps {
@@ -242,8 +243,8 @@ export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
                   <h4 className="text-xs font-extrabold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
                     <FileText className="w-4 h-4" /> E-Mail-Korrespondenz (Ausgangstext):
                   </h4>
-                  <div className="p-4 bg-slate-100 dark:bg-slate-900/90 rounded-2xl text-xs sm:text-sm text-slate-900 dark:text-slate-100 font-sans leading-relaxed whitespace-pre-wrap max-h-[520px] overflow-y-auto border border-slate-300 dark:border-slate-800 shadow-inner">
-                    {activeTopic.emailsText}
+                  <div className="p-4 bg-slate-100 dark:bg-slate-900/90 rounded-2xl text-xs sm:text-sm text-slate-900 dark:text-slate-100 font-sans leading-relaxed max-h-[520px] overflow-y-auto border border-slate-300 dark:border-slate-800 shadow-inner">
+                    <FormattedText text={activeTopic.emailsText} />
                   </div>
                 </div>
               ) : null}

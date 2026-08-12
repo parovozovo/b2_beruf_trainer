@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { Modelltest, TileType, User } from '../types';
 import { Crown, CheckCircle, XCircle, Volume2, HelpCircle, ArrowRight, RotateCcw, Award, Layers, FileText, ChevronDown } from 'lucide-react';
+import { FormattedText } from './FormattedText';
 import confetti from 'canvas-confetti';
 
 interface TilePracticeProps {
@@ -523,8 +524,8 @@ const Lesen1UI: React.FC<{
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div className="space-y-5">
         <div className="p-5 sm:p-6 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-lg text-sm sm:text-base text-slate-100 leading-relaxed whitespace-pre-wrap font-sans">
-          <h4 className="font-extrabold text-indigo-400 mb-3 text-sm uppercase tracking-wider">Situationen (Personen 1-5):</h4>
-          {variant.textBlock}
+          <h4 className="font-extrabold text-indigo-600 dark:text-indigo-400 mb-3 text-sm uppercase tracking-wider">Situationen / Personen (1–5):</h4>
+          <FormattedText text={variant.textBlock} />
         </div>
 
         {/* Answer Pickers */}
@@ -571,9 +572,9 @@ const Lesen1UI: React.FC<{
         </div>
       </div>
 
-      <div className="p-5 sm:p-6 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-lg text-sm sm:text-base text-slate-100 leading-relaxed whitespace-pre-wrap font-sans">
-        <h4 className="font-extrabold text-indigo-400 mb-3 text-sm uppercase tracking-wider">Anzeigen (A-H):</h4>
-        {variant.headingsBlock}
+      <div className="p-5 sm:p-6 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-lg text-sm sm:text-base text-slate-100 leading-relaxed font-sans">
+        <h4 className="font-extrabold text-indigo-600 dark:text-indigo-400 mb-3 text-sm uppercase tracking-wider">Informationstexte / Anzeigen (A–H):</h4>
+        <FormattedText text={variant.headingsBlock} />
       </div>
     </div>
   );
@@ -599,7 +600,7 @@ const Lesen2UI: React.FC<{
     <div className="space-y-6">
       {/* Block 1: Text 1 + Q6 & Q7 */}
       <div className="p-5 sm:p-6 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-lg space-y-5">
-        <div className="text-sm sm:text-base text-slate-100 leading-relaxed whitespace-pre-wrap font-sans">{variant.text1}</div>
+        <FormattedText text={variant.text1} className="text-sm sm:text-base text-slate-100 leading-relaxed font-sans" />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-4 border-t border-slate-800">
           {/* Q6 Richtig / Falsch */}
@@ -665,7 +666,7 @@ const Lesen2UI: React.FC<{
 
       {/* Block 2: Text 2 + Q8 & Q9 */}
       <div className="p-5 sm:p-6 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-lg space-y-5">
-        <div className="text-sm sm:text-base text-slate-100 leading-relaxed whitespace-pre-wrap font-sans">{variant.text2}</div>
+        <FormattedText text={variant.text2} className="text-sm sm:text-base text-slate-100 leading-relaxed font-sans" />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-4 border-t border-slate-800">
           {/* Q8 Richtig / Falsch */}
@@ -744,10 +745,10 @@ const Lesen3UI: React.FC<{
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div className="space-y-5">
-        <div className="p-5 sm:p-6 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-lg text-sm sm:text-base text-slate-100 leading-relaxed whitespace-pre-wrap font-sans">
+        <div className="p-5 sm:p-6 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-lg text-sm sm:text-base text-slate-100 leading-relaxed font-sans">
           <h4 className="font-extrabold text-indigo-600 dark:text-indigo-400 mb-3 text-sm uppercase tracking-wider">Situationen / Anfragen (Fragen 10–13):</h4>
-          <div className="mb-4 font-normal">{variant.text1}</div>
-          <div className="font-normal">{variant.text2}</div>
+          <FormattedText text={variant.text1} className="mb-4 font-normal" />
+          {variant.text2 ? <FormattedText text={variant.text2} className="font-normal" /> : null}
         </div>
 
         <div className="space-y-3">
@@ -789,9 +790,9 @@ const Lesen3UI: React.FC<{
         </div>
       </div>
 
-      <div className="p-5 sm:p-6 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-lg text-sm sm:text-base text-slate-100 leading-relaxed whitespace-pre-wrap font-sans">
-        <h4 className="font-extrabold text-indigo-400 mb-3 text-sm uppercase tracking-wider">Optionen (A-F + X falls keine Lösung):</h4>
-        {variant.optionsAtoF}
+      <div className="p-5 sm:p-6 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-lg text-sm sm:text-base text-slate-100 leading-relaxed font-sans">
+        <h4 className="font-extrabold text-indigo-600 dark:text-indigo-400 mb-3 text-sm uppercase tracking-wider">Antworten / Forenbeiträge (A–F + X):</h4>
+        <FormattedText text={variant.optionsAtoF} />
       </div>
     </div>
   );
@@ -814,8 +815,8 @@ const GenericABCQuestionsUI: React.FC<{
       {variant.audioUrl !== undefined || variant.scriptText ? (
         <AudioPlayerBlock audioUrl={variant.audioUrl} scriptText={variant.scriptText} />
       ) : variant.protocolText ? (
-        <div className="p-5 sm:p-6 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-lg text-sm sm:text-base text-slate-100 leading-relaxed whitespace-pre-wrap font-sans">
-          {variant.protocolText}
+        <div className="p-5 sm:p-6 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-lg text-sm sm:text-base text-slate-100 leading-relaxed font-sans">
+          <FormattedText text={variant.protocolText} />
         </div>
       ) : null}
 
@@ -884,9 +885,9 @@ const LesenSchreibenUI: React.FC<{
 }> = ({ variant, userAnswers, onAnswerChange, submitted }) => {
   return (
     <div className="space-y-6">
-      <div className="p-5 sm:p-6 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-lg text-sm sm:text-base text-slate-100 leading-relaxed whitespace-pre-wrap font-sans">
-        <h4 className="font-extrabold text-indigo-400 mb-3 text-sm uppercase tracking-wider">E-Mail-Korrespondenz (Q19-21):</h4>
-        {variant.emailsText}
+      <div className="p-5 sm:p-6 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-lg text-sm sm:text-base text-slate-100 leading-relaxed font-sans">
+        <h4 className="font-extrabold text-indigo-600 dark:text-indigo-400 mb-3 text-sm uppercase tracking-wider">E-Mail-Korrespondenz (Fragen 19–21):</h4>
+        <FormattedText text={variant.emailsText} />
       </div>
 
       <div className="space-y-4">
