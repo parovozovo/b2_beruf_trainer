@@ -215,10 +215,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       setVQ9Text('Verhalten im Alarmfall?');
       setVQ9Options(['Aufzug nutzen', 'Warten', 'Notausgang nutzen']);
       setVQ9CorrectIndex(2);
-      setVQuestionsABCList([
-        { id: 14, questionText: 'Beispielfrage 1', options: ['Antwort A', 'Antwort B', 'Antwort C'], correctIndex: 0 },
-        { id: 15, questionText: 'Beispielfrage 2', options: ['Antwort A', 'Antwort B', 'Antwort C'], correctIndex: 1 },
-      ]);
+      setVQuestionsABCList(createDefaultQuestionsForTile(selectedTileType));
       setVHoeren1QuestionsList([
         { id: 22, type: 'richtig_falsch', questionText: 'Aussage 22 (Richtig oder Falsch)', correct: 'richtig' },
         { id: 23, type: 'choice', questionText: 'Frage 23 (Mehrfachauswahl)', options: ['Option A', 'Option B', 'Option C'], correct: 0 },
@@ -377,12 +374,44 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     window.scrollTo({ top: 350, behavior: 'smooth' });
   };
 
+  const getTileABCQuestionRange = (tileType: TileType): { start: number; end: number } => {
+    switch (tileType) {
+      case 'lesen_4': return { start: 14, end: 18 };
+      case 'lesen_schreiben': return { start: 19, end: 20 };
+      case 'hoeren_3': return { start: 32, end: 35 };
+      case 'hoeren_4': return { start: 36, end: 40 };
+      case 'sprachbausteine_2': return { start: 52, end: 57 };
+      default: return { start: 14, end: 18 };
+    }
+  };
+
+  const createDefaultQuestionsForTile = (tileType: TileType): QuestionABC[] => {
+    const { start, end } = getTileABCQuestionRange(tileType);
+    const list: QuestionABC[] = [];
+    for (let qId = start; qId <= end; qId++) {
+      list.push({
+        id: qId,
+        questionText: `Frage ${qId}`,
+        options: ['Option A', 'Option B', 'Option C'],
+        correctIndex: 0,
+      });
+    }
+    return list;
+  };
+
   // Handlers for Question Builder Items (ABC Questions)
   const handleAddQuestionABC = () => {
-    const nextId = vQuestionsABCList.length > 0 ? Math.max(...vQuestionsABCList.map((q) => q.id)) + 1 : 14;
+    const { start, end } = getTileABCQuestionRange(selectedTileType);
+    const maxAllowed = end - start + 1;
+    if (vQuestionsABCList.length >= maxAllowed) {
+      showToast(`Für ${selectedTileType} sind bereits alle ${maxAllowed} Fragen (Q${start}–Q${end}) angelegt!`, 'error');
+      return;
+    }
+    const currentMax = vQuestionsABCList.length > 0 ? Math.max(...vQuestionsABCList.map((q) => q.id)) : start - 1;
+    const nextId = Math.min(currentMax + 1, end);
     setVQuestionsABCList([
       ...vQuestionsABCList,
-      { id: nextId, questionText: 'Neue Frage', options: ['Option A', 'Option B', 'Option C'], correctIndex: 0 },
+      { id: nextId, questionText: `Frage ${nextId}`, options: ['Option A', 'Option B', 'Option C'], correctIndex: 0 },
     ]);
   };
 
@@ -1025,7 +1054,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   />
                 </div>
 
-                {(selectedTileType === 'lesen_2' || selectedTileType === 'lesen_3') && (
+                {selectedTileType === 'lesen_2' && (
                   <div>
                     <label className="block text-xs text-slate-400 mb-1">Text 2</label>
                     <textarea

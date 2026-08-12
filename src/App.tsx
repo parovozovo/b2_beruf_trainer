@@ -199,13 +199,24 @@ export function App() {
     setFullExamResultsState(getFullExamResults());
   };
 
+  // Theme state (German clean design light/dark theme)
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    return (localStorage.getItem('b2_trainer_theme') as 'dark' | 'light') || 'dark';
+  });
+
+  const handleToggleTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    localStorage.setItem('b2_trainer_theme', next);
+  };
+
   const handleResetTrainingStats = () => {
     clearTileResults();
     setTileResultsState([]);
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-indigo-500 selection:text-white flex flex-col">
+    <div className={`${theme === 'dark' ? 'dark-theme bg-slate-950 text-slate-100' : 'light-theme bg-slate-100 text-slate-900'} min-h-screen font-sans selection:bg-indigo-600 selection:text-white flex flex-col transition-colors duration-200`}>
       {/* Header Navbar */}
       <Navbar
         currentTab={currentTab}
@@ -216,6 +227,8 @@ export function App() {
         currentUser={currentUser}
         onOpenLoginModal={() => setIsLoginModalOpen(true)}
         onOpenUserProfileModal={() => setIsUserProfileModalOpen(true)}
+        theme={theme}
+        onToggleTheme={handleToggleTheme}
       />
 
       {/* Main Container Body */}
