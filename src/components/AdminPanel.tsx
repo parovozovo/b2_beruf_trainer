@@ -42,7 +42,7 @@ import { isSupabaseConfigured } from '../utils/supabase';
 
 interface AdminPanelProps {
   modelltests: Modelltest[];
-  onSaveModelltests: (tests: Modelltest[]) => Promise<void> | void;
+  onSaveModelltests: (tests: Modelltest[]) => Promise<{ success: boolean; error?: string }> | void;
   promoCodes: PromoCode[];
   onSavePromoCodes: (codes: PromoCode[]) => Promise<void> | void;
   forumsbeitragTopics: ForumsbeitragTopic[];
@@ -511,11 +511,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     });
 
     try {
-      await onSaveModelltests(updatedTests as Modelltest[]);
-      setSelectedVariantId('new');
-      showToast('Prüfungsvariante erfolgreich in Supabase & lokal gespeichert!');
-    } catch {
-      showToast('Fehler beim Speichern der Variante in Supabase!', 'error');
+      const res = await onSaveModelltests(updatedTests as Modelltest[]);
+      if (res && res.success === false) {
+        showToast(`Fehler beim Speichern in Supabase: ${res.error}`, 'error');
+      } else {
+        setSelectedVariantId('new');
+        showToast('Prüfungsvariante erfolgreich in Supabase & lokal gespeichert!');
+      }
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Fehler beim Speichern';
+      showToast(`Fehler: ${msg}`, 'error');
     }
   };
 

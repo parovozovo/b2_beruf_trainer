@@ -84,7 +84,7 @@ export function App() {
   // Handlers for Data Updates with Supabase Cloud Sync
   const handleSaveModelltests = async (tests: Modelltest[]) => {
     setModelltests(tests);
-    await saveModelltestsAsync(tests);
+    return await saveModelltestsAsync(tests);
   };
 
   const handleSavePromoCodes = async (codes: PromoCode[]) => {

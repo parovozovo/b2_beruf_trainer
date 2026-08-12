@@ -13,7 +13,6 @@ const KEYS = {
   TILE_RESULTS: 'b2_tile_results',
 };
 
-// Admin Email identifier
 export const ADMIN_EMAIL = 'luck34y@yahoo.com';
 
 export function getCurrentUser(): User | null {
@@ -52,11 +51,12 @@ export async function fetchModelltestsAsync(): Promise<Modelltest[]> {
         saveModelltestsLocal(tests);
         return tests;
       } else if (!error && data && data.length === 0) {
-        // Seed initial tests into Supabase if DB table is empty
         await seedInitialDataToSupabase();
+      } else if (error) {
+        console.error('Supabase fetch error:', error.message);
       }
     } catch (e) {
-      console.warn('Supabase fetch error, fallback to local storage:', e);
+      console.warn('Supabase fetch connection error:', e);
     }
   }
   return getModelltestsLocal();
@@ -79,26 +79,33 @@ export function saveModelltestsLocal(tests: Modelltest[]): void {
   localStorage.setItem(KEYS.MODELLTESTS, JSON.stringify(tests));
 }
 
-export async function saveModelltestsAsync(tests: Modelltest[]): Promise<void> {
+export async function saveModelltestsAsync(tests: Modelltest[]): Promise<{ success: boolean; error?: string }> {
   saveModelltestsLocal(tests);
-  if (isSupabaseConfigured) {
-    try {
-      for (const mt of tests) {
-        const { error } = await supabase.from('modelltests').upsert({
-          id: mt.id,
-          title: mt.title,
-          description: mt.description,
-          is_premium: mt.isPremium,
-          is_hidden: mt.isHidden || false,
-          variants: mt.variants,
-        });
-        if (error) {
-          console.error('Supabase save error for modelltest:', mt.id, error.message);
-        }
+
+  if (!isSupabaseConfigured) {
+    return { success: false, error: 'Supabase URL / ANON_KEY is not configured in Vercel environment variables.' };
+  }
+
+  try {
+    for (const mt of tests) {
+      const { error } = await supabase.from('modelltests').upsert({
+        id: mt.id,
+        title: mt.title,
+        description: mt.description,
+        is_premium: mt.isPremium,
+        is_hidden: mt.isHidden || false,
+        variants: mt.variants,
+      });
+
+      if (error) {
+        console.error('Supabase upsert error for mt:', mt.id, error.message);
+        return { success: false, error: `Supabase Error (${error.code || 'RLS'}): ${error.message}` };
       }
-    } catch (e) {
-      console.error('Supabase connection error:', e);
     }
+    return { success: true };
+  } catch (e: unknown) {
+    const msg = e instanceof Error ? e.message : 'Unknown connection error';
+    return { success: false, error: msg };
   }
 }
 
