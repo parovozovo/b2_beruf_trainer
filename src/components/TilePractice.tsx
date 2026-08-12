@@ -861,13 +861,20 @@ const LesenSchreibenUI: React.FC<{
       </div>
 
       {/* Info box for Question 21 */}
-      <div className="p-4 bg-indigo-500/10 border border-indigo-500/30 rounded-xl text-xs text-indigo-300 space-y-1">
-        <div className="font-bold flex items-center gap-2">
-          <HelpCircle className="w-4 h-4" /> Thema für den Beschwerdebrief (Frage 21):
+      <div className="p-5 glass-card rounded-2xl border border-indigo-500/30 text-sm space-y-3">
+        <div className="font-extrabold text-indigo-600 dark:text-indigo-400 flex items-center gap-2 text-base">
+          <HelpCircle className="w-5 h-5 text-indigo-500" /> 📌 Hinweis zu Aufgabe 21 (Beschwerdebrief):
         </div>
-        <p className="text-slate-300 leading-relaxed">{variant.beschwerdeTopicText}</p>
-        <div className="text-[11px] text-indigo-400 font-medium italic pt-1">
-          * Hinweis: Frage 21 wird separat im Modul "Schreiben" mit Zeitmessung und Speicherung geübt.
+        {variant.beschwerdeTopicText && variant.beschwerdeTopicText !== variant.emailsText && (
+          <p className="text-slate-800 dark:text-slate-200 leading-relaxed font-semibold bg-indigo-500/10 p-3.5 rounded-xl border border-indigo-500/20 text-sm">
+            <span className="block font-bold text-indigo-700 dark:text-indigo-300 mb-1">Aufgabenstellung / Leitpunkte:</span>
+            {variant.beschwerdeTopicText}
+          </p>
+        )}
+        <div className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 font-semibold leading-relaxed">
+          Auf der Grundlage dieser E-Mail-Korrespondenz verfassen Sie in der Prüfung eine Antwort (Beschwerdebrief).
+          <br />
+          <strong>Aufgabe 21 wird mit Tastatur, Wortzähler, Vorlagen und KI-Bewertung separat im Modul „Schreiben“ absolviert.</strong>
         </div>
       </div>
     </div>

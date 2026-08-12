@@ -507,7 +507,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         title: vTitle,
         emailsText: vText1,
         questions: vQuestionsABCList,
-        beschwerdeTopicText: vBeschwerdePrompt || vText1,
+        beschwerdeTopicText: vBeschwerdePrompt || 'Schreiben Sie eine Antwort-E-Mail auf die obenstehende Beschwerde.',
       };
       constructedVariant = v as unknown as Record<string, unknown>;
     } else if (selectedTileType === 'hoeren_1') {
@@ -1505,13 +1505,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
               {/* LESEN SCHREIBEN BESCHWERDE PROMPT */}
               {selectedTileType === 'lesen_schreiben' && (
-                <div>
-                  <label className="block text-xs text-slate-400 mb-1">Beschwerdebrief Thema (Frage 21 Prompt)</label>
+                <div className="p-4 glass-card rounded-2xl border border-slate-300 dark:border-slate-800 space-y-2">
+                  <label className="block text-xs font-extrabold text-indigo-600 dark:text-indigo-400">
+                    Aufgabenstellung / Leitpunkte für Beschwerdebrief (Frage 21 Prompt) [Optional]
+                  </label>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium">
+                    Hier nur eine kurze Aufgabenstellung eintragen (z.B. "Schreiben Sie eine Antwort-E-Mail auf die Beschwerde..."). Nicht den gesamten E-Mail-Text hier reinkopieren!
+                  </p>
                   <textarea
                     value={vBeschwerdePrompt}
                     onChange={(e) => setVBeschwerdePrompt(e.target.value)}
                     rows={3}
-                    className="w-full p-3 glass-input rounded-xl text-xs font-mono"
+                    placeholder="Schreiben Sie eine Antwort-E-Mail auf die Beschwerde..."
+                    className="w-full p-3 glass-input rounded-xl text-xs font-sans"
                   />
                 </div>
               )}
