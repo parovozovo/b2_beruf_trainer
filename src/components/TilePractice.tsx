@@ -32,7 +32,8 @@ export const TilePractice: React.FC<TilePracticeProps> = ({
   onSaveResult,
   onOpenPremiumLockedModal,
 }) => {
-  const [selectedModelltestId, setSelectedModelltestId] = useState<string>(modelltests[0]?.id || '');
+  const defaultFreeTest = modelltests.find((m) => !m.isPremium) || modelltests[0];
+  const [selectedModelltestId, setSelectedModelltestId] = useState<string>(defaultFreeTest?.id || '');
   const [selectedTileType, setSelectedTileType] = useState<TileType>('lesen_1');
   const [selectedVariantIndex, setSelectedVariantIndex] = useState<number>(0);
 
@@ -41,7 +42,7 @@ export const TilePractice: React.FC<TilePracticeProps> = ({
   const [submitted, setSubmitted] = useState(false);
   const [currentScore, setCurrentScore] = useState<{ score: number; maxScore: number } | null>(null);
 
-  const activeTest = modelltests.find((m) => m.id === selectedModelltestId) || modelltests[0];
+  const activeTest = modelltests.find((m) => m.id === selectedModelltestId) || defaultFreeTest;
 
   const handleSelectModelltest = (testId: string) => {
     const targetTest = modelltests.find((m) => m.id === testId);
@@ -259,7 +260,25 @@ export const TilePractice: React.FC<TilePracticeProps> = ({
       </div>
 
       {/* Main Content Area for Active Variant */}
-      {!activeVariant ? (
+      {activeTest?.isPremium && (!currentUser || !currentUser.isPremium) ? (
+        <div className="glass-panel p-10 rounded-3xl border-2 border-amber-500/40 text-center space-y-4 max-w-2xl mx-auto my-6 shadow-xl">
+          <div className="w-16 h-16 bg-amber-500/20 text-amber-400 rounded-3xl flex items-center justify-center mx-auto border border-amber-500/30">
+            <Crown className="w-8 h-8" />
+          </div>
+          <h3 className="text-2xl font-black text-slate-900 dark:text-white">
+            Modelltest "{activeTest.title}" ist Premium-Inhalt
+          </h3>
+          <p className="text-sm text-slate-600 dark:text-slate-300 font-medium">
+            Dieser Modelltest steht exklusiv unseren Premium-Mitgliedern zur Verfügung. Upgraden Sie Ihr Konto, um Zugriff auf alle Premium-Modelltests und Komplettprüfungen B2-DTB zu erhalten.
+          </p>
+          <button
+            onClick={onOpenPremiumLockedModal}
+            className="px-6 py-3.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-2xl text-sm shadow-lg transition-all"
+          >
+            👑 Jetzt Premium freischalten
+          </button>
+        </div>
+      ) : !activeVariant ? (
         <div className="glass-panel p-10 rounded-2xl text-center text-slate-400 border border-slate-800">
           <HelpCircle className="w-10 h-10 mx-auto mb-2 text-slate-600" />
           <p className="text-sm">Für diesen Prüfungsteil ist noch keine Variante im gewählten Modelltest vorhanden.</p>

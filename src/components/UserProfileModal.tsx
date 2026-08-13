@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Shield, Key, LogOut, CheckCircle, Sparkles, LogIn } from 'lucide-react';
 import type { User, PromoCode } from '../types';
+import { getRemainingPremiumDays } from '../utils/storage';
 import { supabase, isSupabaseConfigured } from '../utils/supabase';
 
 interface UserProfileModalProps {
@@ -116,24 +117,30 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           <div className="flex justify-between items-center">
             <span className="text-slate-400">Kontostatus:</span>
             {currentUser.isPremium ? (
-              <span className="px-2.5 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-lg font-bold flex items-center gap-1">
+              <span className="px-2.5 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-lg font-extrabold flex items-center gap-1">
                 <Sparkles className="w-3.5 h-3.5" /> Premium-Mitglied
               </span>
             ) : (
-              <span className="px-2.5 py-1 bg-slate-800 text-slate-300 rounded-lg font-bold">
+              <span className="px-2.5 py-1 bg-slate-800 text-slate-400 rounded-lg font-bold">
                 Kostenloses Konto
               </span>
             )}
           </div>
 
           <div className="flex justify-between items-center">
-            <span className="text-slate-400">Rolle:</span>
-            <span className="font-bold text-slate-200 uppercase">{currentUser.role}</span>
+            <span className="text-slate-400">Verbleibende Premium-Tage:</span>
+            {currentUser.isPremium ? (
+              <span className="font-black text-amber-400">
+                {currentUser.premiumExpiresAt ? `${getRemainingPremiumDays(currentUser)} Tage gültig` : '👑 Unbegrenzt'}
+              </span>
+            ) : (
+              <span className="font-bold text-slate-500">0 Tage (Kein Premium)</span>
+            )}
           </div>
 
           <div className="flex justify-between items-center">
-            <span className="text-slate-400">Tägliche Prüfungsversuche:</span>
-            <span className="font-bold text-emerald-400">{currentUser.dailyExamAttemptsRemaining} verbleibend</span>
+            <span className="text-slate-400">Rolle:</span>
+            <span className="font-bold text-slate-200 uppercase">{currentUser.role}</span>
           </div>
         </div>
 

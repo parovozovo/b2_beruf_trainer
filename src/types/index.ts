@@ -7,8 +7,10 @@ export interface User {
   role: UserRole;
   isPremium: boolean;
   premiumExpiresAt: string | null; // ISO Date string
-  dailyExamAttemptsRemaining: number;
+  dailyExamAttemptsRemaining?: number;
   lastAttemptDate?: string;
+  isBanned?: boolean;
+  appliedPromoCode?: string;
 }
 
 export interface PromoCode {

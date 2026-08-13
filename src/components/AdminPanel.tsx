@@ -4,6 +4,7 @@ import type {
   TileType,
   PromoCode,
   ForumsbeitragTopic,
+  User,
   QuestionABC,
   Hoeren1Question,
   Lesen1Variant,
@@ -39,8 +40,14 @@ import {
   AlertTriangle,
   RefreshCw,
   X,
+  Users,
+  UserCheck,
+  Ban,
+  Crown,
+  Search,
 } from 'lucide-react';
 import { isSupabaseConfigured } from '../utils/supabase';
+import { getRegisteredUsersLocal, saveRegisteredUsersLocal, getRemainingPremiumDays } from '../utils/storage';
 
 interface AdminPanelProps {
   modelltests: Modelltest[];
@@ -105,7 +112,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   sprechenTopics,
   onSaveSprechenTopics,
 }) => {
-  const [activeTab, setActiveTab] = useState<'modelltests' | 'promocodes' | 'forumsbeitrag' | 'sprechen'>('modelltests');
+  const [activeTab, setActiveTab] = useState<'modelltests' | 'promocodes' | 'forumsbeitrag' | 'sprechen' | 'users'>('modelltests');
+
+  // User Management State
+  const [usersList, setUsersList] = useState<User[]>(() => getRegisteredUsersLocal());
+  const [userSearchText, setUserSearchText] = useState('');
 
   // UI Toast notification state
   const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -113,6 +124,43 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const showToast = (text: string, type: 'success' | 'error' = 'success') => {
     setToastMessage({ type, text });
     setTimeout(() => setToastMessage(null), 5000);
+  };
+
+  const handleExtendUserPremium = (userId: string) => {
+    const updated = usersList.map((u) => {
+      if (u.id === userId) {
+        const currentExp = u.premiumExpiresAt ? new Date(u.premiumExpiresAt).getTime() : Date.now();
+        const startBase = Math.max(currentExp, Date.now());
+        const newExp = new Date(startBase + 30 * 86400000).toISOString();
+        return { ...u, isPremium: true, premiumExpiresAt: newExp };
+      }
+      return u;
+    });
+    setUsersList(updated);
+    saveRegisteredUsersLocal(updated);
+    showToast('Premium-Mitgliedschaft um 30 Tage verlängert!');
+  };
+
+  const handleToggleBanUser = (userId: string) => {
+    const updated = usersList.map((u) => {
+      if (u.id === userId) {
+        const nextBanned = !u.isBanned;
+        showToast(nextBanned ? 'Benutzer wurde gesperrt!' : 'Benutzer wurde entsperrt!');
+        return { ...u, isBanned: nextBanned };
+      }
+      return u;
+    });
+    setUsersList(updated);
+    saveRegisteredUsersLocal(updated);
+  };
+
+  const handleDeleteUser = (userId: string) => {
+    if (window.confirm('Möchten Sie diesen Benutzer wirklich dauerhaft löschen?')) {
+      const updated = usersList.filter((u) => u.id !== userId);
+      setUsersList(updated);
+      saveRegisteredUsersLocal(updated);
+      showToast('Benutzer wurde gelöscht!');
+    }
   };
 
   const text1Ref = React.useRef<HTMLTextAreaElement | null>(null);
@@ -1299,6 +1347,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           }`}
         >
           <Mic className="w-4 h-4 inline mr-1.5" /> Sprechen (Teil 2 & 3)
+        </button>
+        <button
+          onClick={() => setActiveTab('users')}
+          className={`px-4 py-2 rounded-xl font-bold transition-all ${
+            activeTab === 'users' ? 'bg-rose-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Users className="w-4 h-4 inline mr-1.5" /> Benutzer-Verwaltung
         </button>
       </div>
 
@@ -2779,6 +2835,201 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* BENUTZER-VERWALTUNG TAB */}
+      {activeTab === 'users' && (
+        <div className="space-y-6">
+          {/* Top Search & Metrics Bar */}
+          <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-black text-white flex items-center gap-2">
+                  <Users className="w-5 h-5 text-rose-400" /> Benutzer-Verwaltung ({usersList.length})
+                </h3>
+                <p className="text-xs text-slate-400 font-medium mt-0.5">
+                  Verwalten Sie Kontostatus, Premium-Gültigkeit, Promo-Codes und Benutzer-Sperren.
+                </p>
+              </div>
+
+              {/* Search Bar */}
+              <div className="relative w-full sm:w-72">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                <input
+                  type="text"
+                  value={userSearchText}
+                  onChange={(e) => setUserSearchText(e.target.value)}
+                  placeholder="Benutzer suchen (Name, E-Mail)..."
+                  className="w-full pl-9 pr-4 py-2 glass-input rounded-xl text-xs font-bold"
+                />
+              </div>
+            </div>
+
+            {/* Metrics Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+              <div className="p-3.5 bg-slate-900/80 rounded-xl border border-slate-800 space-y-1">
+                <div className="text-[11px] font-bold text-slate-400">Gesamte Benutzer</div>
+                <div className="text-xl font-black text-white">{usersList.length}</div>
+              </div>
+
+              <div className="p-3.5 bg-slate-900/80 rounded-xl border border-slate-800 space-y-1">
+                <div className="text-[11px] font-bold text-amber-400">⭐️ Premium-Mitglieder</div>
+                <div className="text-xl font-black text-amber-400">
+                  {usersList.filter((u) => u.isPremium).length}
+                </div>
+              </div>
+
+              <div className="p-3.5 bg-slate-900/80 rounded-xl border border-slate-800 space-y-1">
+                <div className="text-[11px] font-bold text-slate-400">Kostenlose Konten</div>
+                <div className="text-xl font-black text-slate-300">
+                  {usersList.filter((u) => !u.isPremium).length}
+                </div>
+              </div>
+
+              <div className="p-3.5 bg-slate-900/80 rounded-xl border border-slate-800 space-y-1">
+                <div className="text-[11px] font-bold text-rose-400">🚫 Gesperrte Benutzer</div>
+                <div className="text-xl font-black text-rose-400">
+                  {usersList.filter((u) => u.isBanned).length}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Users Table List */}
+          <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-800 text-slate-400 font-extrabold uppercase tracking-wider text-[11px]">
+                    <th className="pb-3 px-3">Benutzer</th>
+                    <th className="pb-3 px-3">Rolle</th>
+                    <th className="pb-3 px-3">Premium-Status</th>
+                    <th className="pb-3 px-3">Gutschein</th>
+                    <th className="pb-3 px-3">Status</th>
+                    <th className="pb-3 px-3 text-right">Aktionen</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60 font-medium">
+                  {usersList
+                    .filter(
+                      (u) =>
+                        u.name.toLowerCase().includes(userSearchText.toLowerCase()) ||
+                        u.email.toLowerCase().includes(userSearchText.toLowerCase())
+                    )
+                    .map((u) => {
+                      const remDays = getRemainingPremiumDays(u);
+                      return (
+                        <tr key={u.id} className="hover:bg-slate-900/50 transition-colors">
+                          {/* User Info */}
+                          <td className="py-3 px-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 rounded-xl flex items-center justify-center font-black text-xs shrink-0">
+                                {u.name.slice(0, 2).toUpperCase()}
+                              </div>
+                              <div>
+                                <div className="font-bold text-white text-sm">{u.name}</div>
+                                <div className="text-slate-400 text-[11px] font-mono">{u.email}</div>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Role */}
+                          <td className="py-3 px-3">
+                            {u.role === 'admin' ? (
+                              <span className="px-2 py-0.5 bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded text-[10px] font-bold">
+                                ADMIN
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded text-[10px] font-bold">
+                                BENUTZER
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Premium Status & Days */}
+                          <td className="py-3 px-3">
+                            {u.isPremium ? (
+                              <div className="space-y-0.5">
+                                <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded text-[10px] font-bold inline-flex items-center gap-1">
+                                  <Crown className="w-3 h-3 text-amber-400" /> Premium
+                                </span>
+                                <div className="text-[11px] text-amber-400 font-bold">
+                                  {u.premiumExpiresAt ? `${remDays} Tage verbleibend` : '👑 Unbegrenzt'}
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="text-slate-500 text-xs font-semibold">Kostenlos (0 Tage)</span>
+                            )}
+                          </td>
+
+                          {/* Promo Code */}
+                          <td className="py-3 px-3 font-mono text-xs">
+                            {u.appliedPromoCode ? (
+                              <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded font-bold">
+                                {u.appliedPromoCode}
+                              </span>
+                            ) : (
+                              <span className="text-slate-600">—</span>
+                            )}
+                          </td>
+
+                          {/* Status / Ban */}
+                          <td className="py-3 px-3">
+                            {u.isBanned ? (
+                              <span className="px-2 py-0.5 bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded text-[10px] font-bold inline-flex items-center gap-1">
+                                <Ban className="w-3 h-3 text-rose-400" /> Gesperrt
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded text-[10px] font-bold inline-flex items-center gap-1">
+                                <UserCheck className="w-3 h-3 text-emerald-400" /> Aktiv
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Actions */}
+                          <td className="py-3 px-3 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => handleExtendUserPremium(u.id)}
+                                className="px-2.5 py-1 bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 rounded-lg text-[11px] font-bold border border-amber-500/40 flex items-center gap-1"
+                                title="Premium um 30 Tage verlängern"
+                              >
+                                <Crown className="w-3 h-3 text-amber-400" /> +30 Tage
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleToggleBanUser(u.id)}
+                                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border flex items-center gap-1 ${
+                                  u.isBanned
+                                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/30'
+                                    : 'bg-rose-500/20 text-rose-300 border-rose-500/40 hover:bg-rose-500/30'
+                                }`}
+                                title={u.isBanned ? 'Benutzer entsperren' : 'Benutzer sperren'}
+                              >
+                                {u.isBanned ? <UserCheck className="w-3 h-3" /> : <Ban className="w-3 h-3" />}
+                                {u.isBanned ? 'Entsperren' : 'Sperren'}
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteUser(u.id)}
+                                className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-500/20 rounded-lg transition-colors"
+                                title="Benutzer löschen"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>

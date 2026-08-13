@@ -4,6 +4,7 @@ import { supabase, isSupabaseConfigured } from './supabase';
 
 const KEYS = {
   CURRENT_USER: 'b2_current_user',
+  REGISTERED_USERS: 'b2_registered_users',
   PROMO_CODES: 'b2_promo_codes',
   MODELLTESTS: 'b2_modelltests',
   FORUMSBEITRAG_TOPICS: 'b2_forumsbeitrag_topics',
@@ -15,11 +16,30 @@ const KEYS = {
 
 export const ADMIN_EMAIL = 'luck34y@yahoo.com';
 
+export function getRemainingPremiumDays(user: User | null): number {
+  if (!user || !user.isPremium) return 0;
+  if (!user.premiumExpiresAt) return 999; // Permanent/Unlimited Admin
+  const expires = new Date(user.premiumExpiresAt).getTime();
+  const now = new Date().getTime();
+  const diffMs = expires - now;
+  if (diffMs <= 0) return 0;
+  return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+}
+
 export function getCurrentUser(): User | null {
   const data = localStorage.getItem(KEYS.CURRENT_USER);
   if (!data) return null;
   try {
-    return JSON.parse(data);
+    const u: User = JSON.parse(data);
+    // Check if premium expired
+    if (u.isPremium && u.premiumExpiresAt) {
+      if (new Date(u.premiumExpiresAt).getTime() < Date.now()) {
+        u.isPremium = false;
+        u.premiumExpiresAt = null;
+        setCurrentUser(u);
+      }
+    }
+    return u;
   } catch {
     return null;
   }
@@ -30,7 +50,65 @@ export function setCurrentUser(user: User | null): void {
     localStorage.removeItem(KEYS.CURRENT_USER);
   } else {
     localStorage.setItem(KEYS.CURRENT_USER, JSON.stringify(user));
+    // Sync into registered users list as well
+    syncUserToRegisteredList(user);
   }
+}
+
+export function getRegisteredUsersLocal(): User[] {
+  const data = localStorage.getItem(KEYS.REGISTERED_USERS);
+  if (!data) {
+    // Seed initial default users if none exist
+    const defaultUsers: User[] = [
+      {
+        id: 'admin-1',
+        name: 'Administrator',
+        email: ADMIN_EMAIL,
+        role: 'admin',
+        isPremium: true,
+        premiumExpiresAt: null,
+      },
+      {
+        id: 'user-demo-1',
+        name: 'Max Mustermann',
+        email: 'max.mustermann@beispiel.de',
+        role: 'user',
+        isPremium: true,
+        premiumExpiresAt: new Date(Date.now() + 30 * 86400000).toISOString(),
+        appliedPromoCode: 'PROMO2026',
+      },
+      {
+        id: 'user-demo-2',
+        name: 'Anna Schmidt',
+        email: 'anna.schmidt@beispiel.de',
+        role: 'user',
+        isPremium: false,
+        premiumExpiresAt: null,
+      },
+    ];
+    localStorage.setItem(KEYS.REGISTERED_USERS, JSON.stringify(defaultUsers));
+    return defaultUsers;
+  }
+  try {
+    return JSON.parse(data);
+  } catch {
+    return [];
+  }
+}
+
+export function saveRegisteredUsersLocal(users: User[]): void {
+  localStorage.setItem(KEYS.REGISTERED_USERS, JSON.stringify(users));
+}
+
+export function syncUserToRegisteredList(user: User): void {
+  const list = getRegisteredUsersLocal();
+  const idx = list.findIndex((u) => u.id === user.id || u.email.toLowerCase() === user.email.toLowerCase());
+  if (idx >= 0) {
+    list[idx] = { ...list[idx], ...user };
+  } else {
+    list.unshift(user);
+  }
+  saveRegisteredUsersLocal(list);
 }
 
 // ==========================================
