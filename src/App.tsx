@@ -18,6 +18,7 @@ import {
   clearTileResults,
   getFullExamResults,
   saveFullExamResult,
+  deleteFullExamResult,
   fetchModelltestsAsync,
   fetchPromoCodesAsync,
 } from './utils/storage';
@@ -179,7 +180,7 @@ export function App() {
     setTileResultsState(getTileResults());
   };
 
-  // Full Exam Result Saver
+  // Full Exam Result Saver & Deleter
   const handleSaveFullExamResult = (result: {
     totalScore: number;
     maxTotalScore: number;
@@ -196,6 +197,11 @@ export function App() {
       tileBreakdown: result.tileBreakdown,
     };
     saveFullExamResult(record);
+    setFullExamResultsState(getFullExamResults());
+  };
+
+  const handleDeleteFullExamResult = (id: string) => {
+    deleteFullExamResult(id);
     setFullExamResultsState(getFullExamResults());
   };
 
@@ -257,6 +263,7 @@ export function App() {
             currentUser={currentUser}
             fullExamResults={fullExamResults}
             onSaveFullExamResult={handleSaveFullExamResult}
+            onDeleteFullExamResult={handleDeleteFullExamResult}
             onOpenPremiumLockedModal={() => setIsPremiumLockedModalOpen(true)}
           />
         )}

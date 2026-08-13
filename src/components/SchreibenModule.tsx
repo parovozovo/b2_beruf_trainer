@@ -228,7 +228,7 @@ export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h2 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
-              <FileEdit className="w-6 h-6 text-pink-500" /> Modul Schreiben (Telc B2 Beruf)
+              <FileEdit className="w-6 h-6 text-pink-500" /> Modul Schreiben (Deutsch B2 Beruf)
             </h2>
             <p className="text-xs text-slate-600 dark:text-slate-400 font-medium mt-0.5">
               Gezielte Vorbereitung auf die schriftlichen Aufgaben: Beschwerdebrief (Q21) & Forenbeitrag (Q58).

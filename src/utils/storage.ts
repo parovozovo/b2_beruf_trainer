@@ -493,6 +493,19 @@ export function saveFullExamResult(result: FullExamResult): void {
   }
 }
 
+export function deleteFullExamResult(id: string): void {
+  const results = getFullExamResults();
+  const filtered = results.filter((r) => r.id !== id);
+  localStorage.setItem(KEYS.FULL_EXAM_RESULTS, JSON.stringify(filtered));
+  if (isSupabaseConfigured) {
+    (async () => {
+      try {
+        await supabase.from('full_exam_results').delete().eq('id', id);
+      } catch {}
+    })();
+  }
+}
+
 // SEEDER FOR INITIAL DATA INTO SUPABASE CLOUD DATABASE
 export async function seedInitialDataToSupabase(): Promise<void> {
   if (!isSupabaseConfigured) return;

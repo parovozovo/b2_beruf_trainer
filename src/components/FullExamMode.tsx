@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { Modelltest, TileType, User, FullExamResult } from '../types';
-import { Timer, CheckCircle, ArrowRight, ArrowLeft, Award, Clock, Sparkles } from 'lucide-react';
+import { Timer, CheckCircle, ArrowRight, ArrowLeft, Award, Clock, Sparkles, Trash2, XCircle } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 import {
@@ -26,6 +26,7 @@ interface FullExamModeProps {
     passed: boolean;
     tileBreakdown: Array<{ tileType: TileType; score: number; maxScore: number }>;
   }) => void;
+  onDeleteFullExamResult: (id: string) => void;
   onOpenPremiumLockedModal: () => void;
 }
 
@@ -35,18 +36,18 @@ interface SelectedExamVariant {
 }
 
 const TILE_ORDER: Array<{ type: TileType; label: string; range: string }> = [
-  { type: 'lesen_1', label: '1. Lesen 1', range: 'Fragen 1–5' },
-  { type: 'lesen_2', label: '2. Lesen 2', range: 'Fragen 6–9' },
-  { type: 'lesen_3', label: '3. Lesen 3', range: 'Fragen 10–13' },
-  { type: 'lesen_4', label: '4. Lesen 4', range: 'Fragen 14–18' },
-  { type: 'lesen_schreiben', label: '5. Lesen & Schreiben', range: 'Fragen 19–20' },
-  { type: 'hoeren_1', label: '6. Hören 1', range: 'Fragen 22–27' },
-  { type: 'hoeren_2', label: '7. Hören 2', range: 'Fragen 28–31' },
-  { type: 'hoeren_3', label: '8. Hören 3', range: 'Fragen 32–35' },
-  { type: 'hoeren_4', label: '9. Hören 4', range: 'Fragen 36–40' },
-  { type: 'hoeren_schreiben', label: '10. Hören & Schreiben', range: 'Fragen 41–45' },
-  { type: 'sprachbausteine_1', label: '11. Sprachbausteine 1', range: 'Fragen 46–51' },
-  { type: 'sprachbausteine_2', label: '12. Sprachbausteine 2', range: 'Fragen 52–57' },
+  { type: 'lesen_1', label: '1. Lesen 1', range: '1–5' },
+  { type: 'lesen_2', label: '2. Lesen 2', range: '6–9' },
+  { type: 'lesen_3', label: '3. Lesen 3', range: '10–13' },
+  { type: 'lesen_4', label: '4. Lesen 4', range: '14–18' },
+  { type: 'lesen_schreiben', label: '5. Lesen & Schreiben', range: '19–20' },
+  { type: 'hoeren_1', label: '6. Hören 1', range: '22–27' },
+  { type: 'hoeren_2', label: '7. Hören 2', range: '28–31' },
+  { type: 'hoeren_3', label: '8. Hören 3', range: '32–35' },
+  { type: 'hoeren_4', label: '9. Hören 4', range: '36–40' },
+  { type: 'hoeren_schreiben', label: '10. Hören & Schreiben', range: '41–45' },
+  { type: 'sprachbausteine_1', label: '11. Sprachbausteine 1', range: '46–51' },
+  { type: 'sprachbausteine_2', label: '12. Sprachbausteine 2', range: '52–57' },
 ];
 
 export const FullExamMode: React.FC<FullExamModeProps> = ({
@@ -54,6 +55,7 @@ export const FullExamMode: React.FC<FullExamModeProps> = ({
   currentUser,
   fullExamResults,
   onSaveFullExamResult,
+  onDeleteFullExamResult,
   onOpenPremiumLockedModal,
 }) => {
   const [examStarted, setExamStarted] = useState(false);
@@ -145,6 +147,17 @@ export const FullExamMode: React.FC<FullExamModeProps> = ({
     }));
   };
 
+  // Cancel exam without saving
+  const handleCancelExam = () => {
+    if (window.confirm('Möchten Sie den Test wirklich abbrechen? Das Ergebnis wird NICHT gespeichert.')) {
+      setExamStarted(false);
+      setExamFinished(false);
+      setSelectedVariants([]);
+      setExamAnswers({});
+    }
+  };
+
+  // Submit & finish exam with evaluation and saving
   const handleFinishExam = () => {
     let totalScore = 0;
     let maxTotalScore = 0;
@@ -263,13 +276,13 @@ export const FullExamMode: React.FC<FullExamModeProps> = ({
 
             <div>
               <span className="px-3.5 py-1 bg-amber-500/10 text-amber-600 dark:text-amber-300 rounded-full text-xs font-black uppercase border border-amber-500/20 inline-flex items-center gap-1.5 mb-2">
-                <Sparkles className="w-3.5 h-3.5" /> Offizielle Prüfungssimulation
+                <Sparkles className="w-3.5 h-3.5" /> Offizielle Prüfungssimulation B2-DTB
               </span>
               <h2 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">
-                Komplettprüfung Telc B2 Beruf
+                Komplettprüfung Deutsch B2 Beruf (B2-DTB)
               </h2>
               <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed font-medium mt-2 max-w-2xl mx-auto">
-                Absolvieren Sie alle 57 Fragen im originalen Telc B2 Beruf Format unter realistischen Prüfungsbedingungen (Countdown-Timer) in einem durchgehenden Durchgang.
+                Absolvieren Sie alle 57 Fragen im originalen B2-DTB Prüfungsformat unter realistischen Prüfungsbedingungen (Countdown-Timer) in einem durchgehenden Durchgang.
               </p>
             </div>
 
@@ -287,7 +300,7 @@ export const FullExamMode: React.FC<FullExamModeProps> = ({
             </button>
           </div>
 
-          {/* RECENT EXAM RESULTS HISTORY (STATISTIK MOVED FROM DASHBOARD) */}
+          {/* RECENT EXAM RESULTS HISTORY (STATISTIK WITH DELETE BUTTON) */}
           <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-300 dark:border-slate-800 space-y-4 shadow-sm">
             <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
               <Clock className="w-5 h-5 text-amber-500" /> Letzte Prüfungsergebnisse ({fullExamResults.length})
@@ -299,9 +312,9 @@ export const FullExamMode: React.FC<FullExamModeProps> = ({
               </p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-80 overflow-y-auto pr-1">
-                {fullExamResults.map((r, idx) => (
-                  <div key={idx} className="p-4 bg-slate-100 dark:bg-slate-900/60 rounded-2xl border border-slate-300 dark:border-slate-800 space-y-1.5">
-                    <div className="flex items-center justify-between">
+                {fullExamResults.map((r) => (
+                  <div key={r.id} className="p-4 bg-slate-100 dark:bg-slate-900/60 rounded-2xl border border-slate-300 dark:border-slate-800 space-y-1.5 relative group">
+                    <div className="flex items-center justify-between pr-6">
                       <span className="font-black text-sm text-slate-900 dark:text-white">
                         Ergebnis: {r.totalScore} / {r.maxTotalScore} ({Math.round((r.totalScore / (r.maxTotalScore || 1)) * 100)}%)
                       </span>
@@ -309,9 +322,19 @@ export const FullExamMode: React.FC<FullExamModeProps> = ({
                         {r.passed ? '✓ Bestanden' : '✗ Nicht bestanden'}
                       </span>
                     </div>
+
                     <div className="text-[11px] text-slate-500 font-medium">
                       Datum: {new Date(r.date).toLocaleDateString('de-DE')}
                     </div>
+
+                    {/* Delete Attempt Button */}
+                    <button
+                      onClick={() => onDeleteFullExamResult(r.id)}
+                      className="absolute top-3.5 right-3 p-1.5 text-slate-400 hover:text-rose-500 rounded-lg hover:bg-rose-500/10 transition-colors"
+                      title="Diesen Versuch aus der Statistik löschen"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 ))}
               </div>
@@ -355,16 +378,19 @@ export const FullExamMode: React.FC<FullExamModeProps> = ({
           </div>
 
           <button
-            onClick={handleStartExam}
+            onClick={() => {
+              setExamStarted(false);
+              setExamFinished(false);
+            }}
             className="px-6 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold rounded-2xl shadow-lg transition-colors text-sm"
           >
-            Neuen Testlauf starten
+            Zurück zur Übersicht
           </button>
         </div>
       ) : (
         /* Active Exam Interface */
         <div className="space-y-6">
-          {/* Exam Header: Timer & Finish CTA */}
+          {/* Exam Header: Timer, Cancel Button & Finish Button */}
           <div className="glass-panel p-4 sm:p-5 rounded-2xl border border-amber-500/30 flex flex-wrap items-center justify-between gap-4 sticky top-20 z-30 shadow-xl backdrop-blur-xl">
             <div className="flex items-center gap-3">
               <span className="px-3 py-1 bg-amber-500/20 border border-amber-500/40 text-amber-600 dark:text-amber-300 rounded-xl text-xs font-black uppercase">
@@ -372,22 +398,33 @@ export const FullExamMode: React.FC<FullExamModeProps> = ({
               </span>
             </div>
 
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              {/* Timer */}
               <div className="flex items-center gap-2 px-3.5 py-1.5 bg-slate-900 border border-slate-700 rounded-xl font-mono text-base font-black text-amber-400">
                 <Timer className="w-4.5 h-4.5" /> {formatTimer(secondsRemaining)}
               </div>
 
+              {/* Cancel Exam (Without Saving) */}
+              <button
+                onClick={handleCancelExam}
+                className="px-3.5 py-2 glass-card hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-extrabold rounded-xl text-xs flex items-center gap-1.5 border border-slate-300 dark:border-slate-700 transition-colors"
+                title="Test abbrechen ohne das Ergebnis zu speichern"
+              >
+                <XCircle className="w-4 h-4 text-rose-500" /> Abbrechen
+              </button>
+
+              {/* Submit & Evaluate Exam */}
               <button
                 onClick={handleFinishExam}
-                className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-xl text-xs shadow-md transition-colors"
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-xl text-xs shadow-md transition-colors flex items-center gap-1.5"
               >
-                Prüfung beenden
+                <CheckCircle className="w-4 h-4" /> Abgeben & Auswerten
               </button>
             </div>
           </div>
 
-          {/* Step Selector Bar (Parts 1 to 12) */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+          {/* Flexible Multi-row 12-Step Chapter Selector Bar */}
+          <div className="p-2.5 bg-slate-100 dark:bg-slate-900/90 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-wrap items-center gap-1.5 shadow-sm">
             {TILE_ORDER.map(({ type: tType, label }, idx) => {
               const isCurrent = idx === activeSectionIndex;
               const hasAnswers = examAnswers[tType] && Object.keys(examAnswers[tType]).length > 0;
@@ -396,15 +433,16 @@ export const FullExamMode: React.FC<FullExamModeProps> = ({
                 <button
                   key={tType}
                   onClick={() => setActiveSectionIndex(idx)}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-extrabold shrink-0 transition-all border ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all border flex items-center gap-1 shrink-0 ${
                     isCurrent
-                      ? 'bg-indigo-600 text-white border-indigo-500 shadow-md ring-2 ring-indigo-500/30'
+                      ? 'bg-indigo-600 text-white border-indigo-500 shadow-md ring-2 ring-indigo-500/40'
                       : hasAnswers
-                      ? 'bg-slate-200 dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 border-emerald-500/30'
+                      ? 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/40'
                       : 'glass-card text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-800 hover:border-indigo-500/50'
                   }`}
                 >
-                  {label} {hasAnswers && '✓'}
+                  <span>{label}</span>
+                  {hasAnswers && <span className="text-[10px] font-black text-emerald-400">✓</span>}
                 </button>
               );
             })}
