@@ -48,6 +48,7 @@ import {
 } from 'lucide-react';
 import { isSupabaseConfigured } from '../utils/supabase';
 import {
+  ADMIN_EMAIL,
   getRegisteredUsersLocal,
   getRemainingPremiumDays,
   fetchRegisteredUsersAsync,
@@ -123,6 +124,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   // User Management State
   const [usersList, setUsersList] = useState<User[]>(() => getRegisteredUsersLocal());
   const [userSearchText, setUserSearchText] = useState('');
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [newUserName, setNewUserName] = useState('');
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserRole, setNewUserRole] = useState<'user' | 'admin'>('user');
+  const [newUserPremiumDays, setNewUserPremiumDays] = useState<number>(30);
+  const [showSqlHelp, setShowSqlHelp] = useState(false);
 
   // UI Toast notification state
   const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -135,6 +142,26 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const handleSyncUsers = async () => {
     const list = await fetchRegisteredUsersAsync();
     setUsersList(list);
+  };
+
+  const handleCreateUserManual = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newUserEmail.trim()) return;
+    const cleanEmail = newUserEmail.trim().toLowerCase();
+    const newUser: User = {
+      id: `user-manual-${Date.now()}`,
+      name: newUserName.trim() || cleanEmail.split('@')[0],
+      email: cleanEmail,
+      role: newUserRole,
+      isPremium: newUserPremiumDays > 0,
+      premiumExpiresAt: newUserPremiumDays > 0 ? new Date(Date.now() + newUserPremiumDays * 86400000).toISOString() : null,
+    };
+    syncUserToRegisteredList(newUser);
+    setUsersList(getRegisteredUsersLocal());
+    setShowAddUserModal(false);
+    setNewUserName('');
+    setNewUserEmail('');
+    showToast(`Benutzer ${cleanEmail} wurde erfolgreich angelegt!`);
   };
 
   useEffect(() => {
@@ -2850,7 +2877,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       {/* BENUTZER-VERWALTUNG TAB */}
       {activeTab === 'users' && (
         <div className="space-y-6">
-          {/* Top Search & Metrics Bar */}
+          {/* Top Search & Actions Bar */}
           <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
@@ -2862,18 +2889,99 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 </p>
               </div>
 
-              {/* Search Bar */}
-              <div className="relative w-full sm:w-72">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                <input
-                  type="text"
-                  value={userSearchText}
-                  onChange={(e) => setUserSearchText(e.target.value)}
-                  placeholder="Benutzer suchen (Name, E-Mail)..."
-                  className="w-full pl-9 pr-4 py-2 glass-input rounded-xl text-xs font-bold"
-                />
+              {/* Action Buttons & Search */}
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddUserModal(true)}
+                  className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold rounded-xl text-xs flex items-center gap-1.5 shadow-md"
+                >
+                  <Plus className="w-4 h-4" /> Nutzer manuell anlegen
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleSyncUsers}
+                  className="px-3.5 py-2 glass-card hover:bg-slate-800 text-emerald-400 font-extrabold rounded-xl text-xs flex items-center gap-1.5 border border-slate-700"
+                  title="Liste mit Supabase Cloud DB abgleichen"
+                >
+                  <RefreshCw className="w-4 h-4" /> DB Synchronisieren
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowSqlHelp(!showSqlHelp)}
+                  className="px-3.5 py-2 glass-card hover:bg-slate-800 text-amber-300 font-extrabold rounded-xl text-xs flex items-center gap-1.5 border border-slate-700"
+                >
+                  <FileText className="w-4 h-4" /> Supabase SQL Setup
+                </button>
+
+                {/* Search Bar */}
+                <div className="relative w-full sm:w-64">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                  <input
+                    type="text"
+                    value={userSearchText}
+                    onChange={(e) => setUserSearchText(e.target.value)}
+                    placeholder="Benutzer suchen..."
+                    className="w-full pl-9 pr-4 py-2 glass-input rounded-xl text-xs font-bold"
+                  />
+                </div>
               </div>
             </div>
+
+            {/* SQL Setup Helper Panel */}
+            {showSqlHelp && (
+              <div className="p-4 bg-slate-950/80 rounded-2xl border border-amber-500/30 text-xs space-y-3 font-mono">
+                <div className="flex items-center justify-between text-amber-400 font-sans font-bold">
+                  <span>💡 Einmaliger SQL-Befehl für die Supabase PostgreSQL Datenbank:</span>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(`CREATE TABLE IF NOT EXISTS public.registered_users (
+  id TEXT PRIMARY KEY,
+  name TEXT,
+  email TEXT UNIQUE,
+  role TEXT DEFAULT 'user',
+  is_premium BOOLEAN DEFAULT FALSE,
+  premium_expires_at TIMESTAMPTZ,
+  is_banned BOOLEAN DEFAULT FALSE,
+  applied_promo_code TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.registered_users ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public read registered_users" ON public.registered_users FOR SELECT USING (true);
+CREATE POLICY "Allow public insert registered_users" ON public.registered_users FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow public update registered_users" ON public.registered_users FOR UPDATE USING (true);
+CREATE POLICY "Allow public delete registered_users" ON public.registered_users FOR DELETE USING (true);`);
+                      showToast('SQL-Code in die Zwischenablage kopiert!');
+                    }}
+                    className="px-3 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg text-xs font-bold"
+                  >
+                    SQL Kopieren
+                  </button>
+                </div>
+                <pre className="p-3 bg-slate-900 rounded-xl overflow-x-auto text-[11px] text-slate-300">
+{`CREATE TABLE IF NOT EXISTS public.registered_users (
+  id TEXT PRIMARY KEY,
+  name TEXT,
+  email TEXT UNIQUE,
+  role TEXT DEFAULT 'user',
+  is_premium BOOLEAN DEFAULT FALSE,
+  premium_expires_at TIMESTAMPTZ,
+  is_banned BOOLEAN DEFAULT FALSE,
+  applied_promo_code TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.registered_users ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow public read registered_users" ON public.registered_users FOR SELECT USING (true);
+CREATE POLICY "Allow public insert registered_users" ON public.registered_users FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow public update registered_users" ON public.registered_users FOR UPDATE USING (true);
+CREATE POLICY "Allow public delete registered_users" ON public.registered_users FOR DELETE USING (true);`}
+                </pre>
+              </div>
+            )}
 
             {/* Metrics Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
@@ -2928,6 +3036,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     )
                     .map((u) => {
                       const remDays = getRemainingPremiumDays(u);
+                      const isSelfOrAdmin = u.role === 'admin' || u.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+
                       return (
                         <tr key={u.id} className="hover:bg-slate-900/50 transition-colors">
                           {/* User Info */}
@@ -3008,28 +3118,36 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                 <Crown className="w-3 h-3 text-amber-400" /> +30 Tage
                               </button>
 
-                              <button
-                                type="button"
-                                onClick={() => handleToggleBanUser(u.id)}
-                                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border flex items-center gap-1 ${
-                                  u.isBanned
-                                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/30'
-                                    : 'bg-rose-500/20 text-rose-300 border-rose-500/40 hover:bg-rose-500/30'
-                                }`}
-                                title={u.isBanned ? 'Benutzer entsperren' : 'Benutzer sperren'}
-                              >
-                                {u.isBanned ? <UserCheck className="w-3 h-3" /> : <Ban className="w-3 h-3" />}
-                                {u.isBanned ? 'Entsperren' : 'Sperren'}
-                              </button>
+                              {!isSelfOrAdmin ? (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleToggleBanUser(u.id)}
+                                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border flex items-center gap-1 ${
+                                      u.isBanned
+                                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/30'
+                                        : 'bg-rose-500/20 text-rose-300 border-rose-500/40 hover:bg-rose-500/30'
+                                    }`}
+                                    title={u.isBanned ? 'Benutzer entsperren' : 'Benutzer sperren'}
+                                  >
+                                    {u.isBanned ? <UserCheck className="w-3 h-3" /> : <Ban className="w-3 h-3" />}
+                                    {u.isBanned ? 'Entsperren' : 'Sperren'}
+                                  </button>
 
-                              <button
-                                type="button"
-                                onClick={() => handleDeleteUser(u.id)}
-                                className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-500/20 rounded-lg transition-colors"
-                                title="Benutzer löschen"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteUser(u.id)}
+                                    className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-500/20 rounded-lg transition-colors"
+                                    title="Benutzer löschen"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </>
+                              ) : (
+                                <span className="px-2 py-1 bg-slate-800 text-slate-400 rounded text-[10px] font-bold">
+                                  👑 Haupt-Admin
+                                </span>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -3039,6 +3157,95 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               </table>
             </div>
           </div>
+
+          {/* MANUAL ADD USER MODAL */}
+          {showAddUserModal && (
+            <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fadeIn">
+              <div className="glass-panel p-6 rounded-3xl border border-slate-700 max-w-md w-full space-y-4 shadow-2xl">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                    <Plus className="w-5 h-5 text-indigo-400" /> Nutzer manuell anlegen
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddUserModal(false)}
+                    className="text-slate-400 hover:text-white p-1 rounded-lg"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <form onSubmit={handleCreateUserManual} className="space-y-3 text-xs">
+                  <div>
+                    <label className="block text-slate-300 font-bold mb-1">E-Mail Adresse *</label>
+                    <input
+                      type="email"
+                      required
+                      value={newUserEmail}
+                      onChange={(e) => setNewUserEmail(e.target.value)}
+                      placeholder="z.B. parovozovo@yahoo.com"
+                      className="w-full px-3 py-2.5 glass-input rounded-xl font-mono text-xs font-bold"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-300 font-bold mb-1">Vollständiger Name</label>
+                    <input
+                      type="text"
+                      value={newUserName}
+                      onChange={(e) => setNewUserName(e.target.value)}
+                      placeholder="z.B. Max Mustermann"
+                      className="w-full px-3 py-2.5 glass-input rounded-xl text-xs font-bold"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-slate-300 font-bold mb-1">Rolle</label>
+                      <select
+                        value={newUserRole}
+                        onChange={(e) => setNewUserRole(e.target.value as 'user' | 'admin')}
+                        className="w-full px-3 py-2.5 glass-input rounded-xl text-xs font-bold bg-slate-900"
+                      >
+                        <option value="user">Benutzer (Standard)</option>
+                        <option value="admin">Administrator</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-300 font-bold mb-1">Premium-Tage</label>
+                      <select
+                        value={newUserPremiumDays}
+                        onChange={(e) => setNewUserPremiumDays(Number(e.target.value))}
+                        className="w-full px-3 py-2.5 glass-input rounded-xl text-xs font-bold bg-slate-900"
+                      >
+                        <option value={0}>0 Tage (Kostenlos)</option>
+                        <option value={30}>30 Tage (1 Monat)</option>
+                        <option value={90}>90 Tage (3 Monate)</option>
+                        <option value={365}>365 Tage (1 Jahr)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowAddUserModal(false)}
+                      className="flex-1 py-2.5 glass-card text-slate-300 font-bold rounded-xl"
+                    >
+                      Abbrechen
+                    </button>
+                    <button
+                      type="submit"
+                      className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-xl shadow-lg flex items-center justify-center gap-1.5"
+                    >
+                      <Save className="w-4 h-4" /> Nutzer Speichern
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
