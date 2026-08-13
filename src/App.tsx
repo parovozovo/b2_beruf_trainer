@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import confetti from 'canvas-confetti';
+import { CheckCircle2, AlertCircle, Info } from 'lucide-react';
 import type { User, Modelltest, PromoCode, ForumsbeitragTopic, TileType, TileResult, FullExamResult } from './types';
 import {
   getCurrentUser,
@@ -131,11 +133,22 @@ export function App() {
     window.location.hash = '';
   };
 
+  // Toast Notification System
+  const [toast, setToast] = useState<{ id: number; message: string; type: 'success' | 'error' | 'info' } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    const id = Date.now();
+    setToast({ id, message, type });
+    setTimeout(() => {
+      setToast((current) => (current?.id === id ? null : current));
+    }, 3500);
+  };
+
   // Promo Code Redemption
-  const handleRedeemPromoCode = (codeStr: string) => {
+  const handleRedeemPromoCode = (codeStr: string): { success: boolean; message: string; durationDays?: number } => {
     if (!currentUser) {
       setIsLoginModalOpen(true);
-      return;
+      return { success: false, message: 'Bitte melden Sie sich zuerst an.' };
     }
 
     const found = promoCodes.find(
@@ -143,8 +156,13 @@ export function App() {
     );
 
     if (!found) {
-      alert('Ungültiger oder bereits abgelaufener Gutscheincode.');
-      return;
+      showToast('Ungültiger oder bereits abgelaufener Gutscheincode.', 'error');
+      return { success: false, message: 'Ungültiger oder abgelaufener Code.' };
+    }
+
+    if (found.usedByEmails && found.usedByEmails.includes(currentUser.email)) {
+      showToast('Sie haben diesen Gutscheincode bereits eingelöst.', 'error');
+      return { success: false, message: 'Code wurde bereits verwendet.' };
     }
 
     const updatedUser: User = {
@@ -162,12 +180,27 @@ export function App() {
         ? {
             ...c,
             usedCount: c.usedCount + 1,
-            usedByEmails: [...c.usedByEmails, currentUser.email],
+            usedByEmails: [...(c.usedByEmails || []), currentUser.email],
           }
         : c
     );
     handleSavePromoCodes(updatedCodes);
-    alert(`Herzlichen Glückwunsch! Ihr Konto wurde auf Premium aufgestuft (${found.durationDays} Tage gültig).`);
+
+    // Celebration animation!
+    confetti({
+      particleCount: 140,
+      spread: 90,
+      origin: { y: 0.5 },
+    });
+
+    const successMsg = `🎉 Premium freigeschaltet (${found.durationDays} Tage gültig)!`;
+    showToast(successMsg, 'success');
+
+    return {
+      success: true,
+      message: successMsg,
+      durationDays: found.durationDays,
+    };
   };
 
   // Tile Practice Result Saver
@@ -364,6 +397,30 @@ export function App() {
         promoCodes={promoCodes}
         onRedeemPromoCode={handleRedeemPromoCode}
       />
+
+      {/* Global In-App Notification Toast */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-50 animate-bounceIn max-w-sm">
+          <div
+            className={`p-4 rounded-2xl shadow-2xl border flex items-center gap-3 backdrop-blur-xl ${
+              toast.type === 'success'
+                ? 'bg-emerald-950/90 text-emerald-200 border-emerald-500/50 shadow-emerald-950/40'
+                : toast.type === 'error'
+                ? 'bg-rose-950/90 text-rose-200 border-rose-500/50 shadow-rose-950/40'
+                : 'bg-slate-900/90 text-slate-200 border-slate-700 shadow-slate-950/40'
+            }`}
+          >
+            {toast.type === 'success' ? (
+              <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+            ) : toast.type === 'error' ? (
+              <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />
+            ) : (
+              <Info className="w-5 h-5 text-indigo-400 shrink-0" />
+            )}
+            <span className="text-xs font-black tracking-wide leading-tight">{toast.message}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

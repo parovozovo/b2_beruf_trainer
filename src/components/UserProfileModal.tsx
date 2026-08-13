@@ -13,6 +13,7 @@ import {
   AlertCircle,
   Save,
 } from 'lucide-react';
+import confetti from 'canvas-confetti';
 import type { User, PromoCode } from '../types';
 import { getRemainingPremiumDays } from '../utils/storage';
 import { supabase, isSupabaseConfigured } from '../utils/supabase';
@@ -25,7 +26,7 @@ interface UserProfileModalProps {
   onOpenLoginModal: () => void;
   onNavigateToAdmin?: () => void;
   promoCodes: PromoCode[];
-  onRedeemPromoCode: (code: string) => void;
+  onRedeemPromoCode: (code: string) => { success: boolean; message: string; durationDays?: number } | void;
 }
 
 export const UserProfileModal: React.FC<UserProfileModalProps> = ({
@@ -40,6 +41,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 }) => {
   const [promoInput, setPromoInput] = useState('');
   const [redeemSuccessMsg, setRedeemSuccessMsg] = useState<string | null>(null);
+  const [redeemError, setRedeemError] = useState<string | null>(null);
 
   // Settings State
   const [fontScale, setFontScale] = useState<string>(() => localStorage.getItem('b2_font_scale') || '100%');
@@ -111,10 +113,18 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
 
   const handleRedeem = (e: React.FormEvent) => {
     e.preventDefault();
+    setRedeemError(null);
+    setRedeemSuccessMsg(null);
     if (!promoInput.trim()) return;
-    onRedeemPromoCode(promoInput.trim());
-    setRedeemSuccessMsg('Gutscheincode erfolgreich eingelöst!');
-    setPromoInput('');
+
+    const result = onRedeemPromoCode(promoInput.trim());
+    if (result && result.success === false) {
+      setRedeemError(result.message);
+    } else {
+      setRedeemSuccessMsg(result?.message || 'Gutscheincode erfolgreich eingelöst!');
+      setPromoInput('');
+      confetti({ particleCount: 120, spread: 80, origin: { y: 0.5 } });
+    }
   };
 
   const handlePasswordChangeSubmit = async (e: React.FormEvent) => {
@@ -389,9 +399,14 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 <Key className="w-3.5 h-3.5" /> Einlösen
               </button>
             </div>
+            {redeemError && (
+              <div className="text-xs text-rose-400 font-bold flex items-center gap-1.5 p-2 bg-rose-500/10 border border-rose-500/30 rounded-xl animate-fadeIn">
+                <AlertCircle className="w-4 h-4 shrink-0" /> {redeemError}
+              </div>
+            )}
             {redeemSuccessMsg && (
-              <div className="text-xs text-emerald-400 font-semibold flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5" /> {redeemSuccessMsg}
+              <div className="text-xs text-emerald-400 font-bold flex items-center gap-1.5 p-2 bg-emerald-500/10 border border-emerald-500/30 rounded-xl animate-fadeIn">
+                <CheckCircle2 className="w-4 h-4 shrink-0" /> {redeemSuccessMsg}
               </div>
             )}
           </form>

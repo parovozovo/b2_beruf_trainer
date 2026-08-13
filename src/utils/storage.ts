@@ -171,6 +171,28 @@ export async function fetchRegisteredUsersAsync(): Promise<User[]> {
     } catch (e) {
       console.warn('Could not fetch registered_users table from Supabase:', e);
     }
+
+    // 5. Discover active users from written essays if table exists
+    try {
+      const { data: essays } = await supabase.from('written_essays').select('user_email, user_id, user_name');
+      if (essays && essays.length > 0) {
+        essays.forEach((item: Record<string, unknown>) => {
+          const uEmail = String(item.user_email || '').toLowerCase();
+          if (uEmail && !mergedMap.has(uEmail)) {
+            mergedMap.set(uEmail, {
+              id: String(item.user_id || `user-essay-${uEmail.replace(/[^a-z0-9]/gi, '_')}`),
+              name: String(item.user_name || uEmail.split('@')[0]),
+              email: uEmail,
+              role: uEmail === ADMIN_EMAIL.toLowerCase() ? 'admin' : 'user',
+              isPremium: false,
+              premiumExpiresAt: null,
+            });
+          }
+        });
+      }
+    } catch (e) {
+      console.warn('Could not discover users from written_essays:', e);
+    }
   }
 
   const mergedList = Array.from(mergedMap.values());
