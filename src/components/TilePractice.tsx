@@ -513,7 +513,7 @@ export const AudioPlayerBlock: React.FC<{
 };
 
 // Lesen 1 UI Component
-const Lesen1UI: React.FC<{
+export const Lesen1UI: React.FC<{
   variant: { textBlock: string; headingsBlock: string; correctAnswers: Record<string, string> };
   userAnswers: Record<string, string>;
   onAnswerChange: (key: string, val: string) => void;
@@ -580,8 +580,8 @@ const Lesen1UI: React.FC<{
   );
 };
 
-// Lesen 2 UI
-const Lesen2UI: React.FC<{
+// Lesen 2 UI Component
+export const Lesen2UI: React.FC<{
   variant: {
     text1: string;
     q6Text?: string;
@@ -734,7 +734,7 @@ const Lesen2UI: React.FC<{
 };
 
 // Lesen 3 UI
-const Lesen3UI: React.FC<{
+export const Lesen3UI: React.FC<{
   variant: { text1: string; text2: string; optionsAtoF: string; correctAnswers: Record<string, string> };
   userAnswers: Record<string, string>;
   onAnswerChange: (key: string, val: string) => void;
@@ -799,7 +799,7 @@ const Lesen3UI: React.FC<{
 };
 
 // Generic ABC Questions UI (Lesen 4, Hoeren 3, Hoeren 4)
-const GenericABCQuestionsUI: React.FC<{
+export const GenericABCQuestionsUI: React.FC<{
   variant: {
     audioUrl?: string;
     scriptText?: string;
@@ -873,7 +873,7 @@ const GenericABCQuestionsUI: React.FC<{
 };
 
 // Lesen und Schreiben UI
-const LesenSchreibenUI: React.FC<{
+export const LesenSchreibenUI: React.FC<{
   variant: {
     emailsText: string;
     questions: Array<{ id: number; questionText: string; options: [string, string, string]; correctIndex: number }>;
@@ -961,7 +961,7 @@ const LesenSchreibenUI: React.FC<{
 };
 
 // Hoeren 1 UI (Supports 1 single audio MP3 file OR 3 separate audio MP3 files)
-const Hoeren1UI: React.FC<{
+export const Hoeren1UI: React.FC<{
   variant: {
     audioUrl?: string;
     scriptText?: string;
@@ -1092,7 +1092,7 @@ const Hoeren1UI: React.FC<{
 };
 
 // Hoeren 2 UI
-const Hoeren2UI: React.FC<{
+export const Hoeren2UI: React.FC<{
   variant: { audioUrl?: string; scriptText: string; optionsAtoF: string; correctAnswers: Record<string, string> };
   userAnswers: Record<string, string>;
   onAnswerChange: (key: string, val: string) => void;
@@ -1153,7 +1153,7 @@ const Hoeren2UI: React.FC<{
 };
 
 // Hoeren und Schreiben UI
-const HoerenSchreibenUI: React.FC<{
+export const HoerenSchreibenUI: React.FC<{
   variant: { audioUrl?: string; scriptText: string; q41Text?: string; q41Options?: [string, string, string]; q41Correct: string; fields: Array<{ label: string; key: string }> };
   userAnswers: Record<string, string>;
   onAnswerChange: (key: string, val: string) => void;
@@ -1229,7 +1229,7 @@ const HoerenSchreibenUI: React.FC<{
 };
 
 // Sprachbausteine 1 UI
-const Sprachbausteine1UI: React.FC<{
+export const Sprachbausteine1UI: React.FC<{
   variant: { textWithGaps: string; correctAnswers: Record<number, string>; extraDistractors: string[] };
   userAnswers: Record<string, string>;
   onAnswerChange: (key: string, val: string) => void;
@@ -1290,7 +1290,7 @@ const Sprachbausteine1UI: React.FC<{
 };
 
 // Sprachbausteine 2 UI
-const Sprachbausteine2UI: React.FC<{
+export const Sprachbausteine2UI: React.FC<{
   variant: {
     textWithGaps: string;
     questions: Array<{ id: number; questionText: string; options: [string, string, string]; correctIndex: number }>;

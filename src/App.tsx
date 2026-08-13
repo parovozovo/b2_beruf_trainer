@@ -238,7 +238,6 @@ export function App() {
             currentUser={currentUser}
             onSelectMode={setCurrentTab}
             tileResults={tileResults}
-            fullExamResults={fullExamResults}
             onResetTrainingStats={handleResetTrainingStats}
           />
         )}
@@ -256,6 +255,7 @@ export function App() {
           <FullExamMode
             modelltests={modelltests.filter((m) => !m.isHidden)}
             currentUser={currentUser}
+            fullExamResults={fullExamResults}
             onSaveFullExamResult={handleSaveFullExamResult}
             onOpenPremiumLockedModal={() => setIsPremiumLockedModalOpen(true)}
           />
