@@ -129,7 +129,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserRole, setNewUserRole] = useState<'user' | 'admin'>('user');
   const [newUserPremiumDays, setNewUserPremiumDays] = useState<number>(30);
-  const [showSqlHelp, setShowSqlHelp] = useState(false);
 
   // UI Toast notification state
   const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -2920,15 +2919,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   className="px-3.5 py-2 glass-card hover:bg-slate-800 text-emerald-400 font-extrabold rounded-xl text-xs flex items-center gap-1.5 border border-slate-700"
                   title="Liste mit Supabase Cloud DB abgleichen"
                 >
-                  <RefreshCw className="w-4 h-4" /> DB Synchronisieren
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setShowSqlHelp(!showSqlHelp)}
-                  className="px-3.5 py-2 glass-card hover:bg-slate-800 text-amber-300 font-extrabold rounded-xl text-xs flex items-center gap-1.5 border border-slate-700"
-                >
-                  <FileText className="w-4 h-4" /> Supabase SQL Setup
+                  <RefreshCw className="w-4 h-4" /> Aktualisieren
                 </button>
 
                 {/* Search Bar */}
@@ -2944,59 +2935,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 </div>
               </div>
             </div>
-
-            {/* SQL Setup Helper Panel */}
-            {showSqlHelp && (
-              <div className="p-4 bg-slate-950/80 rounded-2xl border border-amber-500/30 text-xs space-y-3 font-mono">
-                <div className="flex items-center justify-between text-amber-400 font-sans font-bold">
-                  <span>💡 Einmaliger SQL-Befehl für die Supabase PostgreSQL Datenbank:</span>
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(`CREATE TABLE IF NOT EXISTS public.registered_users (
-  id TEXT PRIMARY KEY,
-  name TEXT,
-  email TEXT UNIQUE,
-  role TEXT DEFAULT 'user',
-  is_premium BOOLEAN DEFAULT FALSE,
-  premium_expires_at TIMESTAMPTZ,
-  is_banned BOOLEAN DEFAULT FALSE,
-  applied_promo_code TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-ALTER TABLE public.registered_users ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow public read registered_users" ON public.registered_users FOR SELECT USING (true);
-CREATE POLICY "Allow public insert registered_users" ON public.registered_users FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow public update registered_users" ON public.registered_users FOR UPDATE USING (true);
-CREATE POLICY "Allow public delete registered_users" ON public.registered_users FOR DELETE USING (true);`);
-                      showToast('SQL-Code in die Zwischenablage kopiert!');
-                    }}
-                    className="px-3 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg text-xs font-bold"
-                  >
-                    SQL Kopieren
-                  </button>
-                </div>
-                <pre className="p-3 bg-slate-900 rounded-xl overflow-x-auto text-[11px] text-slate-300">
-{`CREATE TABLE IF NOT EXISTS public.registered_users (
-  id TEXT PRIMARY KEY,
-  name TEXT,
-  email TEXT UNIQUE,
-  role TEXT DEFAULT 'user',
-  is_premium BOOLEAN DEFAULT FALSE,
-  premium_expires_at TIMESTAMPTZ,
-  is_banned BOOLEAN DEFAULT FALSE,
-  applied_promo_code TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-ALTER TABLE public.registered_users ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow public read registered_users" ON public.registered_users FOR SELECT USING (true);
-CREATE POLICY "Allow public insert registered_users" ON public.registered_users FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow public update registered_users" ON public.registered_users FOR UPDATE USING (true);
-CREATE POLICY "Allow public delete registered_users" ON public.registered_users FOR DELETE USING (true);`}
-                </pre>
-              </div>
-            )}
 
             {/* Metrics Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
