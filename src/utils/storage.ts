@@ -1,4 +1,4 @@
-import type { User, PromoCode, Modelltest, ForumsbeitragTopic, WrittenEssayRecord, FullExamResult, TileResult } from '../types';
+import type { User, UserRole, PromoCode, Modelltest, ForumsbeitragTopic, WrittenEssayRecord, FullExamResult, TileResult } from '../types';
 import { INITIAL_PROMO_CODES, INITIAL_FORUMSBEITRAG_TOPICS, INITIAL_MODELLTESTS, INITIAL_SPRECHEN_TOPICS } from '../data/initialData';
 import { supabase, isSupabaseConfigured } from './supabase';
 
@@ -100,15 +100,92 @@ export function saveRegisteredUsersLocal(users: User[]): void {
   localStorage.setItem(KEYS.REGISTERED_USERS, JSON.stringify(users));
 }
 
+export async function fetchRegisteredUsersAsync(): Promise<User[]> {
+  const local = getRegisteredUsersLocal();
+  if (!isSupabaseConfigured) return local;
+
+  try {
+    const { data, error } = await supabase.from('registered_users').select('*');
+    if (!error && data && data.length > 0) {
+      const remoteUsers: User[] = data.map((item: Record<string, unknown>) => ({
+        id: String(item.id),
+        name: String(item.name || 'Benutzer'),
+        email: String(item.email || ''),
+        role: (item.role as UserRole) || 'user',
+        isPremium: Boolean(item.is_premium),
+        premiumExpiresAt: item.premium_expires_at ? String(item.premium_expires_at) : null,
+        isBanned: Boolean(item.is_banned),
+        appliedPromoCode: item.applied_promo_code ? String(item.applied_promo_code) : undefined,
+      }));
+
+      // Merge remote with local (by email key)
+      const mergedMap = new Map<string, User>();
+      local.forEach((u) => mergedMap.set(u.email.toLowerCase(), u));
+      remoteUsers.forEach((u) => mergedMap.set(u.email.toLowerCase(), u));
+
+      const mergedList = Array.from(mergedMap.values());
+      saveRegisteredUsersLocal(mergedList);
+      return mergedList;
+    }
+  } catch (e) {
+    console.warn('Could not fetch registered_users from Supabase:', e);
+  }
+  return local;
+}
+
 export function syncUserToRegisteredList(user: User): void {
   const list = getRegisteredUsersLocal();
   const idx = list.findIndex((u) => u.id === user.id || u.email.toLowerCase() === user.email.toLowerCase());
+  let updatedUser = user;
+
   if (idx >= 0) {
-    list[idx] = { ...list[idx], ...user };
+    updatedUser = {
+      ...list[idx],
+      ...user,
+      isPremium: list[idx].isPremium || user.isPremium,
+      premiumExpiresAt: list[idx].premiumExpiresAt || user.premiumExpiresAt,
+      appliedPromoCode: list[idx].appliedPromoCode || user.appliedPromoCode,
+      isBanned: user.isBanned !== undefined ? user.isBanned : list[idx].isBanned,
+    };
+    list[idx] = updatedUser;
   } else {
-    list.unshift(user);
+    list.unshift(updatedUser);
   }
+
   saveRegisteredUsersLocal(list);
+
+  if (isSupabaseConfigured) {
+    (async () => {
+      try {
+        await supabase.from('registered_users').upsert({
+          id: updatedUser.id,
+          name: updatedUser.name,
+          email: updatedUser.email,
+          role: updatedUser.role,
+          is_premium: updatedUser.isPremium,
+          premium_expires_at: updatedUser.premiumExpiresAt,
+          is_banned: Boolean(updatedUser.isBanned),
+          applied_promo_code: updatedUser.appliedPromoCode || null,
+        });
+      } catch (e) {
+        console.warn('Could not sync user to Supabase:', e);
+      }
+    })();
+  }
+}
+
+export function deleteRegisteredUserInStorage(userId: string): void {
+  const list = getRegisteredUsersLocal().filter((u) => u.id !== userId);
+  saveRegisteredUsersLocal(list);
+  if (isSupabaseConfigured) {
+    (async () => {
+      try {
+        await supabase.from('registered_users').delete().eq('id', userId);
+      } catch (e) {
+        console.warn('Could not delete user from Supabase:', e);
+      }
+    })();
+  }
 }
 
 // ==========================================

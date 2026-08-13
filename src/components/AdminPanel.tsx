@@ -47,7 +47,13 @@ import {
   Search,
 } from 'lucide-react';
 import { isSupabaseConfigured } from '../utils/supabase';
-import { getRegisteredUsersLocal, saveRegisteredUsersLocal, getRemainingPremiumDays } from '../utils/storage';
+import {
+  getRegisteredUsersLocal,
+  getRemainingPremiumDays,
+  fetchRegisteredUsersAsync,
+  syncUserToRegisteredList,
+  deleteRegisteredUserInStorage,
+} from '../utils/storage';
 
 interface AdminPanelProps {
   modelltests: Modelltest[];
@@ -126,39 +132,40 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     setTimeout(() => setToastMessage(null), 5000);
   };
 
+  const handleSyncUsers = async () => {
+    const list = await fetchRegisteredUsersAsync();
+    setUsersList(list);
+  };
+
+  useEffect(() => {
+    handleSyncUsers();
+  }, []);
+
   const handleExtendUserPremium = (userId: string) => {
-    const updated = usersList.map((u) => {
-      if (u.id === userId) {
-        const currentExp = u.premiumExpiresAt ? new Date(u.premiumExpiresAt).getTime() : Date.now();
-        const startBase = Math.max(currentExp, Date.now());
-        const newExp = new Date(startBase + 30 * 86400000).toISOString();
-        return { ...u, isPremium: true, premiumExpiresAt: newExp };
-      }
-      return u;
-    });
-    setUsersList(updated);
-    saveRegisteredUsersLocal(updated);
+    const target = usersList.find((u) => u.id === userId);
+    if (!target) return;
+    const currentExp = target.premiumExpiresAt ? new Date(target.premiumExpiresAt).getTime() : Date.now();
+    const startBase = Math.max(currentExp, Date.now());
+    const newExp = new Date(startBase + 30 * 86400000).toISOString();
+    const updatedUser: User = { ...target, isPremium: true, premiumExpiresAt: newExp };
+    syncUserToRegisteredList(updatedUser);
+    setUsersList(getRegisteredUsersLocal());
     showToast('Premium-Mitgliedschaft um 30 Tage verlängert!');
   };
 
   const handleToggleBanUser = (userId: string) => {
-    const updated = usersList.map((u) => {
-      if (u.id === userId) {
-        const nextBanned = !u.isBanned;
-        showToast(nextBanned ? 'Benutzer wurde gesperrt!' : 'Benutzer wurde entsperrt!');
-        return { ...u, isBanned: nextBanned };
-      }
-      return u;
-    });
-    setUsersList(updated);
-    saveRegisteredUsersLocal(updated);
+    const target = usersList.find((u) => u.id === userId);
+    if (!target) return;
+    const updatedUser: User = { ...target, isBanned: !target.isBanned };
+    syncUserToRegisteredList(updatedUser);
+    setUsersList(getRegisteredUsersLocal());
+    showToast(updatedUser.isBanned ? 'Benutzer wurde gesperrt!' : 'Benutzer wurde entsperrt!');
   };
 
   const handleDeleteUser = (userId: string) => {
     if (window.confirm('Möchten Sie diesen Benutzer wirklich dauerhaft löschen?')) {
-      const updated = usersList.filter((u) => u.id !== userId);
-      setUsersList(updated);
-      saveRegisteredUsersLocal(updated);
+      deleteRegisteredUserInStorage(userId);
+      setUsersList(getRegisteredUsersLocal());
       showToast('Benutzer wurde gelöscht!');
     }
   };

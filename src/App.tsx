@@ -21,6 +21,7 @@ import {
   deleteFullExamResult,
   fetchModelltestsAsync,
   fetchPromoCodesAsync,
+  syncUserToRegisteredList,
 } from './utils/storage';
 import { Navbar } from './components/Navbar';
 import { Dashboard } from './components/Dashboard';
@@ -67,6 +68,9 @@ export function App() {
     };
 
     checkAdminRoute();
+    if (currentUser) {
+      syncUserToRegisteredList(currentUser);
+    }
     window.addEventListener('hashchange', checkAdminRoute);
     return () => window.removeEventListener('hashchange', checkAdminRoute);
   }, [currentUser]);

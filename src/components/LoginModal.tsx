@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, UserCheck, Lock, Mail, LogIn, ShieldAlert, UserPlus } from 'lucide-react';
 import type { User } from '../types';
-import { ADMIN_EMAIL } from '../utils/storage';
+import { ADMIN_EMAIL, syncUserToRegisteredList } from '../utils/storage';
 import { supabase, isSupabaseConfigured } from '../utils/supabase';
 
 interface LoginModalProps {
@@ -64,8 +64,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 premiumExpiresAt: null,
                 dailyExamAttemptsRemaining: 2,
               };
+              syncUserToRegisteredList(newUser);
               onLoginSuccess(newUser, isAdmin);
-              alert('Konto wurde erstellt! (Hinweis: Supabase E-Mail-Bestätigung wurde übersprungen).');
+              alert('Konto wurde erstellt! Willkommen!');
               onClose();
               return;
             }
@@ -80,8 +81,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               role: isAdmin ? 'admin' : 'user',
               isPremium: isAdmin,
               premiumExpiresAt: null,
-              dailyExamAttemptsRemaining: 2,
             };
+            syncUserToRegisteredList(newUser);
             onLoginSuccess(newUser, isAdmin);
             alert('Registrierung erfolgreich! Willkommen!');
             onClose();
@@ -103,8 +104,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 role: 'admin',
                 isPremium: true,
                 premiumExpiresAt: null,
-                dailyExamAttemptsRemaining: 999,
               };
+              syncUserToRegisteredList(adminUser);
               onLoginSuccess(adminUser, true);
               onClose();
               return;
@@ -120,8 +121,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               role: isAdmin ? 'admin' : 'user',
               isPremium: isAdmin,
               premiumExpiresAt: null,
-              dailyExamAttemptsRemaining: 2,
             };
+            syncUserToRegisteredList(loggedInUser);
             onLoginSuccess(loggedInUser, isAdmin);
             onClose();
           }
@@ -135,8 +136,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           role: isAdmin ? 'admin' : 'user',
           isPremium: isAdmin,
           premiumExpiresAt: null,
-          dailyExamAttemptsRemaining: 2,
         };
+        syncUserToRegisteredList(loggedUser);
         onLoginSuccess(loggedUser, isAdmin);
         onClose();
       }
