@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import type { Modelltest, ForumsbeitragTopic, WrittenEssayRecord, User } from '../types';
-import { FileEdit, Timer, Copy, Trash2, CheckCircle2, History, FileText, RotateCcw, Shuffle, ChevronDown, BookOpen, Lightbulb, Plus } from 'lucide-react';
+import { FileEdit, Timer, Copy, Trash2, CheckCircle2, History, FileText, RotateCcw, Shuffle, ChevronDown, BookOpen } from 'lucide-react';
 import { FormattedText } from './FormattedText';
 import { getWrittenEssays, saveWrittenEssay, deleteWrittenEssay } from '../utils/storage';
 
@@ -16,79 +16,6 @@ interface ActiveTopicState {
   emailsText?: string;
   promptText: string;
 }
-
-// B2 Redemittel Dataset for Quick Insertion
-const REDEMITTEL_DATA = {
-  beschwerde: [
-    {
-      category: '📌 Anrede & Grund des Schreibens',
-      phrases: [
-        'Sehr geehrte Damen und Herren,',
-        'Sehr geehrte Frau Schneider, / Sehr geehrter Herr Miller,',
-        'ich beziehe mich auf unsere E-Mail-Korrespondenz vom [Datum].',
-        'leider muss ich mich heute mit einer dringenden Beschwerde an Sie wenden.',
-        'hiermit möchte ich meine große Unzufriedenheit bezüglich der Lieferung ausdrücken.',
-      ],
-    },
-    {
-      category: '⚠️ Problem schildern & Mängel benennen',
-      phrases: [
-        'Entgegen unserer ausdrücklichen Vereinbarung wurden die Waren bisher nicht geliefert.',
-        'Für unser Unternehmen ist diese Verzögerung mit erheblichen Unannehmlichkeiten verbunden.',
-        'Die gelieferte Ware entspricht keineswegs den von Ihnen zugesicherten Qualitätsstandards.',
-      ],
-    },
-    {
-      category: '🎯 Forderung & Fristsetzung',
-      phrases: [
-        'Ich fordere Sie daher nachdrücklich auf, bis spätestens zum [Datum] eine Ersatzlieferung zu veranlassen.',
-        'Wir bitten Sie, uns einen angemessenen Preisnachlass von 15 % zu gewähren.',
-        'Bitte bestätigen Sie mir den neuen Liefertermin umgehend schriftlich.',
-      ],
-    },
-    {
-      category: '⚡️ Konsequenzen & Schluss',
-      phrases: [
-        'Sollte die Frist ergebnislos verstreichen, sehen wir uns gezwungen, vom Vertrag zurückzutreten.',
-        'In diesem Fall behalten wir uns rechtliche Schritte sowie Schadensersatzansprüche vor.',
-        'Ich erwarte Ihre umgehende Rückmeldung.\nMit freundlichen Grüßen',
-      ],
-    },
-  ],
-  forumsbeitrag: [
-    {
-      category: '📌 Einleitung & Bezugnahme',
-      phrases: [
-        'Ich habe den Forumsbeitrag zum Thema mit großem Interesse gelesen und möchte mich dazu äußern.',
-        'Das Thema spielt heutzutage in vielen Unternehmen eine zentral wichtige Rolle.',
-      ],
-    },
-    {
-      category: '💭 Eigene Meinung & Erfahrung',
-      phrases: [
-        'Meiner Meinung nach ist es von entscheidender Bedeutung, dass...',
-        'Ich stehe diesem Vorschlag sehr positiv / eher skeptisch gegenüber, weil...',
-        'Aus meiner persönlichen Erfahrung im Betrieb kann ich bestätigen, dass...',
-      ],
-    },
-    {
-      category: '⚖️ Argumente & Beispiele',
-      phrases: [
-        'Ein wesentlicher Vorteil besteht darin, dass die Mitarbeiter dadurch motivierter arbeiten.',
-        'Auf der anderen Seite sollte man bedenken, dass höhere Kosten entstehen könnten.',
-        'Als konkretes Beispiel lässt sich anführen, dass...',
-      ],
-    },
-    {
-      category: '💡 Vorschläge & Fazit',
-      phrases: [
-        'Um ein ausgewogenes Verhältnis zu schaffen, schlage ich vor, dass...',
-        'Ein sinnvoller Kompromiss wäre die Einführung eines hybriden Arbeitsmodells.',
-        'Zusammenfassend lässt sich sagen, dass eine flexible Regelung für alle Beteiligten von Vorteil ist.',
-      ],
-    },
-  ],
-};
 
 export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
   modelltests,
@@ -148,9 +75,6 @@ export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
 
   // Spoiler state for Beschwerdebrief Q21 (user asked to hide it under spoiler for Q21)
   const [showBeschwerdePrompt, setShowBeschwerdePrompt] = useState(false);
-
-  // Redemittel Cheat Sheet drawer toggle
-  const [showRedemittel, setShowRedemittel] = useState(true);
 
   // Editor & Timer state
   const [userText, setUserText] = useState('');
@@ -267,13 +191,7 @@ export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
     progressBadge = { text: '👍 Gute Länge (100–150 Wörter)', color: 'bg-sky-500/20 text-sky-700 dark:text-sky-300 border-sky-500/30' };
   }
 
-  // Insert Redemittel phrase into userText
-  const handleInsertPhrase = (phrase: string) => {
-    setUserText((prev) => {
-      if (!prev.trim()) return phrase;
-      return prev + (prev.endsWith('\n') ? '' : '\n') + phrase;
-    });
-  };
+
 
   const handleSaveEssay = () => {
     if (!userText.trim() || !activeTopic) return;
@@ -538,51 +456,6 @@ export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
                   <RotateCcw className="w-3.5 h-3.5" /> Text leeren
                 </button>
               </div>
-            </div>
-
-            {/* IDEA 3: TELC B2 REDEMITTEL CHEAT SHEET PANEL */}
-            <div className="glass-panel p-5 rounded-2xl border border-slate-300 dark:border-slate-800 space-y-3 shadow-sm">
-              <button
-                type="button"
-                onClick={() => setShowRedemittel(!showRedemittel)}
-                className="w-full flex items-center justify-between text-xs font-black text-indigo-600 dark:text-indigo-400 hover:underline"
-              >
-                <span className="flex items-center gap-2">
-                  <Lightbulb className="w-4.5 h-4.5 text-amber-500" />
-                  💡 Telc B2 Formulierungsbausteine & Redemittel ({taskType === 'beschwerde' ? 'Beschwerdebrief' : 'Forenbeitrag'})
-                </span>
-                <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showRedemittel ? 'rotate-180' : ''}`} />
-              </button>
-
-              {showRedemittel && (
-                <div className="pt-2 space-y-4">
-                  {(taskType === 'beschwerde' ? REDEMITTEL_DATA.beschwerde : REDEMITTEL_DATA.forumsbeitrag).map((cat, catIdx) => (
-                    <div key={catIdx} className="space-y-2">
-                      <h5 className="text-[11px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                        {cat.category}
-                      </h5>
-                      <div className="grid grid-cols-1 gap-1.5">
-                        {cat.phrases.map((phrase, pIdx) => (
-                          <div
-                            key={pIdx}
-                            className="p-2.5 bg-slate-100 dark:bg-slate-900/90 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3 text-xs text-slate-800 dark:text-slate-200 hover:border-indigo-500/50 transition-all group"
-                          >
-                            <span className="font-medium font-sans">{phrase}</span>
-                            <button
-                              type="button"
-                              onClick={() => handleInsertPhrase(phrase)}
-                              className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-[11px] font-extrabold flex items-center gap-1 shrink-0 shadow-sm transition-all"
-                              title="In Ihren Text einfügen"
-                            >
-                              <Plus className="w-3 h-3" /> Einfügen
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
 
           </div>
