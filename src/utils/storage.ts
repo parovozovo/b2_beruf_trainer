@@ -102,35 +102,80 @@ export function saveRegisteredUsersLocal(users: User[]): void {
 
 export async function fetchRegisteredUsersAsync(): Promise<User[]> {
   const local = getRegisteredUsersLocal();
-  if (!isSupabaseConfigured) return local;
+  const mergedMap = new Map<string, User>();
 
-  try {
-    const { data, error } = await supabase.from('registered_users').select('*');
-    if (!error && data && data.length > 0) {
-      const remoteUsers: User[] = data.map((item: Record<string, unknown>) => ({
-        id: String(item.id),
-        name: String(item.name || 'Benutzer'),
-        email: String(item.email || ''),
-        role: (item.role as UserRole) || 'user',
-        isPremium: Boolean(item.is_premium),
-        premiumExpiresAt: item.premium_expires_at ? String(item.premium_expires_at) : null,
-        isBanned: Boolean(item.is_banned),
-        appliedPromoCode: item.applied_promo_code ? String(item.applied_promo_code) : undefined,
-      }));
+  // 1. Add local users
+  local.forEach((u) => {
+    if (u.email) mergedMap.set(u.email.toLowerCase(), u);
+  });
 
-      // Merge remote with local (by email key)
-      const mergedMap = new Map<string, User>();
-      local.forEach((u) => mergedMap.set(u.email.toLowerCase(), u));
-      remoteUsers.forEach((u) => mergedMap.set(u.email.toLowerCase(), u));
-
-      const mergedList = Array.from(mergedMap.values());
-      saveRegisteredUsersLocal(mergedList);
-      return mergedList;
+  // 2. Add current active user if present
+  const current = getCurrentUser();
+  if (current && current.email) {
+    if (!mergedMap.has(current.email.toLowerCase())) {
+      mergedMap.set(current.email.toLowerCase(), current);
     }
-  } catch (e) {
-    console.warn('Could not fetch registered_users from Supabase:', e);
   }
-  return local;
+
+  // 3. Discover users from Promo Codes (local & Cloud)
+  try {
+    const promoCodesList = isSupabaseConfigured ? await fetchPromoCodesAsync() : getPromoCodesLocal();
+    promoCodesList.forEach((pc) => {
+      if (pc.usedByEmails && Array.isArray(pc.usedByEmails)) {
+        pc.usedByEmails.forEach((userEmail: string) => {
+          if (!userEmail) return;
+          const cleanEmail = userEmail.toLowerCase();
+          const existing = mergedMap.get(cleanEmail);
+          if (existing) {
+            if (!existing.appliedPromoCode) existing.appliedPromoCode = pc.code;
+            existing.isPremium = true;
+          } else {
+            mergedMap.set(cleanEmail, {
+              id: `user-promo-${cleanEmail.replace(/[^a-z0-9]/gi, '_')}`,
+              name: cleanEmail.split('@')[0],
+              email: cleanEmail,
+              role: cleanEmail === ADMIN_EMAIL.toLowerCase() ? 'admin' : 'user',
+              isPremium: true,
+              premiumExpiresAt: new Date(Date.now() + (pc.durationDays || 30) * 86400000).toISOString(),
+              appliedPromoCode: pc.code,
+            });
+          }
+        });
+      }
+    });
+  } catch (e) {
+    console.warn('Could not discover users from promo codes:', e);
+  }
+
+  // 4. Try fetching from Supabase registered_users table if available
+  if (isSupabaseConfigured) {
+    try {
+      const { data, error } = await supabase.from('registered_users').select('*');
+      if (!error && data && data.length > 0) {
+        data.forEach((item: Record<string, unknown>) => {
+          const uEmail = String(item.email || '').toLowerCase();
+          if (!uEmail) return;
+          const remoteUser: User = {
+            id: String(item.id),
+            name: String(item.name || uEmail.split('@')[0]),
+            email: uEmail,
+            role: (item.role as UserRole) || 'user',
+            isPremium: Boolean(item.is_premium),
+            premiumExpiresAt: item.premium_expires_at ? String(item.premium_expires_at) : null,
+            isBanned: Boolean(item.is_banned),
+            appliedPromoCode: item.applied_promo_code ? String(item.applied_promo_code) : undefined,
+          };
+          mergedMap.set(uEmail, remoteUser);
+        });
+      }
+    } catch (e) {
+      console.warn('Could not fetch registered_users table from Supabase:', e);
+    }
+  }
+
+  const mergedList = Array.from(mergedMap.values());
+  saveRegisteredUsersLocal(mergedList);
+  return mergedList;
 }
 
 export function syncUserToRegisteredList(user: User): void {

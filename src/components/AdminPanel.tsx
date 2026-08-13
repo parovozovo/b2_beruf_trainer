@@ -2513,7 +2513,22 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       <td className="p-3 font-mono font-bold text-amber-400">{code.code}</td>
                       <td className="p-3">{code.durationDays} Tage</td>
                       <td className="p-3 font-bold">{code.usedCount} / {code.maxUses}</td>
-                      <td className="p-3 text-[11px] text-slate-400">{code.usedByEmails.join(', ') || 'Keine'}</td>
+                      <td className="p-3 max-w-xs">
+                        {code.usedByEmails && code.usedByEmails.length > 0 ? (
+                          <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto pr-1">
+                            {code.usedByEmails.map((emailItem, idx) => (
+                              <span
+                                key={idx}
+                                className="px-2 py-0.5 bg-slate-900 text-indigo-300 font-mono text-[10px] font-bold rounded-md border border-slate-800"
+                              >
+                                {emailItem}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-slate-600 italic">Noch keine</span>
+                        )}
+                      </td>
                       <td className="p-3">
                         <button
                           onClick={() => handleTogglePromoActive(code.id)}
