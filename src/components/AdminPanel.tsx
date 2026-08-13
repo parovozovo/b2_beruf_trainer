@@ -188,11 +188,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     showToast(updatedUser.isBanned ? 'Benutzer wurde gesperrt!' : 'Benutzer wurde entsperrt!');
   };
 
-  const handleDeleteUser = (userId: string) => {
-    if (window.confirm('Möchten Sie diesen Benutzer wirklich dauerhaft löschen?')) {
-      deleteRegisteredUserInStorage(userId);
-      setUsersList(getRegisteredUsersLocal());
-      showToast('Benutzer wurde gelöscht!');
+  const handleDeleteUser = async (userId: string, userEmail: string) => {
+    if (window.confirm(`Möchten Sie den Benutzer "${userEmail}" wirklich dauerhaft löschen?`)) {
+      deleteRegisteredUserInStorage(userId, userEmail);
+      setUsersList((prev) => prev.filter((u) => u.id !== userId && u.email.toLowerCase() !== userEmail.toLowerCase()));
+      showToast('Benutzer wurde dauerhaft gelöscht!');
     }
   };
 
@@ -2976,6 +2976,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     <th className="pb-3 px-3">Rolle</th>
                     <th className="pb-3 px-3">Premium-Status</th>
                     <th className="pb-3 px-3">Gutschein</th>
+                    <th className="pb-3 px-3">Registriert</th>
+                    <th className="pb-3 px-3">Letzter Login</th>
                     <th className="pb-3 px-3">Status</th>
                     <th className="pb-3 px-3 text-right">Aktionen</th>
                   </tr>
@@ -3046,6 +3048,32 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                             )}
                           </td>
 
+                          {/* Registered Date */}
+                          <td className="py-3 px-3 text-[11px] text-slate-400 font-mono">
+                            {u.createdAt
+                              ? new Date(u.createdAt).toLocaleDateString('de-DE', {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  year: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })
+                              : '—'}
+                          </td>
+
+                          {/* Last Login Date */}
+                          <td className="py-3 px-3 text-[11px] text-slate-400 font-mono">
+                            {u.lastLoginAt
+                              ? new Date(u.lastLoginAt).toLocaleDateString('de-DE', {
+                                  day: '2-digit',
+                                  month: '2-digit',
+                                  year: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })
+                              : '—'}
+                          </td>
+
                           {/* Status / Ban */}
                           <td className="py-3 px-3">
                             {u.isBanned ? (
@@ -3089,7 +3117,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
                                   <button
                                     type="button"
-                                    onClick={() => handleDeleteUser(u.id)}
+                                    onClick={() => handleDeleteUser(u.id, u.email)}
                                     className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-500/20 rounded-lg transition-colors"
                                     title="Benutzer löschen"
                                   >

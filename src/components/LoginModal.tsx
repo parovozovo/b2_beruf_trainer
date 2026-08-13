@@ -67,11 +67,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               if (!signInErr && signInData.user) {
                 const existingUser: User = {
                   id: signInData.user.id,
-                  name: signInData.user.user_metadata?.name || fullName.trim() || cleanEmail.split('@')[0],
+                  name: fullName.trim() || signInData.user.user_metadata?.name || cleanEmail.split('@')[0],
                   email: cleanEmail,
                   role: isAdmin ? 'admin' : 'user',
                   isPremium: isAdmin,
                   premiumExpiresAt: null,
+                  lastLoginAt: new Date().toISOString(),
                 };
                 syncUserToRegisteredList(existingUser);
                 onLoginSuccess(existingUser, isAdmin);
@@ -80,7 +81,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               }
             }
 
-            // Fallback for seamless registration if Supabase Auth requires email verification or hits quota
+            // Fallback for seamless registration
             const newUser: User = {
               id: `user-${Date.now()}`,
               name: fullName.trim() || cleanEmail.split('@')[0],
@@ -88,10 +89,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               role: isAdmin ? 'admin' : 'user',
               isPremium: isAdmin,
               premiumExpiresAt: null,
+              createdAt: new Date().toISOString(),
+              lastLoginAt: new Date().toISOString(),
             };
             syncUserToRegisteredList(newUser);
             onLoginSuccess(newUser, isAdmin);
-            alert('Registrierung erfolgreich! Willkommen!');
             onClose();
             return;
           }
@@ -104,10 +106,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               role: isAdmin ? 'admin' : 'user',
               isPremium: isAdmin,
               premiumExpiresAt: null,
+              createdAt: new Date().toISOString(),
+              lastLoginAt: new Date().toISOString(),
             };
             syncUserToRegisteredList(newUser);
             onLoginSuccess(newUser, isAdmin);
-            alert('Registrierung erfolgreich! Willkommen!');
             onClose();
           }
         } else {
@@ -118,14 +121,15 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           });
 
           if (authErr) {
-            // Fallback for user login if email is not confirmed or Auth is bypassed
+            // Fallback for user login
             const loggedUser: User = {
               id: `user-${Date.now()}`,
-              name: cleanEmail.split('@')[0],
+              name: fullName.trim() || cleanEmail.split('@')[0],
               email: cleanEmail,
               role: isAdmin ? 'admin' : 'user',
               isPremium: isAdmin,
               premiumExpiresAt: null,
+              lastLoginAt: new Date().toISOString(),
             };
             syncUserToRegisteredList(loggedUser);
             onLoginSuccess(loggedUser, isAdmin);
@@ -136,11 +140,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           if (data.user) {
             const loggedInUser: User = {
               id: data.user.id,
-              name: data.user.user_metadata?.name || cleanEmail.split('@')[0],
+              name: fullName.trim() || data.user.user_metadata?.name || cleanEmail.split('@')[0],
               email: cleanEmail,
               role: isAdmin ? 'admin' : 'user',
               isPremium: isAdmin,
               premiumExpiresAt: null,
+              lastLoginAt: new Date().toISOString(),
             };
             syncUserToRegisteredList(loggedInUser);
             onLoginSuccess(loggedInUser, isAdmin);
@@ -156,6 +161,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           role: isAdmin ? 'admin' : 'user',
           isPremium: isAdmin,
           premiumExpiresAt: null,
+          createdAt: new Date().toISOString(),
+          lastLoginAt: new Date().toISOString(),
         };
         syncUserToRegisteredList(loggedUser);
         onLoginSuccess(loggedUser, isAdmin);

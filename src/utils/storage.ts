@@ -164,6 +164,8 @@ export async function fetchRegisteredUsersAsync(): Promise<User[]> {
             premiumExpiresAt: item.premium_expires_at ? String(item.premium_expires_at) : null,
             isBanned: Boolean(item.is_banned),
             appliedPromoCode: item.applied_promo_code ? String(item.applied_promo_code) : undefined,
+            createdAt: item.created_at ? String(item.created_at) : undefined,
+            lastLoginAt: item.last_login_at ? String(item.last_login_at) : undefined,
           };
           mergedMap.set(uEmail, remoteUser);
         });
@@ -174,7 +176,7 @@ export async function fetchRegisteredUsersAsync(): Promise<User[]> {
 
     // 5. Discover active users from written essays if table exists
     try {
-      const { data: essays } = await supabase.from('written_essays').select('user_email, user_id, user_name');
+      const { data: essays } = await supabase.from('written_essays').select('user_email, user_id, user_name, created_at');
       if (essays && essays.length > 0) {
         essays.forEach((item: Record<string, unknown>) => {
           const uEmail = String(item.user_email || '').toLowerCase();
@@ -186,6 +188,7 @@ export async function fetchRegisteredUsersAsync(): Promise<User[]> {
               role: uEmail === ADMIN_EMAIL.toLowerCase() ? 'admin' : 'user',
               isPremium: false,
               premiumExpiresAt: null,
+              createdAt: item.created_at ? String(item.created_at) : undefined,
             });
           }
         });
@@ -203,16 +206,24 @@ export async function fetchRegisteredUsersAsync(): Promise<User[]> {
 export function syncUserToRegisteredList(user: User): void {
   const list = getRegisteredUsersLocal();
   const idx = list.findIndex((u) => u.id === user.id || u.email.toLowerCase() === user.email.toLowerCase());
-  let updatedUser = user;
+  const now = new Date().toISOString();
+  let updatedUser: User = {
+    ...user,
+    createdAt: user.createdAt || (idx >= 0 ? list[idx].createdAt : now),
+    lastLoginAt: now,
+  };
 
   if (idx >= 0) {
     updatedUser = {
       ...list[idx],
       ...user,
+      name: user.name || list[idx].name,
       isPremium: list[idx].isPremium || user.isPremium,
       premiumExpiresAt: list[idx].premiumExpiresAt || user.premiumExpiresAt,
       appliedPromoCode: list[idx].appliedPromoCode || user.appliedPromoCode,
       isBanned: user.isBanned !== undefined ? user.isBanned : list[idx].isBanned,
+      createdAt: list[idx].createdAt || updatedUser.createdAt,
+      lastLoginAt: now,
     };
     list[idx] = updatedUser;
   } else {
@@ -224,16 +235,21 @@ export function syncUserToRegisteredList(user: User): void {
   if (isSupabaseConfigured) {
     (async () => {
       try {
-        await supabase.from('registered_users').upsert({
-          id: updatedUser.id,
-          name: updatedUser.name,
-          email: updatedUser.email,
-          role: updatedUser.role,
-          is_premium: updatedUser.isPremium,
-          premium_expires_at: updatedUser.premiumExpiresAt,
-          is_banned: Boolean(updatedUser.isBanned),
-          applied_promo_code: updatedUser.appliedPromoCode || null,
-        });
+        await supabase.from('registered_users').upsert(
+          {
+            id: updatedUser.id,
+            name: updatedUser.name,
+            email: updatedUser.email.toLowerCase(),
+            role: updatedUser.role,
+            is_premium: updatedUser.isPremium,
+            premium_expires_at: updatedUser.premiumExpiresAt,
+            is_banned: Boolean(updatedUser.isBanned),
+            applied_promo_code: updatedUser.appliedPromoCode || null,
+            created_at: updatedUser.createdAt || now,
+            last_login_at: updatedUser.lastLoginAt || now,
+          },
+          { onConflict: 'email' }
+        );
       } catch (e) {
         console.warn('Could not sync user to Supabase:', e);
       }
@@ -241,13 +257,43 @@ export function syncUserToRegisteredList(user: User): void {
   }
 }
 
-export function deleteRegisteredUserInStorage(userId: string): void {
-  const list = getRegisteredUsersLocal().filter((u) => u.id !== userId);
-  saveRegisteredUsersLocal(list);
+export function deleteRegisteredUserInStorage(userId: string, userEmail?: string): void {
+  const list = getRegisteredUsersLocal();
+  const target = list.find((u) => u.id === userId || (userEmail && u.email.toLowerCase() === userEmail.toLowerCase()));
+  const targetEmail = target?.email || userEmail;
+
+  // 1. Remove from local user list
+  const filtered = list.filter((u) => u.id !== userId && (!targetEmail || u.email.toLowerCase() !== targetEmail.toLowerCase()));
+  saveRegisteredUsersLocal(filtered);
+
+  // 2. Clean email from promo codes (so user isn't re-discovered)
+  if (targetEmail) {
+    const promoList = getPromoCodesLocal();
+    const updatedPromoList = promoList.map((pc) => ({
+      ...pc,
+      usedByEmails: (pc.usedByEmails || []).filter((em) => em.toLowerCase() !== targetEmail.toLowerCase()),
+      usedCount: Math.max(0, (pc.usedByEmails || []).filter((em) => em.toLowerCase() !== targetEmail.toLowerCase()).length),
+    }));
+    savePromoCodesLocal(updatedPromoList);
+    if (isSupabaseConfigured) {
+      savePromoCodesAsync(updatedPromoList).catch((e) => console.warn(e));
+    }
+
+    // 3. Clear current user if it matches deleted account
+    const current = getCurrentUser();
+    if (current && current.email.toLowerCase() === targetEmail.toLowerCase()) {
+      localStorage.removeItem(KEYS.CURRENT_USER);
+    }
+  }
+
+  // 4. Delete from Supabase registered_users table
   if (isSupabaseConfigured) {
     (async () => {
       try {
         await supabase.from('registered_users').delete().eq('id', userId);
+        if (targetEmail) {
+          await supabase.from('registered_users').delete().eq('email', targetEmail.toLowerCase());
+        }
       } catch (e) {
         console.warn('Could not delete user from Supabase:', e);
       }

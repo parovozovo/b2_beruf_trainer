@@ -11,6 +11,8 @@ export interface User {
   lastAttemptDate?: string;
   isBanned?: boolean;
   appliedPromoCode?: string;
+  createdAt?: string; // ISO Date string
+  lastLoginAt?: string; // ISO Date string
 }
 
 export interface PromoCode {
