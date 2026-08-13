@@ -150,9 +150,12 @@ export function App() {
     const updatedUser: User = {
       ...currentUser,
       isPremium: true,
+      premiumExpiresAt: new Date(Date.now() + (found.durationDays || 30) * 86400000).toISOString(),
+      appliedPromoCode: found.code,
     };
     setCurrentUserTab(updatedUser);
     setCurrentUser(updatedUser);
+    syncUserToRegisteredList(updatedUser);
 
     const updatedCodes = promoCodes.map((c) =>
       c.id === found.id
@@ -164,7 +167,7 @@ export function App() {
         : c
     );
     handleSavePromoCodes(updatedCodes);
-    alert('Herzlichen Glückwunsch! Ihr Konto wurde auf Premium aufgestuft.');
+    alert(`Herzlichen Glückwunsch! Ihr Konto wurde auf Premium aufgestuft (${found.durationDays} Tage gültig).`);
   };
 
   // Tile Practice Result Saver
@@ -345,6 +348,7 @@ export function App() {
         isOpen={isPremiumLockedModalOpen}
         onClose={() => setIsPremiumLockedModalOpen(false)}
         onOpenPromoModal={() => setIsPromoModalOpen(true)}
+        onRedeemPromoCode={handleRedeemPromoCode}
       />
 
       <UserProfileModal
