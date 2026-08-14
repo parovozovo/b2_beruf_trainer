@@ -16,24 +16,51 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   onClose,
   onLoginSuccess,
 }) => {
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
+  const [mode, setMode] = useState<'signin' | 'signup' | 'forgot_password'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successInfo, setSuccessInfo] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
   const handleRealAuthSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSuccessInfo(null);
     setLoading(true);
 
     const cleanEmail = email.trim().toLowerCase();
 
-    if (!cleanEmail || !password) {
-      setError('Bitte E-Mail-Adresse und Passwort eingeben.');
+    if (!cleanEmail) {
+      setError('Bitte E-Mail-Adresse eingeben.');
+      setLoading(false);
+      return;
+    }
+
+    // Forgot Password Flow
+    if (mode === 'forgot_password') {
+      try {
+        if (isSupabaseConfigured) {
+          const { error: resetErr } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
+            redirectTo: `${window.location.origin}/#reset-password`,
+          });
+          if (resetErr) throw resetErr;
+        }
+        setSuccessInfo(`Ein Link zum Zurücksetzen Ihres Passworts wurde an ${cleanEmail} gesendet. Bitte überprüfen Sie Ihr Postfach (auch Spam-Ordner).`);
+      } catch (err: unknown) {
+        const errMsg = err instanceof Error ? err.message : 'Fehler beim Senden der E-Mail.';
+        setError(errMsg);
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    if (!password) {
+      setError('Bitte Passwort eingeben.');
       setLoading(false);
       return;
     }
@@ -43,6 +70,21 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     try {
       if (isSupabaseConfigured) {
         if (mode === 'signup') {
+          // Check if user already exists in registered_users table
+          try {
+            const { data: existingRows } = await supabase
+              .from('registered_users')
+              .select('id, email')
+              .eq('email', cleanEmail);
+            if (existingRows && existingRows.length > 0) {
+              setError('Ein Konto mit dieser E-Mail-Adresse existiert bereits. Bitte melden Sie sich an oder nutzen Sie "Passwort vergessen".');
+              setLoading(false);
+              return;
+            }
+          } catch (chkErr) {
+            console.warn('Could not pre-check user existence in table:', chkErr);
+          }
+
           // Real Supabase Signup
           const { data, error: authErr } = await supabase.auth.signUp({
             email: cleanEmail,
@@ -53,49 +95,16 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           });
 
           if (authErr) {
-            // Handle Supabase Auth errors gracefully (e.g. user already registered, email rate limit, unconfirmed email)
             if (
-              authErr.message.includes('already registered') ||
-              authErr.message.includes('User already exists')
+              authErr.message.toLowerCase().includes('already registered') ||
+              authErr.message.toLowerCase().includes('already exists') ||
+              authErr.message.toLowerCase().includes('user already')
             ) {
-              // Try signing in automatically if user already exists
-              const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
-                email: cleanEmail,
-                password: password,
-              });
-
-              if (!signInErr && signInData.user) {
-                const existingUser: User = {
-                  id: signInData.user.id,
-                  name: fullName.trim() || signInData.user.user_metadata?.name || cleanEmail.split('@')[0],
-                  email: cleanEmail,
-                  role: isAdmin ? 'admin' : 'user',
-                  isPremium: isAdmin,
-                  premiumExpiresAt: null,
-                  lastLoginAt: new Date().toISOString(),
-                };
-                syncUserToRegisteredList(existingUser);
-                onLoginSuccess(existingUser, isAdmin);
-                onClose();
-                return;
-              }
+              setError('Ein Konto mit dieser E-Mail-Adresse existiert bereits. Bitte melden Sie sich an oder nutzen Sie "Passwort vergessen".');
+              setLoading(false);
+              return;
             }
-
-            // Fallback for seamless registration
-            const newUser: User = {
-              id: `user-${Date.now()}`,
-              name: fullName.trim() || cleanEmail.split('@')[0],
-              email: cleanEmail,
-              role: isAdmin ? 'admin' : 'user',
-              isPremium: isAdmin,
-              premiumExpiresAt: null,
-              createdAt: new Date().toISOString(),
-              lastLoginAt: new Date().toISOString(),
-            };
-            syncUserToRegisteredList(newUser);
-            onLoginSuccess(newUser, isAdmin);
-            onClose();
-            return;
+            throw authErr;
           }
 
           if (data.user) {
@@ -121,26 +130,13 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           });
 
           if (authErr) {
-            // Fallback for user login
-            const loggedUser: User = {
-              id: `user-${Date.now()}`,
-              name: fullName.trim() || cleanEmail.split('@')[0],
-              email: cleanEmail,
-              role: isAdmin ? 'admin' : 'user',
-              isPremium: isAdmin,
-              premiumExpiresAt: null,
-              lastLoginAt: new Date().toISOString(),
-            };
-            syncUserToRegisteredList(loggedUser);
-            onLoginSuccess(loggedUser, isAdmin);
-            onClose();
-            return;
+            throw authErr;
           }
 
           if (data.user) {
             const loggedInUser: User = {
               id: data.user.id,
-              name: fullName.trim() || data.user.user_metadata?.name || cleanEmail.split('@')[0],
+              name: data.user.user_metadata?.name || cleanEmail.split('@')[0],
               email: cleanEmail,
               role: isAdmin ? 'admin' : 'user',
               isPremium: isAdmin,
@@ -153,7 +149,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           }
         }
       } else {
-        // Direct Auth
+        // Direct Local Auth fallback
         const loggedUser: User = {
           id: `user-${Date.now()}`,
           name: fullName.trim() || cleanEmail.split('@')[0],
@@ -192,12 +188,18 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           </div>
           <div>
             <h3 className="text-xl font-bold text-white">
-              {mode === 'signin' ? 'Anmeldung' : 'Registrierung'}
+              {mode === 'signin'
+                ? 'Anmeldung'
+                : mode === 'signup'
+                ? 'Registrierung'
+                : 'Passwort zurücksetzen'}
             </h3>
             <p className="text-xs text-slate-400">
               {mode === 'signin'
                 ? 'Melden Sie sich mit Ihren Zugangsdaten an'
-                : 'Erstellen Sie ein neues Benutzerkonto'}
+                : mode === 'signup'
+                ? 'Erstellen Sie ein neues Benutzerkonto'
+                : 'Geben Sie Ihre E-Mail ein, um ein neues Passwort anzufordern'}
             </p>
           </div>
         </div>
@@ -206,6 +208,13 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl flex items-center gap-2 text-xs text-rose-300">
             <ShieldAlert className="w-4 h-4 shrink-0" />
             <span>{error}</span>
+          </div>
+        )}
+
+        {successInfo && (
+          <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center gap-2 text-xs text-emerald-300 font-bold">
+            <Mail className="w-4 h-4 shrink-0 text-emerald-400" />
+            <span>{successInfo}</span>
           </div>
         )}
 
@@ -238,20 +247,37 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1">Passwort</label>
-            <div className="relative">
-              <Lock className="w-4 h-4 absolute left-3 top-3.5 text-slate-400" />
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full pl-10 pr-4 py-2.5 glass-input rounded-xl text-sm"
-              />
+          {mode !== 'forgot_password' && (
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-medium text-slate-300">Passwort</label>
+                {mode === 'signin' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode('forgot_password');
+                      setError(null);
+                      setSuccessInfo(null);
+                    }}
+                    className="text-[11px] text-indigo-400 hover:underline font-semibold"
+                  >
+                    Passwort vergessen?
+                  </button>
+                )}
+              </div>
+              <div className="relative">
+                <Lock className="w-4 h-4 absolute left-3 top-3.5 text-slate-400" />
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full pl-10 pr-4 py-2.5 glass-input rounded-xl text-sm"
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           <button
             type="submit"
@@ -264,9 +290,13 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               <>
                 <LogIn className="w-4 h-4" /> Anmelden
               </>
-            ) : (
+            ) : mode === 'signup' ? (
               <>
                 <UserPlus className="w-4 h-4" /> Benutzerkonto erstellen
+              </>
+            ) : (
+              <>
+                <Mail className="w-4 h-4" /> Link zum Zurücksetzen senden
               </>
             )}
           </button>
@@ -276,14 +306,28 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           {mode === 'signin' ? (
             <span>
               Noch kein Konto?{' '}
-              <button onClick={() => setMode('signup')} className="text-indigo-400 font-bold hover:underline">
+              <button
+                onClick={() => {
+                  setMode('signup');
+                  setError(null);
+                  setSuccessInfo(null);
+                }}
+                className="text-indigo-400 font-bold hover:underline"
+              >
                 Jetzt registrieren
               </button>
             </span>
           ) : (
             <span>
               Bereits registriert?{' '}
-              <button onClick={() => setMode('signin')} className="text-indigo-400 font-bold hover:underline">
+              <button
+                onClick={() => {
+                  setMode('signin');
+                  setError(null);
+                  setSuccessInfo(null);
+                }}
+                className="text-indigo-400 font-bold hover:underline"
+              >
                 Hier anmelden
               </button>
             </span>

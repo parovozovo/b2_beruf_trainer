@@ -24,7 +24,9 @@ import {
   fetchModelltestsAsync,
   fetchPromoCodesAsync,
   syncUserToRegisteredList,
+  ADMIN_EMAIL,
 } from './utils/storage';
+import { supabase, isSupabaseConfigured } from './utils/supabase';
 import { Navbar } from './components/Navbar';
 import { Dashboard } from './components/Dashboard';
 import { TilePractice } from './components/TilePractice';
@@ -93,6 +95,31 @@ export function App() {
       setSprechenTopics(cloudSP);
     }
     loadCloudData();
+
+    // Supabase Auth event listener (for Password Recovery email link)
+    if (isSupabaseConfigured) {
+      const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'PASSWORD_RECOVERY') {
+          showToast('🔑 Sie können jetzt Ihr neues Passwort festlegen.', 'info');
+          setIsUserProfileModalOpen(true);
+        } else if (event === 'SIGNED_IN' && session?.user) {
+          const u: User = {
+            id: session.user.id,
+            name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'Benutzer',
+            email: session.user.email || '',
+            role: session.user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase() ? 'admin' : 'user',
+            isPremium: session.user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase(),
+            premiumExpiresAt: null,
+            lastLoginAt: new Date().toISOString(),
+          };
+          setCurrentUserTab(u);
+          setCurrentUser(u);
+        }
+      });
+      return () => {
+        authListener?.subscription?.unsubscribe();
+      };
+    }
   }, []);
 
   // Handlers for Data Updates with Supabase Cloud Sync
