@@ -64,39 +64,17 @@ export function setCurrentUser(user: User | null): void {
 export function getRegisteredUsersLocal(): User[] {
   const data = localStorage.getItem(KEYS.REGISTERED_USERS);
   if (!data) {
-    // Seed initial default users if none exist
-    const defaultUsers: User[] = [
-      {
-        id: 'admin-1',
-        name: 'Administrator',
-        email: ADMIN_EMAIL,
-        role: 'admin',
-        isPremium: true,
-        premiumExpiresAt: null,
-      },
-      {
-        id: 'user-demo-1',
-        name: 'Max Mustermann',
-        email: 'max.mustermann@beispiel.de',
-        role: 'user',
-        isPremium: true,
-        premiumExpiresAt: new Date(Date.now() + 30 * 86400000).toISOString(),
-        appliedPromoCode: 'PROMO2026',
-      },
-      {
-        id: 'user-demo-2',
-        name: 'Anna Schmidt',
-        email: 'anna.schmidt@beispiel.de',
-        role: 'user',
-        isPremium: false,
-        premiumExpiresAt: null,
-      },
-    ];
-    localStorage.setItem(KEYS.REGISTERED_USERS, JSON.stringify(defaultUsers));
-    return defaultUsers;
+    return [];
   }
   try {
-    return JSON.parse(data);
+    const list: User[] = JSON.parse(data);
+    // Filter out old demo mock users
+    return list.filter(
+      (u) =>
+        u.email !== 'max.mustermann@beispiel.de' &&
+        u.email !== 'anna.schmidt@beispiel.de' &&
+        !u.id.startsWith('user-demo-')
+    );
   } catch {
     return [];
   }
