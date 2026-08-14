@@ -37,13 +37,14 @@ import { AdminPanel } from './components/AdminPanel';
 import { LoginModal } from './components/LoginModal';
 import { PromoModal } from './components/PromoModal';
 import { PremiumLockedModal } from './components/PremiumLockedModal';
+import { ResetPasswordModal } from './components/ResetPasswordModal';
 import { UserProfileModal } from './components/UserProfileModal';
 
 export function App() {
   const [currentUser, setCurrentUserTab] = useState<User | null>(getCurrentUser());
   const [currentTab, setCurrentTab] = useState<string>('dashboard');
 
-  // Application Data States
+  // Core Data States
   const [modelltests, setModelltests] = useState<Modelltest[]>(getModelltestsLocal());
   const [promoCodes, setPromoCodes] = useState<PromoCode[]>(getPromoCodesLocal());
   const [forumsbeitragTopics, setForumsbeitragTopics] = useState<ForumsbeitragTopic[]>(getForumsbeitragTopicsLocal());
@@ -56,12 +57,53 @@ export function App() {
   const [isPromoModalOpen, setIsPromoModalOpen] = useState(false);
   const [isPremiumLockedModalOpen, setIsPremiumLockedModalOpen] = useState(false);
   const [isUserProfileModalOpen, setIsUserProfileModalOpen] = useState(false);
+  const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
 
   // Hidden admin hash route detection (/admin-beruf or #admin-beruf)
   useEffect(() => {
     const checkAdminRoute = () => {
       const path = window.location.pathname;
       const hash = window.location.hash;
+      const search = window.location.search;
+
+      // Handle Password Recovery URL hash or query
+      if (
+        hash.includes('type=recovery') ||
+        hash.includes('reset-password') ||
+        search.includes('type=recovery')
+      ) {
+        setIsResetPasswordModalOpen(true);
+        showToast('🔑 Bitte geben Sie Ihr neues Passwort ein.', 'info');
+      }
+
+      // Handle Email Verification Confirmation
+      if (hash.includes('type=signup') || hash.includes('type=email_change')) {
+        showToast('✅ E-Mail-Adresse erfolgreich bestätigt! Willkommen!', 'success');
+        confetti({ particleCount: 80, spread: 60 });
+      }
+
+      // Handle Error Description from Auth Link
+      if (hash.includes('error_description=')) {
+        const match = hash.match(/error_description=([^&]+)/);
+        if (match && match[1]) {
+          const decoded = decodeURIComponent(match[1].replace(/\+/g, ' '));
+          showToast(`⚠️ ${decoded}`, 'error');
+        }
+      }
+
+      // Handle PKCE Code exchange
+      if (search.includes('code=')) {
+        const urlParams = new URLSearchParams(search);
+        const code = urlParams.get('code');
+        if (code && isSupabaseConfigured) {
+          supabase.auth.exchangeCodeForSession(code).then(({ data, error }) => {
+            if (!error && data.session) {
+              showToast('✅ Erfolgreich authentifiziert!', 'success');
+            }
+          });
+        }
+      }
+
       if (path.includes('admin-beruf') || hash.includes('admin-beruf')) {
         if (currentUser?.role === 'admin') {
           setCurrentTab('admin');
@@ -101,7 +143,7 @@ export function App() {
       const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
         if (event === 'PASSWORD_RECOVERY') {
           showToast('🔑 Sie können jetzt Ihr neues Passwort festlegen.', 'info');
-          setIsUserProfileModalOpen(true);
+          setIsResetPasswordModalOpen(true);
         } else if (event === 'SIGNED_IN' && session?.user) {
           const email = session.user.email || '';
           const u: User = {
@@ -424,6 +466,23 @@ export function App() {
         }}
         promoCodes={promoCodes}
         onRedeemPromoCode={handleRedeemPromoCode}
+      />
+
+      <ResetPasswordModal
+        isOpen={isResetPasswordModalOpen}
+        onClose={() => {
+          setIsResetPasswordModalOpen(false);
+          // Clean hash
+          if (window.location.hash.includes('recovery') || window.location.hash.includes('reset-password')) {
+            window.location.hash = '';
+          }
+        }}
+        onSuccess={(updatedUser) => {
+          setCurrentUser(updatedUser);
+          setCurrentUserTab(updatedUser);
+          showToast('✅ Passwort erfolgreich gespeichert! Willkommen!', 'success');
+          confetti({ particleCount: 100, spread: 70 });
+        }}
       />
 
       {/* Global In-App Notification Toast */}
