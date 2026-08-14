@@ -14,8 +14,8 @@ const KEYS = {
   TILE_RESULTS: 'b2_tile_results',
 };
 
-export const ADMIN_EMAILS = ['parovozovo@yahoo.com', 'luck34y@yahoo.com'];
-export const ADMIN_EMAIL = 'parovozovo@yahoo.com';
+export const ADMIN_EMAILS = ['luck34y@yahoo.com'];
+export const ADMIN_EMAIL = 'luck34y@yahoo.com';
 
 export function isAdminEmail(email?: string | null): boolean {
   if (!email) return false;

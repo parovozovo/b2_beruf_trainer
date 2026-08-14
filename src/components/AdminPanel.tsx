@@ -171,51 +171,47 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     handleSyncUsers();
   }, []);
 
-  const handleAdjustUserPremium = (userId: string) => {
-    const target = usersList.find((u) => u.id === userId);
-    if (!target) return;
+  const [adjustingUser, setAdjustingUser] = useState<User | null>(null);
+  const [adjustOption, setAdjustOption] = useState<'1' | '7' | '14' | '30' | '90' | 'unlimited' | 'remove' | 'custom'>('30');
+  const [customAdjustDays, setCustomAdjustDays] = useState<number>(15);
 
-    const input = window.prompt(
-      `👑 Premium-Gültigkeit anpassen für "${target.name}" (${target.email}):\n\n` +
-        `• Geben Sie eine Anzahl Tage ein (z.B. 1, 7, 14, 15, 30, 60, 90)\n` +
-        `• Tippen Sie "unbegrenzt" für lebenslangen Premium-Zugang\n` +
-        `• Tippen Sie "0" um Premium sofort zu entziehen`,
-      '30'
-    );
+  const handleOpenAdjustModal = (user: User) => {
+    setAdjustingUser(user);
+    setAdjustOption('30');
+    setCustomAdjustDays(15);
+  };
 
-    if (input === null) return; // Cancelled
+  const handleSaveAdjustedPremium = () => {
+    if (!adjustingUser) return;
+    const target = adjustingUser;
+    let updatedUser: User;
 
-    const clean = input.trim().toLowerCase();
-    if (clean === '0' || clean === 'kostenlos') {
-      const updatedUser: User = { ...target, isPremium: false, premiumExpiresAt: null };
-      syncUserToRegisteredList(updatedUser);
-      setUsersList((prev) => prev.map((u) => (u.id === userId ? updatedUser : u)));
+    if (adjustOption === 'remove') {
+      updatedUser = { ...target, isPremium: false, premiumExpiresAt: null };
       showToast(`Premium für ${target.name} wurde entzogen.`);
-      return;
+    } else if (adjustOption === 'unlimited') {
+      updatedUser = { ...target, isPremium: true, premiumExpiresAt: null };
+      showToast(`👑 Unbegrenztes Premium für ${target.name} aktiviert!`);
+    } else {
+      let days = 30;
+      if (adjustOption === '1') days = 1;
+      else if (adjustOption === '7') days = 7;
+      else if (adjustOption === '14') days = 14;
+      else if (adjustOption === '30') days = 30;
+      else if (adjustOption === '90') days = 90;
+      else if (adjustOption === 'custom') days = Math.max(1, customAdjustDays || 1);
+
+      const currentExp = target.premiumExpiresAt && target.isPremium ? new Date(target.premiumExpiresAt).getTime() : Date.now();
+      const startBase = Math.max(currentExp, Date.now());
+      const newExp = new Date(startBase + days * 86400000).toISOString();
+
+      updatedUser = { ...target, isPremium: true, premiumExpiresAt: newExp };
+      showToast(`+${days} Tage Premium für ${target.name} zugewiesen!`);
     }
 
-    if (clean === 'unbegrenzt' || clean === 'unlimited' || clean === 'admin') {
-      const updatedUser: User = { ...target, isPremium: true, premiumExpiresAt: null };
-      syncUserToRegisteredList(updatedUser);
-      setUsersList((prev) => prev.map((u) => (u.id === userId ? updatedUser : u)));
-      showToast(`Unbegrenztes Premium für ${target.name} aktiviert! 👑`);
-      return;
-    }
-
-    const days = parseInt(clean, 10);
-    if (isNaN(days) || days <= 0) {
-      alert('Bitte eine gültige positive Zahl von Tagen (z.B. 1, 15, 30) oder "unbegrenzt" eingeben.');
-      return;
-    }
-
-    const currentExp = target.premiumExpiresAt && target.isPremium ? new Date(target.premiumExpiresAt).getTime() : Date.now();
-    const startBase = Math.max(currentExp, Date.now());
-    const newExp = new Date(startBase + days * 86400000).toISOString();
-
-    const updatedUser: User = { ...target, isPremium: true, premiumExpiresAt: newExp };
     syncUserToRegisteredList(updatedUser);
-    setUsersList((prev) => prev.map((u) => (u.id === userId ? updatedUser : u)));
-    showToast(`+${days} Tage Premium für ${target.name} zugewiesen!`);
+    setUsersList((prev) => prev.map((u) => (u.id === target.id ? updatedUser : u)));
+    setAdjustingUser(null);
   };
 
   const handleToggleBanUser = (userId: string) => {
@@ -3154,7 +3150,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                             <div className="flex items-center justify-end gap-1.5">
                               <button
                                 type="button"
-                                onClick={() => handleAdjustUserPremium(u.id)}
+                                onClick={() => handleOpenAdjustModal(u)}
                                 className="px-2.5 py-1 bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 rounded-lg text-[11px] font-bold border border-amber-500/40 flex items-center gap-1 transition-all"
                                 title="Premium-Tage flexibel anpassen (+Tage / Unbegrenzt / Entziehen)"
                               >
@@ -3408,6 +3404,195 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-extrabold rounded-xl text-xs shadow-lg transition-all flex items-center gap-2"
               >
                 <Save className="w-4 h-4" /> 🚀 {parsedBulkTopics.length} Themen in Supabase speichern
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Adjust Premium Modal */}
+      {adjustingUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fadeIn">
+          <div className="relative w-full max-w-md p-6 glass-panel rounded-3xl border border-slate-700/60 shadow-2xl space-y-5">
+            <button
+              onClick={() => setAdjustingUser(null)}
+              className="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-xl transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {/* Header */}
+            <div className="flex items-center gap-3.5">
+              <div className="p-3 bg-amber-500/20 text-amber-400 rounded-2xl border border-amber-500/30">
+                <Crown className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-white">Premium-Gültigkeit anpassen</h3>
+                <p className="text-xs text-slate-400">
+                  Legen Sie die Laufzeit für diesen Benutzer fest
+                </p>
+              </div>
+            </div>
+
+            {/* User Target Card */}
+            <div className="p-3.5 bg-slate-900/80 rounded-2xl border border-slate-800 flex items-center justify-between text-xs">
+              <div>
+                <div className="font-extrabold text-white">{adjustingUser.name}</div>
+                <div className="text-[11px] text-slate-400 font-mono">{adjustingUser.email}</div>
+              </div>
+              <div className="text-right">
+                <div className="text-[10px] text-slate-500 uppercase font-bold">Aktueller Status</div>
+                <div className="font-black text-amber-400 text-xs">
+                  {getRemainingPremiumTimeLabel(adjustingUser)}
+                </div>
+              </div>
+            </div>
+
+            {/* Preset Options Grid */}
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-slate-300">
+                Wählen Sie die gewünschte Verlängerung:
+              </label>
+              <div className="grid grid-cols-2 gap-2 text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => setAdjustOption('1')}
+                  className={`p-2.5 rounded-xl border text-left transition-all flex items-center justify-between ${
+                    adjustOption === '1'
+                      ? 'bg-amber-500/20 border-amber-500 text-amber-300 shadow-sm'
+                      : 'bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800'
+                  }`}
+                >
+                  <span>+1 Tag (Trial)</span>
+                  {adjustOption === '1' && <CheckCircle className="w-3.5 h-3.5 text-amber-400" />}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAdjustOption('7')}
+                  className={`p-2.5 rounded-xl border text-left transition-all flex items-center justify-between ${
+                    adjustOption === '7'
+                      ? 'bg-amber-500/20 border-amber-500 text-amber-300 shadow-sm'
+                      : 'bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800'
+                  }`}
+                >
+                  <span>+7 Tage (1 Woche)</span>
+                  {adjustOption === '7' && <CheckCircle className="w-3.5 h-3.5 text-amber-400" />}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAdjustOption('14')}
+                  className={`p-2.5 rounded-xl border text-left transition-all flex items-center justify-between ${
+                    adjustOption === '14'
+                      ? 'bg-amber-500/20 border-amber-500 text-amber-300 shadow-sm'
+                      : 'bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800'
+                  }`}
+                >
+                  <span>+14 Tage (2 Wochen)</span>
+                  {adjustOption === '14' && <CheckCircle className="w-3.5 h-3.5 text-amber-400" />}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAdjustOption('30')}
+                  className={`p-2.5 rounded-xl border text-left transition-all flex items-center justify-between ${
+                    adjustOption === '30'
+                      ? 'bg-amber-500/20 border-amber-500 text-amber-300 shadow-sm'
+                      : 'bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800'
+                  }`}
+                >
+                  <span>+30 Tage (1 Monat)</span>
+                  {adjustOption === '30' && <CheckCircle className="w-3.5 h-3.5 text-amber-400" />}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAdjustOption('90')}
+                  className={`p-2.5 rounded-xl border text-left transition-all flex items-center justify-between ${
+                    adjustOption === '90'
+                      ? 'bg-amber-500/20 border-amber-500 text-amber-300 shadow-sm'
+                      : 'bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800'
+                  }`}
+                >
+                  <span>+90 Tage (3 Monate)</span>
+                  {adjustOption === '90' && <CheckCircle className="w-3.5 h-3.5 text-amber-400" />}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAdjustOption('unlimited')}
+                  className={`p-2.5 rounded-xl border text-left transition-all flex items-center justify-between ${
+                    adjustOption === 'unlimited'
+                      ? 'bg-amber-500/20 border-amber-500 text-amber-300 shadow-sm'
+                      : 'bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800'
+                  }`}
+                >
+                  <span>👑 Unbegrenzt</span>
+                  {adjustOption === 'unlimited' && <CheckCircle className="w-3.5 h-3.5 text-amber-400" />}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAdjustOption('custom')}
+                  className={`p-2.5 rounded-xl border text-left transition-all flex items-center justify-between ${
+                    adjustOption === 'custom'
+                      ? 'bg-indigo-500/20 border-indigo-500 text-indigo-300 shadow-sm'
+                      : 'bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800'
+                  }`}
+                >
+                  <span>✏️ Eigene Tage</span>
+                  {adjustOption === 'custom' && <CheckCircle className="w-3.5 h-3.5 text-indigo-400" />}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setAdjustOption('remove')}
+                  className={`p-2.5 rounded-xl border text-left transition-all flex items-center justify-between ${
+                    adjustOption === 'remove'
+                      ? 'bg-rose-500/20 border-rose-500 text-rose-300 shadow-sm'
+                      : 'bg-slate-900 border-slate-800 text-rose-400 hover:bg-rose-950/40'
+                  }`}
+                >
+                  <span>❌ Entziehen (Kostenlos)</span>
+                  {adjustOption === 'remove' && <CheckCircle className="w-3.5 h-3.5 text-rose-400" />}
+                </button>
+              </div>
+
+              {adjustOption === 'custom' && (
+                <div className="pt-2 animate-fadeIn">
+                  <label className="block text-[11px] text-slate-400 mb-1">
+                    Geben Sie die genaue Anzahl der Tage ein:
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={9999}
+                    value={customAdjustDays}
+                    onChange={(e) => setCustomAdjustDays(parseInt(e.target.value, 10) || 1)}
+                    className="w-full px-3.5 py-2 glass-input rounded-xl text-sm font-bold text-white"
+                    placeholder="z.B. 15 oder 45"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="flex items-center justify-between pt-2 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={() => setAdjustingUser(null)}
+                className="px-4 py-2 text-xs font-bold text-slate-400 hover:text-white"
+              >
+                Abbrechen
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSaveAdjustedPremium}
+                className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs shadow-lg transition-all flex items-center gap-1.5"
+              >
+                <Crown className="w-4 h-4" /> Gültigkeit speichern
               </button>
             </div>
           </div>
