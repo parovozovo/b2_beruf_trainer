@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, UserCheck, Lock, Mail, LogIn, ShieldAlert, UserPlus } from 'lucide-react';
 import type { User } from '../types';
-import { isAdminEmail, syncUserToRegisteredList } from '../utils/storage';
+import { isAdminEmail, isFreeTrialEnabled, syncUserToRegisteredList } from '../utils/storage';
 import { supabase, isSupabaseConfigured } from '../utils/supabase';
 
 interface LoginModalProps {
@@ -108,15 +108,17 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           }
 
           if (data.user) {
+            const freeTrialOn = isFreeTrialEnabled();
             const trialExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+            const givePremium = isAdmin || freeTrialOn;
             const newUser: User = {
               id: data.user.id,
               name: fullName.trim() || cleanEmail.split('@')[0],
               email: cleanEmail,
               role: isAdmin ? 'admin' : 'user',
-              isPremium: true,
-              premiumExpiresAt: isAdmin ? null : trialExpiresAt,
-              appliedPromoCode: isAdmin ? undefined : 'FREE-TRIAL-24H',
+              isPremium: givePremium,
+              premiumExpiresAt: isAdmin ? null : (freeTrialOn ? trialExpiresAt : null),
+              appliedPromoCode: isAdmin ? undefined : (freeTrialOn ? 'FREE-TRIAL-24H' : undefined),
               createdAt: new Date().toISOString(),
               lastLoginAt: new Date().toISOString(),
             };
@@ -152,15 +154,17 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         }
       } else {
         // Direct Local Auth fallback
+        const freeTrialOn = isFreeTrialEnabled();
         const trialExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+        const givePremium = isAdmin || freeTrialOn;
         const loggedUser: User = {
           id: `user-${Date.now()}`,
           name: fullName.trim() || cleanEmail.split('@')[0],
           email: cleanEmail,
           role: isAdmin ? 'admin' : 'user',
-          isPremium: true,
-          premiumExpiresAt: isAdmin ? null : trialExpiresAt,
-          appliedPromoCode: isAdmin ? undefined : 'FREE-TRIAL-24H',
+          isPremium: givePremium,
+          premiumExpiresAt: isAdmin ? null : (freeTrialOn ? trialExpiresAt : null),
+          appliedPromoCode: isAdmin ? undefined : (freeTrialOn ? 'FREE-TRIAL-24H' : undefined),
           createdAt: new Date().toISOString(),
           lastLoginAt: new Date().toISOString(),
         };

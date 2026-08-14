@@ -49,6 +49,15 @@ export function getRemainingPremiumTimeLabel(user: User | null): string {
   return `${diffDays} Tage verbleibend`;
 }
 
+export function isFreeTrialEnabled(): boolean {
+  const val = localStorage.getItem('b2_free_trial_enabled');
+  return val === null ? true : val === 'true';
+}
+
+export function setFreeTrialEnabled(enabled: boolean): void {
+  localStorage.setItem('b2_free_trial_enabled', String(enabled));
+}
+
 export function getCurrentUser(): User | null {
   const data = localStorage.getItem(KEYS.CURRENT_USER);
   if (!data) return null;

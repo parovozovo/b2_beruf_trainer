@@ -45,6 +45,7 @@ import {
   Ban,
   Crown,
   Search,
+  Gift,
 } from 'lucide-react';
 import { isSupabaseConfigured } from '../utils/supabase';
 import {
@@ -54,6 +55,8 @@ import {
   fetchRegisteredUsersAsync,
   syncUserToRegisteredList,
   deleteRegisteredUserInStorage,
+  isFreeTrialEnabled,
+  setFreeTrialEnabled,
 } from '../utils/storage';
 
 interface AdminPanelProps {
@@ -129,6 +132,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserRole, setNewUserRole] = useState<'user' | 'admin'>('user');
   const [newUserPremiumDays, setNewUserPremiumDays] = useState<number>(30);
+  const [freeTrialActive, setFreeTrialActive] = useState<boolean>(() => isFreeTrialEnabled());
 
   // UI Toast notification state
   const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -167,16 +171,51 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     handleSyncUsers();
   }, []);
 
-  const handleExtendUserPremium = (userId: string) => {
+  const handleAdjustUserPremium = (userId: string) => {
     const target = usersList.find((u) => u.id === userId);
     if (!target) return;
-    const currentExp = target.premiumExpiresAt ? new Date(target.premiumExpiresAt).getTime() : Date.now();
+
+    const input = window.prompt(
+      `👑 Premium-Gültigkeit anpassen für "${target.name}" (${target.email}):\n\n` +
+        `• Geben Sie eine Anzahl Tage ein (z.B. 1, 7, 14, 15, 30, 60, 90)\n` +
+        `• Tippen Sie "unbegrenzt" für lebenslangen Premium-Zugang\n` +
+        `• Tippen Sie "0" um Premium sofort zu entziehen`,
+      '30'
+    );
+
+    if (input === null) return; // Cancelled
+
+    const clean = input.trim().toLowerCase();
+    if (clean === '0' || clean === 'kostenlos') {
+      const updatedUser: User = { ...target, isPremium: false, premiumExpiresAt: null };
+      syncUserToRegisteredList(updatedUser);
+      setUsersList((prev) => prev.map((u) => (u.id === userId ? updatedUser : u)));
+      showToast(`Premium für ${target.name} wurde entzogen.`);
+      return;
+    }
+
+    if (clean === 'unbegrenzt' || clean === 'unlimited' || clean === 'admin') {
+      const updatedUser: User = { ...target, isPremium: true, premiumExpiresAt: null };
+      syncUserToRegisteredList(updatedUser);
+      setUsersList((prev) => prev.map((u) => (u.id === userId ? updatedUser : u)));
+      showToast(`Unbegrenztes Premium für ${target.name} aktiviert! 👑`);
+      return;
+    }
+
+    const days = parseInt(clean, 10);
+    if (isNaN(days) || days <= 0) {
+      alert('Bitte eine gültige positive Zahl von Tagen (z.B. 1, 15, 30) oder "unbegrenzt" eingeben.');
+      return;
+    }
+
+    const currentExp = target.premiumExpiresAt && target.isPremium ? new Date(target.premiumExpiresAt).getTime() : Date.now();
     const startBase = Math.max(currentExp, Date.now());
-    const newExp = new Date(startBase + 30 * 86400000).toISOString();
+    const newExp = new Date(startBase + days * 86400000).toISOString();
+
     const updatedUser: User = { ...target, isPremium: true, premiumExpiresAt: newExp };
     syncUserToRegisteredList(updatedUser);
-    setUsersList(getRegisteredUsersLocal());
-    showToast('Premium-Mitgliedschaft um 30 Tage verlängert!');
+    setUsersList((prev) => prev.map((u) => (u.id === userId ? updatedUser : u)));
+    showToast(`+${days} Tage Premium für ${target.name} zugewiesen!`);
   };
 
   const handleToggleBanUser = (userId: string) => {
@@ -2905,6 +2944,30 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
               {/* Action Buttons & Search */}
               <div className="flex flex-wrap items-center gap-2">
+                {/* 24h Free Trial Master Toggle */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = !freeTrialActive;
+                    setFreeTrialActive(next);
+                    setFreeTrialEnabled(next);
+                    showToast(
+                      next
+                        ? '🎁 24h Free Trial für Neuregistrierungen AKTIVIERT!'
+                        : '🔒 24h Free Trial DEAKTIVIERT (Neue Registrierungen starten kostenlos)'
+                    );
+                  }}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 border transition-all shadow-sm ${
+                    freeTrialActive
+                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-emerald-950/30'
+                      : 'bg-slate-900/80 text-slate-400 border-slate-700 hover:text-white'
+                  }`}
+                  title="Schaltet den 24-Stunden-Gratis-Testzugang für alle neuen Registrierungen ein oder aus"
+                >
+                  <Gift className={`w-4 h-4 ${freeTrialActive ? 'text-emerald-400 animate-pulse' : 'text-slate-500'}`} />
+                  <span>24h Trial: <strong>{freeTrialActive ? 'AKTIV 🟢' : 'AUS 🔴'}</strong></span>
+                </button>
+
                 <button
                   type="button"
                   onClick={() => setShowAddUserModal(true)}
@@ -3091,11 +3154,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                             <div className="flex items-center justify-end gap-1.5">
                               <button
                                 type="button"
-                                onClick={() => handleExtendUserPremium(u.id)}
-                                className="px-2.5 py-1 bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 rounded-lg text-[11px] font-bold border border-amber-500/40 flex items-center gap-1"
-                                title="Premium um 30 Tage verlängern"
+                                onClick={() => handleAdjustUserPremium(u.id)}
+                                className="px-2.5 py-1 bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 rounded-lg text-[11px] font-bold border border-amber-500/40 flex items-center gap-1 transition-all"
+                                title="Premium-Tage flexibel anpassen (+Tage / Unbegrenzt / Entziehen)"
                               >
-                                <Crown className="w-3 h-3 text-amber-400" /> +30 Tage
+                                <Crown className="w-3.5 h-3.5 text-amber-400" /> Tage anpassen
                               </button>
 
                               {!isSelfOrAdmin ? (
