@@ -154,27 +154,37 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           }
 
           if (data.user) {
-            // First check if user was already recorded in registered_users in Supabase or local storage
+            // First check if user was already recorded in registered_users or profiles in Supabase or local storage
             let existingInDb: Record<string, unknown> | null = null;
             try {
               const res = await supabase.from('registered_users').select('*').eq('email', cleanEmail).maybeSingle();
-              if (res.data) existingInDb = res.data;
+              if (res.data) {
+                existingInDb = res.data;
+              } else {
+                const pRes = await supabase.from('profiles').select('*').eq('email', cleanEmail).maybeSingle();
+                if (pRes.data) existingInDb = pRes.data;
+              }
             } catch (e) {
               console.warn(e);
             }
             const existingLocal = getRegisteredUsersLocal().find(u => u.email.toLowerCase() === cleanEmail);
 
-            const trialOn = isFreeTrialEnabled();
-            const defaultTrialExp = new Date(Date.now() + 24 * 3600 * 1000).toISOString();
+            const dbExp = existingInDb?.premium_expires_at ? String(existingInDb.premium_expires_at) : null;
+            const localExp = existingLocal?.premiumExpiresAt || null;
+            const exp = dbExp || localExp;
+            const isExpValid = exp ? new Date(exp).getTime() > Date.now() : false;
+
+            const isPrem = isAdmin ? true : (isExpValid || Boolean(existingInDb?.is_premium) || Boolean(existingLocal?.isPremium));
+            const promo = (existingInDb?.applied_promo_code ? String(existingInDb.applied_promo_code) : undefined) || existingLocal?.appliedPromoCode;
 
             const loggedInUser: User = {
               id: data.user.id,
               name: data.user.user_metadata?.name || String(existingInDb?.name || '') || existingLocal?.name || cleanEmail.split('@')[0],
               email: cleanEmail,
               role: isAdmin ? 'admin' : ((existingInDb?.role || existingLocal?.role || 'user') as UserRole),
-              isPremium: isAdmin ? true : (existingInDb ? Boolean(existingInDb.is_premium) : (existingLocal ? existingLocal.isPremium : trialOn)),
-              premiumExpiresAt: isAdmin ? null : (existingInDb ? (existingInDb.premium_expires_at ? String(existingInDb.premium_expires_at) : null) : (existingLocal ? (existingLocal.premiumExpiresAt || null) : (trialOn ? defaultTrialExp : null))),
-              appliedPromoCode: (existingInDb?.applied_promo_code ? String(existingInDb.applied_promo_code) : undefined) || existingLocal?.appliedPromoCode || (trialOn ? 'FREE-TRIAL-24H' : undefined),
+              isPremium: isPrem,
+              premiumExpiresAt: isAdmin ? null : (isPrem ? exp : null),
+              appliedPromoCode: promo,
               createdAt: (existingInDb?.created_at ? String(existingInDb.created_at) : undefined) || existingLocal?.createdAt || new Date().toISOString(),
               lastLoginAt: new Date().toISOString(),
             };
