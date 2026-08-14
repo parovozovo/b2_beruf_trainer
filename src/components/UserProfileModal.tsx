@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import type { User, PromoCode } from '../types';
-import { getRemainingPremiumDays } from '../utils/storage';
+import { getRemainingPremiumTimeLabel } from '../utils/storage';
 import { supabase, isSupabaseConfigured } from '../utils/supabase';
 
 interface UserProfileModalProps {
@@ -214,10 +214,10 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           </div>
 
           <div className="flex justify-between items-center">
-            <span className="text-slate-400 font-semibold">Verbleibende Premium-Tage:</span>
+            <span className="text-slate-400 font-semibold">Premium-Gültigkeit:</span>
             {currentUser.isPremium ? (
               <span className="font-black text-amber-400">
-                {currentUser.premiumExpiresAt ? `${getRemainingPremiumDays(currentUser)} Tage gültig` : '👑 Unbegrenzt'}
+                {getRemainingPremiumTimeLabel(currentUser)}
               </span>
             ) : (
               <span className="font-bold text-slate-500">0 Tage (Kein Premium)</span>

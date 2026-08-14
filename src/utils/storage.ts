@@ -24,12 +24,29 @@ export function isAdminEmail(email?: string | null): boolean {
 
 export function getRemainingPremiumDays(user: User | null): number {
   if (!user || !user.isPremium) return 0;
-  if (!user.premiumExpiresAt) return 999; // Permanent/Unlimited Admin
+  if (!user.premiumExpiresAt || user.role === 'admin' || isAdminEmail(user.email)) return 999; // Permanent/Unlimited Admin
   const expires = new Date(user.premiumExpiresAt).getTime();
   const now = new Date().getTime();
   const diffMs = expires - now;
   if (diffMs <= 0) return 0;
   return Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+}
+
+export function getRemainingPremiumTimeLabel(user: User | null): string {
+  if (!user || !user.isPremium) return 'Kostenlos';
+  if (!user.premiumExpiresAt || user.role === 'admin' || isAdminEmail(user.email)) return '👑 Unbegrenzt';
+  const expires = new Date(user.premiumExpiresAt).getTime();
+  const now = Date.now();
+  const diffMs = expires - now;
+  if (diffMs <= 0) return 'Abgelaufen';
+
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffHours < 24) {
+    return diffHours === 0 ? 'Noch < 1 Stunde (Testphase)' : `Noch ${diffHours} Std. (Testphase)`;
+  }
+  return `${diffDays} Tage verbleibend`;
 }
 
 export function getCurrentUser(): User | null {

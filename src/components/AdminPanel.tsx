@@ -50,7 +50,7 @@ import { isSupabaseConfigured } from '../utils/supabase';
 import {
   isAdminEmail,
   getRegisteredUsersLocal,
-  getRemainingPremiumDays,
+  getRemainingPremiumTimeLabel,
   fetchRegisteredUsersAsync,
   syncUserToRegisteredList,
   deleteRegisteredUserInStorage,
@@ -2990,7 +2990,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         u.email.toLowerCase().includes(userSearchText.toLowerCase())
                     )
                     .map((u) => {
-                      const remDays = getRemainingPremiumDays(u);
                       const isSelfOrAdmin = u.role === 'admin' || isAdminEmail(u.email);
 
                       return (
@@ -3029,7 +3028,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                   <Crown className="w-3 h-3 text-amber-400" /> Premium
                                 </span>
                                 <div className="text-[11px] text-amber-400 font-bold">
-                                  {u.premiumExpiresAt ? `${remDays} Tage verbleibend` : '👑 Unbegrenzt'}
+                                  {getRemainingPremiumTimeLabel(u)}
                                 </div>
                               </div>
                             ) : (

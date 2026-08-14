@@ -108,13 +108,15 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           }
 
           if (data.user) {
+            const trialExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
             const newUser: User = {
               id: data.user.id,
               name: fullName.trim() || cleanEmail.split('@')[0],
               email: cleanEmail,
               role: isAdmin ? 'admin' : 'user',
-              isPremium: isAdmin,
-              premiumExpiresAt: null,
+              isPremium: true,
+              premiumExpiresAt: isAdmin ? null : trialExpiresAt,
+              appliedPromoCode: isAdmin ? undefined : 'FREE-TRIAL-24H',
               createdAt: new Date().toISOString(),
               lastLoginAt: new Date().toISOString(),
             };
@@ -150,13 +152,15 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         }
       } else {
         // Direct Local Auth fallback
+        const trialExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
         const loggedUser: User = {
           id: `user-${Date.now()}`,
           name: fullName.trim() || cleanEmail.split('@')[0],
           email: cleanEmail,
           role: isAdmin ? 'admin' : 'user',
-          isPremium: isAdmin,
-          premiumExpiresAt: null,
+          isPremium: true,
+          premiumExpiresAt: isAdmin ? null : trialExpiresAt,
+          appliedPromoCode: isAdmin ? undefined : 'FREE-TRIAL-24H',
           createdAt: new Date().toISOString(),
           lastLoginAt: new Date().toISOString(),
         };
