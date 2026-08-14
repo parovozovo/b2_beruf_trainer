@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, UserCheck, Lock, Mail, LogIn, ShieldAlert, UserPlus } from 'lucide-react';
-import type { User } from '../types';
+import type { User, UserRole } from '../types';
 import { isAdminEmail, isFreeTrialEnabled, syncUserToRegisteredList, getRegisteredUsersLocal } from '../utils/storage';
 import { supabase, isSupabaseConfigured } from '../utils/supabase';
 
@@ -154,13 +154,28 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           }
 
           if (data.user) {
+            // First check if user was already recorded in registered_users in Supabase or local storage
+            let existingInDb: Record<string, unknown> | null = null;
+            try {
+              const res = await supabase.from('registered_users').select('*').eq('email', cleanEmail).maybeSingle();
+              if (res.data) existingInDb = res.data;
+            } catch (e) {
+              console.warn(e);
+            }
+            const existingLocal = getRegisteredUsersLocal().find(u => u.email.toLowerCase() === cleanEmail);
+
+            const trialOn = isFreeTrialEnabled();
+            const defaultTrialExp = new Date(Date.now() + 24 * 3600 * 1000).toISOString();
+
             const loggedInUser: User = {
               id: data.user.id,
-              name: data.user.user_metadata?.name || cleanEmail.split('@')[0],
+              name: data.user.user_metadata?.name || String(existingInDb?.name || '') || existingLocal?.name || cleanEmail.split('@')[0],
               email: cleanEmail,
-              role: isAdmin ? 'admin' : 'user',
-              isPremium: isAdmin,
-              premiumExpiresAt: null,
+              role: isAdmin ? 'admin' : ((existingInDb?.role || existingLocal?.role || 'user') as UserRole),
+              isPremium: isAdmin ? true : (existingInDb ? Boolean(existingInDb.is_premium) : (existingLocal ? existingLocal.isPremium : trialOn)),
+              premiumExpiresAt: isAdmin ? null : (existingInDb ? (existingInDb.premium_expires_at ? String(existingInDb.premium_expires_at) : null) : (existingLocal ? (existingLocal.premiumExpiresAt || null) : (trialOn ? defaultTrialExp : null))),
+              appliedPromoCode: (existingInDb?.applied_promo_code ? String(existingInDb.applied_promo_code) : undefined) || existingLocal?.appliedPromoCode || (trialOn ? 'FREE-TRIAL-24H' : undefined),
+              createdAt: (existingInDb?.created_at ? String(existingInDb.created_at) : undefined) || existingLocal?.createdAt || new Date().toISOString(),
               lastLoginAt: new Date().toISOString(),
             };
             syncUserToRegisteredList(loggedInUser);

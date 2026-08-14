@@ -25,6 +25,7 @@ import {
   fetchPromoCodesAsync,
   syncUserToRegisteredList,
   isAdminEmail,
+  isFreeTrialEnabled,
 } from './utils/storage';
 import { supabase, isSupabaseConfigured } from './utils/supabase';
 import { Navbar } from './components/Navbar';
@@ -96,6 +97,35 @@ export function App() {
 
       // Handle Email Verification Confirmation
       if (hash.includes('type=signup') || hash.includes('type=email_change')) {
+        const cleanHash = hash.replace(/^#+/, '');
+        const hashParams = new URLSearchParams(cleanHash.includes('?') ? cleanHash.split('?')[1] : cleanHash);
+        const accessToken = hashParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token');
+        if (accessToken && refreshToken && isSupabaseConfigured) {
+          supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken }).then(({ data }) => {
+            if (data.session?.user) {
+              const u = data.session.user;
+              const uEmail = (u.email || '').toLowerCase();
+              const isAdmin = isAdminEmail(uEmail);
+              const trialOn = isFreeTrialEnabled();
+              const trialExp = new Date(Date.now() + 24 * 3600 * 1000).toISOString();
+              const confirmedUser: User = {
+                id: u.id,
+                name: u.user_metadata?.name || uEmail.split('@')[0] || 'Benutzer',
+                email: uEmail,
+                role: isAdmin ? 'admin' : 'user',
+                isPremium: isAdmin || trialOn,
+                premiumExpiresAt: isAdmin ? null : (trialOn ? trialExp : null),
+                appliedPromoCode: isAdmin ? undefined : (trialOn ? 'FREE-TRIAL-24H' : undefined),
+                createdAt: new Date().toISOString(),
+                lastLoginAt: new Date().toISOString(),
+              };
+              syncUserToRegisteredList(confirmedUser);
+              setCurrentUserTab(confirmedUser);
+              setCurrentUser(confirmedUser);
+            }
+          });
+        }
         showToast('✅ E-Mail-Adresse erfolgreich bestätigt! Willkommen!', 'success');
         confetti({ particleCount: 80, spread: 60 });
       }
