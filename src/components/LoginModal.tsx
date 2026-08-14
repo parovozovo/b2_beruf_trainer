@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, UserCheck, Lock, Mail, LogIn, ShieldAlert, UserPlus } from 'lucide-react';
 import type { User } from '../types';
-import { isAdminEmail, isFreeTrialEnabled, syncUserToRegisteredList } from '../utils/storage';
+import { isAdminEmail, isFreeTrialEnabled, syncUserToRegisteredList, getRegisteredUsersLocal } from '../utils/storage';
 import { supabase, isSupabaseConfigured } from '../utils/supabase';
 
 interface LoginModalProps {
@@ -68,6 +68,16 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     const isAdmin = isAdminEmail(cleanEmail);
 
     try {
+      // 1. Local duplicate check
+      const localExisting = getRegisteredUsersLocal().find(
+        (u) => u.email.toLowerCase() === cleanEmail
+      );
+      if (mode === 'signup' && localExisting) {
+        setError('Ein Konto mit dieser E-Mail-Adresse existiert bereits. Bitte melden Sie sich an oder nutzen Sie "Passwort vergessen".');
+        setLoading(false);
+        return;
+      }
+
       if (isSupabaseConfigured) {
         if (mode === 'signup') {
           // Check if user already exists in registered_users table
@@ -108,6 +118,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           }
 
           if (data.user) {
+            // Supabase returns empty identities array when email is already registered in Auth!
+            if (data.user.identities && data.user.identities.length === 0) {
+              setError('Ein Konto mit dieser E-Mail-Adresse existiert bereits. Bitte melden Sie sich an oder nutzen Sie "Passwort vergessen".');
+              setLoading(false);
+              return;
+            }
             const freeTrialOn = isFreeTrialEnabled();
             const trialExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
             const givePremium = isAdmin || freeTrialOn;
