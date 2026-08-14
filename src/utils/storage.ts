@@ -14,7 +14,13 @@ const KEYS = {
   TILE_RESULTS: 'b2_tile_results',
 };
 
-export const ADMIN_EMAIL = 'luck34y@yahoo.com';
+export const ADMIN_EMAILS = ['parovozovo@yahoo.com', 'luck34y@yahoo.com'];
+export const ADMIN_EMAIL = 'parovozovo@yahoo.com';
+
+export function isAdminEmail(email?: string | null): boolean {
+  if (!email) return false;
+  return ADMIN_EMAILS.includes(email.trim().toLowerCase());
+}
 
 export function getRemainingPremiumDays(user: User | null): number {
   if (!user || !user.isPremium) return 0;
@@ -134,7 +140,7 @@ export async function fetchRegisteredUsersAsync(): Promise<User[]> {
               id: `user-promo-${cleanEmail.replace(/[^a-z0-9]/gi, '_')}`,
               name: cleanEmail.split('@')[0],
               email: cleanEmail,
-              role: cleanEmail === ADMIN_EMAIL.toLowerCase() ? 'admin' : 'user',
+              role: isAdminEmail(cleanEmail) ? 'admin' : 'user',
               isPremium: true,
               premiumExpiresAt: new Date(Date.now() + (pc.durationDays || 30) * 86400000).toISOString(),
               appliedPromoCode: pc.code,
@@ -159,10 +165,10 @@ export async function fetchRegisteredUsersAsync(): Promise<User[]> {
             id: String(item.id),
             name: String(item.name || uEmail.split('@')[0]),
             email: uEmail,
-            role: (item.role as UserRole) || 'user',
-            isPremium: Boolean(item.is_premium),
-            premiumExpiresAt: item.premium_expires_at ? String(item.premium_expires_at) : null,
-            isBanned: Boolean(item.is_banned),
+            role: isAdminEmail(uEmail) ? 'admin' : ((item.role as UserRole) || 'user'),
+            isPremium: isAdminEmail(uEmail) ? true : Boolean(item.is_premium),
+            premiumExpiresAt: isAdminEmail(uEmail) ? null : (item.premium_expires_at ? String(item.premium_expires_at) : null),
+            isBanned: isAdminEmail(uEmail) ? false : Boolean(item.is_banned),
             appliedPromoCode: item.applied_promo_code ? String(item.applied_promo_code) : undefined,
             createdAt: item.created_at ? String(item.created_at) : undefined,
             lastLoginAt: item.last_login_at ? String(item.last_login_at) : undefined,
@@ -185,8 +191,8 @@ export async function fetchRegisteredUsersAsync(): Promise<User[]> {
               id: String(item.user_id || `user-essay-${uEmail.replace(/[^a-z0-9]/gi, '_')}`),
               name: String(item.user_name || uEmail.split('@')[0]),
               email: uEmail,
-              role: uEmail === ADMIN_EMAIL.toLowerCase() ? 'admin' : 'user',
-              isPremium: false,
+              role: isAdminEmail(uEmail) ? 'admin' : 'user',
+              isPremium: isAdminEmail(uEmail),
               premiumExpiresAt: null,
               createdAt: item.created_at ? String(item.created_at) : undefined,
             });

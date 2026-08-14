@@ -48,7 +48,7 @@ import {
 } from 'lucide-react';
 import { isSupabaseConfigured } from '../utils/supabase';
 import {
-  ADMIN_EMAIL,
+  isAdminEmail,
   getRegisteredUsersLocal,
   getRemainingPremiumDays,
   fetchRegisteredUsersAsync,
@@ -2991,7 +2991,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     )
                     .map((u) => {
                       const remDays = getRemainingPremiumDays(u);
-                      const isSelfOrAdmin = u.role === 'admin' || u.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+                      const isSelfOrAdmin = u.role === 'admin' || isAdminEmail(u.email);
 
                       return (
                         <tr key={u.id} className="hover:bg-slate-900/50 transition-colors">

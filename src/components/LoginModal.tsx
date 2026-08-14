@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, UserCheck, Lock, Mail, LogIn, ShieldAlert, UserPlus } from 'lucide-react';
 import type { User } from '../types';
-import { ADMIN_EMAIL, syncUserToRegisteredList } from '../utils/storage';
+import { isAdminEmail, syncUserToRegisteredList } from '../utils/storage';
 import { supabase, isSupabaseConfigured } from '../utils/supabase';
 
 interface LoginModalProps {
@@ -65,7 +65,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
       return;
     }
 
-    const isAdmin = cleanEmail === ADMIN_EMAIL.toLowerCase();
+    const isAdmin = isAdminEmail(cleanEmail);
 
     try {
       if (isSupabaseConfigured) {

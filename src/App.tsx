@@ -24,7 +24,7 @@ import {
   fetchModelltestsAsync,
   fetchPromoCodesAsync,
   syncUserToRegisteredList,
-  ADMIN_EMAIL,
+  isAdminEmail,
 } from './utils/storage';
 import { supabase, isSupabaseConfigured } from './utils/supabase';
 import { Navbar } from './components/Navbar';
@@ -103,12 +103,13 @@ export function App() {
           showToast('🔑 Sie können jetzt Ihr neues Passwort festlegen.', 'info');
           setIsUserProfileModalOpen(true);
         } else if (event === 'SIGNED_IN' && session?.user) {
+          const email = session.user.email || '';
           const u: User = {
             id: session.user.id,
-            name: session.user.user_metadata?.name || session.user.email?.split('@')[0] || 'Benutzer',
-            email: session.user.email || '',
-            role: session.user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase() ? 'admin' : 'user',
-            isPremium: session.user.email?.toLowerCase() === ADMIN_EMAIL.toLowerCase(),
+            name: session.user.user_metadata?.name || email.split('@')[0] || 'Benutzer',
+            email: email,
+            role: isAdminEmail(email) ? 'admin' : 'user',
+            isPremium: isAdminEmail(email),
             premiumExpiresAt: null,
             lastLoginAt: new Date().toISOString(),
           };
