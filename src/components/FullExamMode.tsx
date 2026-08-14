@@ -124,9 +124,7 @@ export const FullExamMode: React.FC<FullExamModeProps> = ({
     breakdown: Array<{ tileType: TileType; score: number; maxScore: number }>;
   } | null>(null);
 
-  const [examPoolMode, setExamPoolMode] = useState<'all' | 'premium_only'>('all');
-
-  // Generate random exam variants from available modelltests
+  // Generate random exam variants strictly from Premium modelltests
   const handleStartExam = () => {
     // Exclusively available for Premium users
     if (!currentUser || !currentUser.isPremium) {
@@ -135,11 +133,12 @@ export const FullExamMode: React.FC<FullExamModeProps> = ({
     }
 
     const assembled: SelectedExamVariant[] = [];
+    const premiumModelltests = modelltests.filter((mt) => mt.isPremium);
+    const pool = premiumModelltests.length > 0 ? premiumModelltests : modelltests;
 
     TILE_ORDER.forEach(({ type: tType }) => {
       const availableVariants: Record<string, unknown>[] = [];
-      modelltests.forEach((mt) => {
-        if (examPoolMode === 'premium_only' && !mt.isPremium) return;
+      pool.forEach((mt) => {
         const vList = mt.variants[tType] || [];
         vList.forEach((v) => availableVariants.push(v as unknown as Record<string, unknown>));
       });
@@ -348,39 +347,10 @@ export const FullExamMode: React.FC<FullExamModeProps> = ({
             </div>
 
             <div className="p-5 glass-card rounded-2xl text-xs sm:text-sm space-y-2 text-left font-medium border border-slate-300 dark:border-slate-800">
-              <div>• <strong className="font-extrabold text-slate-900 dark:text-white">Gesamtdauer:</strong> 85 Minuten für den gesamten Testlauf.</div>
+              <div>• <strong className="font-extrabold text-slate-900 dark:text-white">Gesamtdauer:</strong> 105 Minuten aufgeteilt in 4 realistische Abschnitte.</div>
               <div>• <strong className="font-extrabold text-slate-900 dark:text-white">Bestehensgrenze:</strong> Mindestens 60% korrekte Antworten (35 von 57 Punkten).</div>
-              <div>• <strong className="font-extrabold text-slate-900 dark:text-white">Umfang:</strong> Alle 12 Prüfungsteile (Lesen 1–4, Hören 1–4, Sprachbausteine 1–2).</div>
-            </div>
-
-            {/* Premium Set Selection Filter */}
-            <div className="p-4 bg-amber-500/10 rounded-2xl border border-amber-500/20 text-left space-y-2">
-              <label className="block text-xs font-black uppercase text-amber-600 dark:text-amber-400 tracking-wider">
-                🎯 Modelltest-Auswahl für die Prüfungssimulation:
-              </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-semibold">
-                <label className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center gap-2 ${examPoolMode === 'all' ? 'bg-amber-500/20 border-amber-500 text-slate-900 dark:text-white font-bold' : 'glass-card text-slate-600 dark:text-slate-400'}`}>
-                  <input
-                    type="radio"
-                    name="examPool"
-                    checked={examPoolMode === 'all'}
-                    onChange={() => setExamPoolMode('all')}
-                    className="accent-amber-500"
-                  />
-                  <span>🌐 Alle Modelltests nutzen (Kostenlos & Premium)</span>
-                </label>
-
-                <label className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center gap-2 ${examPoolMode === 'premium_only' ? 'bg-amber-500/20 border-amber-500 text-slate-900 dark:text-white font-bold' : 'glass-card text-slate-600 dark:text-slate-400'}`}>
-                  <input
-                    type="radio"
-                    name="examPool"
-                    checked={examPoolMode === 'premium_only'}
-                    onChange={() => setExamPoolMode('premium_only')}
-                    className="accent-amber-500"
-                  />
-                  <span>👑 Nur Premium-Modelltests nutzen</span>
-                </label>
-              </div>
+              <div>• <strong className="font-extrabold text-slate-900 dark:text-white">Aufgabenpool:</strong> 👑 Exklusive Original-Modelltests (Premium-Qualität).</div>
+              <div>• <strong className="font-extrabold text-slate-900 dark:text-white">Umfang:</strong> Alle 12 Prüfungsteile (Lesen 1–4, Hören 1–4, Schreiben, Sprachbausteine 1–2).</div>
             </div>
 
             <button
