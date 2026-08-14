@@ -70,10 +70,28 @@ export function App() {
       if (
         hash.includes('type=recovery') ||
         hash.includes('reset-password') ||
-        search.includes('type=recovery')
+        search.includes('type=recovery') ||
+        hash.includes('access_token=')
       ) {
-        setIsResetPasswordModalOpen(true);
-        showToast('🔑 Bitte geben Sie Ihr neues Passwort ein.', 'info');
+        // Automatically extract and set session if present in URL
+        if (isSupabaseConfigured) {
+          const cleanHash = hash.replace(/^#+/, '');
+          const hashParams = new URLSearchParams(cleanHash.includes('?') ? cleanHash.split('?')[1] : cleanHash);
+          const accessToken = hashParams.get('access_token');
+          const refreshToken = hashParams.get('refresh_token');
+          if (accessToken && refreshToken) {
+            supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            }).then(() => {
+              setIsResetPasswordModalOpen(true);
+            });
+          } else {
+            setIsResetPasswordModalOpen(true);
+          }
+        } else {
+          setIsResetPasswordModalOpen(true);
+        }
       }
 
       // Handle Email Verification Confirmation
@@ -114,11 +132,27 @@ export function App() {
     };
 
     checkAdminRoute();
+
+    // Supabase Auth State Change Listener
+    let authSubscription: { unsubscribe: () => void } | null = null;
+    if (isSupabaseConfigured) {
+      const { data } = supabase.auth.onAuthStateChange((event) => {
+        if (event === 'PASSWORD_RECOVERY') {
+          setIsResetPasswordModalOpen(true);
+          showToast('🔑 Bitte geben Sie Ihr neues Passwort ein.', 'info');
+        }
+      });
+      authSubscription = data.subscription;
+    }
+
     if (currentUser) {
       syncUserToRegisteredList(currentUser);
     }
     window.addEventListener('hashchange', checkAdminRoute);
-    return () => window.removeEventListener('hashchange', checkAdminRoute);
+    return () => {
+      window.removeEventListener('hashchange', checkAdminRoute);
+      if (authSubscription) authSubscription.unsubscribe();
+    };
   }, [currentUser]);
 
   // Fetch Cloud Database Data on Mount
@@ -190,6 +224,7 @@ export function App() {
   const handleLoginSuccess = (user: User, navigateToAdmin?: boolean) => {
     setCurrentUserTab(user);
     setCurrentUser(user);
+    setIsLoginModalOpen(false);
     if (navigateToAdmin || user.role === 'admin') {
       setCurrentTab('admin');
       window.location.hash = 'admin-beruf';

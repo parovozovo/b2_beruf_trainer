@@ -40,6 +40,26 @@ export const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
 
     try {
       if (isSupabaseConfigured) {
+        // 1. Verify / restore session if needed
+        const { data: currentSession } = await supabase.auth.getSession();
+        if (!currentSession.session) {
+          const hash = window.location.hash || '';
+          const search = window.location.search || '';
+          const cleanHash = hash.replace(/^#+/, '');
+          const hashParams = new URLSearchParams(cleanHash.includes('?') ? cleanHash.split('?')[1] : cleanHash);
+          const searchParams = new URLSearchParams(search);
+
+          const accessToken = hashParams.get('access_token') || searchParams.get('access_token');
+          const refreshToken = hashParams.get('refresh_token') || searchParams.get('refresh_token');
+
+          if (accessToken && refreshToken) {
+            await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            });
+          }
+        }
+
         const { data, error: updateErr } = await supabase.auth.updateUser({
           password: newPassword,
         });
