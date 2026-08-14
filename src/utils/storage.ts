@@ -113,7 +113,7 @@ export function saveRegisteredUsersLocal(users: User[]): void {
 export async function fetchRegisteredUsersAsync(): Promise<User[]> {
   const mergedMap = new Map<string, User>();
 
-  // 1. Fetch from Supabase registered_users table (Cloud primary source of truth)
+  // 1. Fetch from Supabase registered_users or profiles table (Cloud primary source of truth)
   if (isSupabaseConfigured) {
     try {
       const { data, error } = await supabase.from('registered_users').select('*');
@@ -139,6 +139,33 @@ export async function fetchRegisteredUsersAsync(): Promise<User[]> {
       }
     } catch (e) {
       console.warn('Could not fetch registered_users table from Supabase:', e);
+    }
+
+    // 1b. Also query profiles table from Supabase
+    try {
+      const { data: profileRows } = await supabase.from('profiles').select('*');
+      if (profileRows && profileRows.length > 0) {
+        profileRows.forEach((item: Record<string, unknown>) => {
+          const uEmail = String(item.email || '').toLowerCase();
+          if (!uEmail) return;
+          const isSuperAdmin = isAdminEmail(uEmail);
+          const existing = mergedMap.get(uEmail);
+          if (!existing) {
+            mergedMap.set(uEmail, {
+              id: String(item.id),
+              name: String(item.name || uEmail.split('@')[0]),
+              email: uEmail,
+              role: isSuperAdmin ? 'admin' : ((item.role as UserRole) || 'user'),
+              isPremium: isSuperAdmin ? true : Boolean(item.is_premium),
+              premiumExpiresAt: isSuperAdmin ? null : (item.premium_expires_at ? String(item.premium_expires_at) : null),
+              createdAt: item.created_at ? String(item.created_at) : undefined,
+              lastLoginAt: item.updated_at ? String(item.updated_at) : undefined,
+            });
+          }
+        });
+      }
+    } catch (e) {
+      console.warn('Could not fetch profiles table:', e);
     }
   }
 
@@ -262,7 +289,25 @@ export function syncUserToRegisteredList(user: User): void {
           { onConflict: 'email' }
         );
       } catch (e) {
-        console.warn('Could not sync user to Supabase:', e);
+        console.warn('Could not sync user to registered_users in Supabase:', e);
+      }
+
+      try {
+        await supabase.from('profiles').upsert(
+          {
+            id: updatedUser.id,
+            name: updatedUser.name,
+            email: updatedUser.email.toLowerCase(),
+            role: updatedUser.role,
+            is_premium: updatedUser.isPremium,
+            premium_expires_at: updatedUser.premiumExpiresAt,
+            created_at: updatedUser.createdAt || now,
+            updated_at: now,
+          },
+          { onConflict: 'email' }
+        );
+      } catch (e) {
+        console.warn('Could not sync user to profiles in Supabase:', e);
       }
     })();
   }

@@ -95,10 +95,25 @@ CREATE TABLE IF NOT EXISTS public.full_exam_results (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 9. REGISTERED USERS TABLE
+CREATE TABLE IF NOT EXISTS public.registered_users (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  email TEXT UNIQUE NOT NULL,
+  role TEXT NOT NULL DEFAULT 'user',
+  is_premium BOOLEAN NOT NULL DEFAULT false,
+  premium_expires_at TIMESTAMPTZ,
+  is_banned BOOLEAN NOT NULL DEFAULT false,
+  applied_promo_code TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  last_login_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- ==========================================
 -- DISABLE RLS & GRANT ALL PERMISSIONS TO FIX 42501 PERMISSION DENIED
 -- ==========================================
 ALTER TABLE public.profiles DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.registered_users DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.modelltests DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.promo_codes DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.forumsbeitrag_topics DISABLE ROW LEVEL SECURITY;
@@ -108,6 +123,7 @@ ALTER TABLE public.tile_results DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.full_exam_results DISABLE ROW LEVEL SECURITY;
 
 GRANT ALL ON TABLE public.profiles TO anon, authenticated, service_role;
+GRANT ALL ON TABLE public.registered_users TO anon, authenticated, service_role;
 GRANT ALL ON TABLE public.modelltests TO anon, authenticated, service_role;
 GRANT ALL ON TABLE public.promo_codes TO anon, authenticated, service_role;
 GRANT ALL ON TABLE public.forumsbeitrag_topics TO anon, authenticated, service_role;
