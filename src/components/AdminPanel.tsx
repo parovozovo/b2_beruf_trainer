@@ -47,7 +47,7 @@ import {
   Search,
   Gift,
 } from 'lucide-react';
-import { isSupabaseConfigured } from '../utils/supabase';
+import { supabase, isSupabaseConfigured } from '../utils/supabase';
 import {
   isAdminEmail,
   getRegisteredUsersLocal,
@@ -181,13 +181,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     setCustomAdjustDays(15);
   };
 
-  const handleSaveAdjustedPremium = () => {
+  const handleSaveAdjustedPremium = async () => {
     if (!adjustingUser) return;
     const target = adjustingUser;
     let updatedUser: User;
 
     if (adjustOption === 'remove') {
-      updatedUser = { ...target, isPremium: false, premiumExpiresAt: null };
+      updatedUser = { ...target, isPremium: false, premiumExpiresAt: null, appliedPromoCode: undefined };
       showToast(`Premium für ${target.name} wurde entzogen.`);
     } else if (adjustOption === 'unlimited') {
       updatedUser = { ...target, isPremium: true, premiumExpiresAt: null };
@@ -208,6 +208,29 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     }
 
     syncUserToRegisteredList(updatedUser);
+
+    if (isSupabaseConfigured) {
+      try {
+        await supabase.from('registered_users').upsert(
+          {
+            id: updatedUser.id,
+            name: updatedUser.name,
+            email: updatedUser.email.toLowerCase(),
+            role: updatedUser.role,
+            is_premium: updatedUser.isPremium,
+            premium_expires_at: updatedUser.premiumExpiresAt,
+            is_banned: Boolean(updatedUser.isBanned),
+            applied_promo_code: updatedUser.appliedPromoCode || null,
+            created_at: updatedUser.createdAt || new Date().toISOString(),
+            last_login_at: updatedUser.lastLoginAt || new Date().toISOString(),
+          },
+          { onConflict: 'email' }
+        );
+      } catch (e) {
+        console.warn('Direct upsert in AdminPanel error:', e);
+      }
+    }
+
     setUsersList((prev) => prev.map((u) => (u.id === target.id || u.email.toLowerCase() === target.email.toLowerCase() ? updatedUser : u)));
     setAdjustingUser(null);
   };

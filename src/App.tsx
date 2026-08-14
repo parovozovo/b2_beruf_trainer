@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { CheckCircle2, AlertCircle, Info } from 'lucide-react';
-import type { User, Modelltest, PromoCode, ForumsbeitragTopic, TileType, TileResult, FullExamResult } from './types';
+import type { User, UserRole, Modelltest, PromoCode, ForumsbeitragTopic, TileType, TileResult, FullExamResult } from './types';
 import {
   getCurrentUser,
   setCurrentUser,
+  getRegisteredUsersLocal,
   getModelltestsLocal,
   saveModelltestsAsync,
   getPromoCodesLocal,
@@ -202,25 +203,88 @@ export function App() {
     }
     loadCloudData();
 
-    // Supabase Auth event listener (for Password Recovery email link)
+    // Sync active user state from Supabase on mount
+    if (isSupabaseConfigured) {
+      const current = getCurrentUser();
+      if (current && current.email) {
+        const email = current.email.toLowerCase();
+        (async () => {
+          try {
+            const { data } = await supabase
+              .from('registered_users')
+              .select('*')
+              .eq('email', email)
+              .maybeSingle();
+
+            if (data) {
+              const isSuperAdmin = isAdminEmail(email);
+              const exp = data.premium_expires_at ? String(data.premium_expires_at) : null;
+              const isExpValid = exp ? new Date(exp).getTime() > Date.now() : false;
+              const isPrem = isSuperAdmin ? true : (isExpValid || Boolean(data.is_premium));
+
+              const freshUser: User = {
+                ...current,
+                name: String(data.name || current.name),
+                role: isSuperAdmin ? 'admin' : ((data.role || 'user') as UserRole),
+                isPremium: isPrem,
+                premiumExpiresAt: isSuperAdmin ? null : (isPrem ? exp : null),
+                appliedPromoCode: data.applied_promo_code ? String(data.applied_promo_code) : current.appliedPromoCode,
+                isBanned: isSuperAdmin ? false : Boolean(data.is_banned),
+              };
+              setCurrentUserTab(freshUser);
+              setCurrentUser(freshUser);
+            }
+          } catch (e) {
+            console.warn('Mount cloud sync error:', e);
+          }
+        })();
+      }
+    }
+
+    // Supabase Auth event listener
     if (isSupabaseConfigured) {
       const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
         if (event === 'PASSWORD_RECOVERY') {
           showToast('🔑 Sie können jetzt Ihr neues Passwort festlegen.', 'info');
           setIsResetPasswordModalOpen(true);
         } else if (event === 'SIGNED_IN' && session?.user) {
-          const email = session.user.email || '';
-          const u: User = {
-            id: session.user.id,
-            name: session.user.user_metadata?.name || email.split('@')[0] || 'Benutzer',
-            email: email,
-            role: isAdminEmail(email) ? 'admin' : 'user',
-            isPremium: isAdminEmail(email),
-            premiumExpiresAt: null,
-            lastLoginAt: new Date().toISOString(),
-          };
-          setCurrentUserTab(u);
-          setCurrentUser(u);
+          const email = (session.user.email || '').toLowerCase();
+          if (email) {
+            (async () => {
+              try {
+                const { data } = await supabase
+                  .from('registered_users')
+                  .select('*')
+                  .eq('email', email)
+                  .maybeSingle();
+
+                const isSuperAdmin = isAdminEmail(email);
+                const localUser = getRegisteredUsersLocal().find((u) => u.email.toLowerCase() === email);
+
+                const dbExp = data?.premium_expires_at ? String(data.premium_expires_at) : null;
+                const localExp = localUser?.premiumExpiresAt || null;
+                const exp = dbExp || localExp;
+                const isExpValid = exp ? new Date(exp).getTime() > Date.now() : false;
+                const isPrem = isSuperAdmin ? true : (isExpValid || Boolean(data?.is_premium) || Boolean(localUser?.isPremium));
+
+                const u: User = {
+                  id: session.user.id,
+                  name: session.user.user_metadata?.name || String(data?.name || '') || localUser?.name || email.split('@')[0] || 'Benutzer',
+                  email: email,
+                  role: isSuperAdmin ? 'admin' : ((data?.role || localUser?.role || 'user') as UserRole),
+                  isPremium: isPrem,
+                  premiumExpiresAt: isSuperAdmin ? null : (isPrem ? exp : null),
+                  appliedPromoCode: data?.applied_promo_code ? String(data.applied_promo_code) : localUser?.appliedPromoCode,
+                  isBanned: isSuperAdmin ? false : Boolean(data?.is_banned),
+                  lastLoginAt: new Date().toISOString(),
+                };
+                setCurrentUserTab(u);
+                setCurrentUser(u);
+              } catch (e) {
+                console.warn('SIGNED_IN user fetch error:', e);
+              }
+            })();
+          }
         }
       });
       return () => {
