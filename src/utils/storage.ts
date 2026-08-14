@@ -228,12 +228,13 @@ export function syncUserToRegisteredList(user: User): void {
       ...list[idx],
       ...user,
       name: user.name || list[idx].name,
-      isPremium: list[idx].isPremium || user.isPremium,
-      premiumExpiresAt: list[idx].premiumExpiresAt || user.premiumExpiresAt,
-      appliedPromoCode: list[idx].appliedPromoCode || user.appliedPromoCode,
+      role: user.role !== undefined ? user.role : list[idx].role,
+      isPremium: user.isPremium !== undefined ? user.isPremium : list[idx].isPremium,
+      premiumExpiresAt: user.premiumExpiresAt !== undefined ? user.premiumExpiresAt : list[idx].premiumExpiresAt,
+      appliedPromoCode: user.appliedPromoCode !== undefined ? user.appliedPromoCode : list[idx].appliedPromoCode,
       isBanned: user.isBanned !== undefined ? user.isBanned : list[idx].isBanned,
       createdAt: list[idx].createdAt || updatedUser.createdAt,
-      lastLoginAt: now,
+      lastLoginAt: user.lastLoginAt || list[idx].lastLoginAt || now,
     };
     list[idx] = updatedUser;
   } else {

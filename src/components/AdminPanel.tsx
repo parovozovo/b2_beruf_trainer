@@ -201,16 +201,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       else if (adjustOption === '90') days = 90;
       else if (adjustOption === 'custom') days = Math.max(1, customAdjustDays || 1);
 
-      const currentExp = target.premiumExpiresAt && target.isPremium ? new Date(target.premiumExpiresAt).getTime() : Date.now();
-      const startBase = Math.max(currentExp, Date.now());
-      const newExp = new Date(startBase + days * 86400000).toISOString();
+      const newExp = new Date(Date.now() + days * 86400000).toISOString();
 
       updatedUser = { ...target, isPremium: true, premiumExpiresAt: newExp };
       showToast(`+${days} Tage Premium für ${target.name} zugewiesen!`);
     }
 
     syncUserToRegisteredList(updatedUser);
-    setUsersList((prev) => prev.map((u) => (u.id === target.id ? updatedUser : u)));
+    setUsersList((prev) => prev.map((u) => (u.id === target.id || u.email.toLowerCase() === target.email.toLowerCase() ? updatedUser : u)));
     setAdjustingUser(null);
   };
 
