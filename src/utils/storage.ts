@@ -34,7 +34,8 @@ export function getRemainingPremiumDays(user: User | null): number {
 
 export function getRemainingPremiumTimeLabel(user: User | null): string {
   if (!user || !user.isPremium) return 'Kostenlos';
-  if (!user.premiumExpiresAt || user.role === 'admin' || isAdminEmail(user.email)) return '👑 Unbegrenzt';
+  if (isAdminEmail(user.email) || user.role === 'admin') return '👑 Unbegrenzt';
+  if (!user.premiumExpiresAt) return '👑 Unbegrenzt';
   const expires = new Date(user.premiumExpiresAt).getTime();
   const now = Date.now();
   const diffMs = expires - now;
@@ -44,7 +45,7 @@ export function getRemainingPremiumTimeLabel(user: User | null): string {
   const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 
   if (diffHours < 24) {
-    return diffHours === 0 ? 'Noch < 1 Stunde (Testphase)' : `Noch ${diffHours} Std. (Testphase)`;
+    return diffHours === 0 ? 'Noch < 1 Stunde' : `Noch ${diffHours} Std.`;
   }
   return `${diffDays} Tage verbleibend`;
 }
@@ -67,7 +68,6 @@ export function getCurrentUser(): User | null {
     if (u.isPremium && u.premiumExpiresAt) {
       if (new Date(u.premiumExpiresAt).getTime() < Date.now()) {
         u.isPremium = false;
-        u.premiumExpiresAt = null;
         setCurrentUser(u);
       }
     }
@@ -111,23 +111,52 @@ export function saveRegisteredUsersLocal(users: User[]): void {
 }
 
 export async function fetchRegisteredUsersAsync(): Promise<User[]> {
-  const local = getRegisteredUsersLocal();
   const mergedMap = new Map<string, User>();
 
-  // 1. Add local users
-  local.forEach((u) => {
-    if (u.email) mergedMap.set(u.email.toLowerCase(), u);
-  });
-
-  // 2. Add current active user if present
-  const current = getCurrentUser();
-  if (current && current.email) {
-    if (!mergedMap.has(current.email.toLowerCase())) {
-      mergedMap.set(current.email.toLowerCase(), current);
+  // 1. Fetch from Supabase registered_users table (Cloud primary source of truth)
+  if (isSupabaseConfigured) {
+    try {
+      const { data, error } = await supabase.from('registered_users').select('*');
+      if (!error && data && data.length > 0) {
+        data.forEach((item: Record<string, unknown>) => {
+          const uEmail = String(item.email || '').toLowerCase();
+          if (!uEmail) return;
+          const isSuperAdmin = isAdminEmail(uEmail);
+          const remoteUser: User = {
+            id: String(item.id),
+            name: String(item.name || uEmail.split('@')[0]),
+            email: uEmail,
+            role: isSuperAdmin ? 'admin' : ((item.role as UserRole) || 'user'),
+            isPremium: isSuperAdmin ? true : Boolean(item.is_premium),
+            premiumExpiresAt: isSuperAdmin ? null : (item.premium_expires_at ? String(item.premium_expires_at) : null),
+            isBanned: isSuperAdmin ? false : Boolean(item.is_banned),
+            appliedPromoCode: item.applied_promo_code ? String(item.applied_promo_code) : undefined,
+            createdAt: item.created_at ? String(item.created_at) : undefined,
+            lastLoginAt: item.last_login_at ? String(item.last_login_at) : undefined,
+          };
+          mergedMap.set(uEmail, remoteUser);
+        });
+      }
+    } catch (e) {
+      console.warn('Could not fetch registered_users table from Supabase:', e);
     }
   }
 
-  // 3. Discover users from Promo Codes (local & Cloud)
+  // 2. Add local users if not present in Cloud DB
+  const local = getRegisteredUsersLocal();
+  local.forEach((u) => {
+    if (u.email && !mergedMap.has(u.email.toLowerCase())) {
+      mergedMap.set(u.email.toLowerCase(), u);
+    }
+  });
+
+  // 3. Add current active user if not present
+  const current = getCurrentUser();
+  if (current && current.email && !mergedMap.has(current.email.toLowerCase())) {
+    mergedMap.set(current.email.toLowerCase(), current);
+  }
+
+  // 4. Discover new users from Promo Codes (ONLY create user if completely absent, do NOT overwrite existing user status)
   try {
     const promoCodesList = isSupabaseConfigured ? await fetchPromoCodesAsync() : getPromoCodesLocal();
     promoCodesList.forEach((pc) => {
@@ -136,10 +165,7 @@ export async function fetchRegisteredUsersAsync(): Promise<User[]> {
           if (!userEmail) return;
           const cleanEmail = userEmail.toLowerCase();
           const existing = mergedMap.get(cleanEmail);
-          if (existing) {
-            if (!existing.appliedPromoCode) existing.appliedPromoCode = pc.code;
-            existing.isPremium = true;
-          } else {
+          if (!existing) {
             mergedMap.set(cleanEmail, {
               id: `user-promo-${cleanEmail.replace(/[^a-z0-9]/gi, '_')}`,
               name: cleanEmail.split('@')[0],
@@ -157,34 +183,8 @@ export async function fetchRegisteredUsersAsync(): Promise<User[]> {
     console.warn('Could not discover users from promo codes:', e);
   }
 
-  // 4. Try fetching from Supabase registered_users table if available
+  // 5. Discover users from written essays if missing
   if (isSupabaseConfigured) {
-    try {
-      const { data, error } = await supabase.from('registered_users').select('*');
-      if (!error && data && data.length > 0) {
-        data.forEach((item: Record<string, unknown>) => {
-          const uEmail = String(item.email || '').toLowerCase();
-          if (!uEmail) return;
-          const remoteUser: User = {
-            id: String(item.id),
-            name: String(item.name || uEmail.split('@')[0]),
-            email: uEmail,
-            role: isAdminEmail(uEmail) ? 'admin' : ((item.role as UserRole) || 'user'),
-            isPremium: isAdminEmail(uEmail) ? true : Boolean(item.is_premium),
-            premiumExpiresAt: isAdminEmail(uEmail) ? null : (item.premium_expires_at ? String(item.premium_expires_at) : null),
-            isBanned: isAdminEmail(uEmail) ? false : Boolean(item.is_banned),
-            appliedPromoCode: item.applied_promo_code ? String(item.applied_promo_code) : undefined,
-            createdAt: item.created_at ? String(item.created_at) : undefined,
-            lastLoginAt: item.last_login_at ? String(item.last_login_at) : undefined,
-          };
-          mergedMap.set(uEmail, remoteUser);
-        });
-      }
-    } catch (e) {
-      console.warn('Could not fetch registered_users table from Supabase:', e);
-    }
-
-    // 5. Discover active users from written essays if table exists
     try {
       const { data: essays } = await supabase.from('written_essays').select('user_email, user_id, user_name, created_at');
       if (essays && essays.length > 0) {
