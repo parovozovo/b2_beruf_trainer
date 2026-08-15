@@ -1,8 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Modelltest, TileType, User } from '../types';
 import { Crown, CheckCircle, XCircle, Volume2, HelpCircle, ArrowRight, RotateCcw, Award, Layers, FileText, ChevronDown } from 'lucide-react';
 import { FormattedText } from './FormattedText';
 import confetti from 'canvas-confetti';
+import {
+  getTilePracticeAttempts,
+  saveTilePracticeAttempt,
+  clearSingleTilePracticeAttempt,
+  type TileAttemptState,
+} from '../utils/storage';
 
 interface TilePracticeProps {
   modelltests: Modelltest[];
@@ -32,53 +38,79 @@ export const TilePractice: React.FC<TilePracticeProps> = ({
   onSaveResult,
   onOpenPremiumLockedModal,
 }) => {
-  const defaultFreeTest = modelltests.find((m) => !m.isPremium) || modelltests[0];
+  const defaultFreeTest = (modelltests || []).find((m) => !m?.isPremium) || (modelltests || [])[0];
   const [selectedModelltestId, setSelectedModelltestId] = useState<string>(defaultFreeTest?.id || '');
   const [selectedTileType, setSelectedTileType] = useState<TileType>('lesen_1');
   const [selectedVariantIndex, setSelectedVariantIndex] = useState<number>(0);
+
+  // Persistent practice attempts state
+  const [attempts, setAttempts] = useState<Record<string, TileAttemptState>>(() => getTilePracticeAttempts());
 
   // Answers state
   const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
   const [submitted, setSubmitted] = useState(false);
   const [currentScore, setCurrentScore] = useState<{ score: number; maxScore: number } | null>(null);
 
-  const activeTest = modelltests.find((m) => m.id === selectedModelltestId) || defaultFreeTest;
+  const activeTest = (modelltests || []).find((m) => m?.id === selectedModelltestId) || defaultFreeTest || (modelltests || [])[0];
+  const variants = activeTest?.variants?.[selectedTileType] || [];
+  const activeVariant = ((variants as Array<{ id: string; title: string }>)[selectedVariantIndex] || (variants as Array<{ id: string; title: string }>)[0]) as { id: string; title: string } | undefined;
+
+  const currentAttemptKey = `${selectedModelltestId}_${selectedTileType}_${activeVariant?.id || selectedVariantIndex}`;
+
+  // Synchronize state with saved attempt whenever selection changes
+  useEffect(() => {
+    const allAttempts = getTilePracticeAttempts();
+    setAttempts(allAttempts);
+    const saved = allAttempts[currentAttemptKey];
+    if (saved && saved.submitted) {
+      setUserAnswers(saved.userAnswers || {});
+      setSubmitted(true);
+      setCurrentScore({ score: saved.score, maxScore: saved.maxScore });
+    } else if (saved) {
+      setUserAnswers(saved.userAnswers || {});
+      setSubmitted(false);
+      setCurrentScore(null);
+    } else {
+      setUserAnswers({});
+      setSubmitted(false);
+      setCurrentScore(null);
+    }
+  }, [selectedModelltestId, selectedTileType, selectedVariantIndex, activeVariant?.id]);
 
   const handleSelectModelltest = (testId: string) => {
-    const targetTest = modelltests.find((m) => m.id === testId);
+    const targetTest = (modelltests || []).find((m) => m?.id === testId);
     if (targetTest?.isPremium && (!currentUser || !currentUser.isPremium)) {
       onOpenPremiumLockedModal();
       return;
     }
     setSelectedModelltestId(testId);
     setSelectedVariantIndex(0);
-    setUserAnswers({});
-    setSubmitted(false);
-    setCurrentScore(null);
   };
 
   const handleSelectTileType = (type: TileType) => {
     setSelectedTileType(type);
     setSelectedVariantIndex(0);
-    setUserAnswers({});
-    setSubmitted(false);
-    setCurrentScore(null);
   };
 
   const handleSelectVariantIndex = (idx: number) => {
     setSelectedVariantIndex(idx);
-    setUserAnswers({});
-    setSubmitted(false);
-    setCurrentScore(null);
   };
-
-  // Get active variant for selected tile type
-  const variants = activeTest?.variants[selectedTileType] || [];
-  const activeVariant = (variants as Array<{ id: string; title: string }>)[selectedVariantIndex] || (variants as Array<{ id: string; title: string }>)[0];
 
   const handleAnswerChange = (key: string, value: string) => {
     if (submitted) return;
     setUserAnswers((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleResetCurrentTile = () => {
+    clearSingleTilePracticeAttempt(currentAttemptKey);
+    setAttempts((prev) => {
+      const next = { ...prev };
+      delete next[currentAttemptKey];
+      return next;
+    });
+    setSubmitted(false);
+    setUserAnswers({});
+    setCurrentScore(null);
   };
 
   // Submission evaluator logic for all 12 tiles
@@ -89,82 +121,86 @@ export const TilePractice: React.FC<TilePracticeProps> = ({
     let maxScore = 0;
 
     if (selectedTileType === 'lesen_1') {
-      const v = activeVariant as unknown as { correctAnswers: Record<string, string> };
+      const v = activeVariant as unknown as { correctAnswers?: Record<string, string> };
       maxScore = 5;
       ['1', '2', '3', '4', '5'].forEach((qNum) => {
-        if (userAnswers[qNum]?.toUpperCase() === v.correctAnswers[qNum]?.toUpperCase()) {
+        if (userAnswers[qNum]?.toUpperCase() === v?.correctAnswers?.[qNum]?.toUpperCase()) {
           score += 1;
         }
       });
     } else if (selectedTileType === 'lesen_2') {
       const v = activeVariant as unknown as {
-        q6Correct: string;
-        q7: { correctIndex: number };
-        q8Correct: string;
-        q9: { correctIndex: number };
+        q6Correct?: string;
+        q7?: { correctIndex: number };
+        q8Correct?: string;
+        q9?: { correctIndex: number };
       };
       maxScore = 4;
-      if (userAnswers['6'] === v.q6Correct) score += 1;
-      if (userAnswers['7'] === String(v.q7.correctIndex)) score += 1;
-      if (userAnswers['8'] === v.q8Correct) score += 1;
-      if (userAnswers['9'] === String(v.q9.correctIndex)) score += 1;
+      if (userAnswers['6'] === v?.q6Correct) score += 1;
+      if (userAnswers['7'] === String(v?.q7?.correctIndex)) score += 1;
+      if (userAnswers['8'] === v?.q8Correct) score += 1;
+      if (userAnswers['9'] === String(v?.q9?.correctIndex)) score += 1;
     } else if (selectedTileType === 'lesen_3') {
-      const v = activeVariant as unknown as { correctAnswers: Record<string, string> };
+      const v = activeVariant as unknown as { correctAnswers?: Record<string, string> };
       maxScore = 4;
       ['10', '11', '12', '13'].forEach((qNum) => {
-        if (userAnswers[qNum]?.toUpperCase() === v.correctAnswers[qNum]?.toUpperCase()) {
+        if (userAnswers[qNum]?.toUpperCase() === v?.correctAnswers?.[qNum]?.toUpperCase()) {
           score += 1;
         }
       });
     } else if (selectedTileType === 'lesen_4' || selectedTileType === 'hoeren_3' || selectedTileType === 'hoeren_4') {
-      const v = activeVariant as unknown as { questions: Array<{ id: number; correctIndex: number }> };
-      maxScore = v.questions.length;
-      v.questions.forEach((q) => {
+      const v = activeVariant as unknown as { questions?: Array<{ id: number; correctIndex: number }> };
+      const qList = v?.questions || [];
+      maxScore = qList.length;
+      qList.forEach((q) => {
         if (userAnswers[String(q.id)] === String(q.correctIndex)) {
           score += 1;
         }
       });
     } else if (selectedTileType === 'lesen_schreiben') {
-      const v = activeVariant as unknown as { questions: Array<{ id: number; correctIndex: number }> };
+      const v = activeVariant as unknown as { questions?: Array<{ id: number; correctIndex: number }> };
+      const qList = v?.questions || [];
       maxScore = 2;
-      v.questions.forEach((q) => {
+      qList.forEach((q) => {
         if (userAnswers[String(q.id)] === String(q.correctIndex)) {
           score += 1;
         }
       });
     } else if (selectedTileType === 'hoeren_1') {
       const v = activeVariant as unknown as {
-        questions: Array<{ id: number; correct: string | number }>;
+        questions?: Array<{ id: number; correct: string | number }>;
       };
-      maxScore = v.questions.length;
-      v.questions.forEach((q) => {
+      const qList = v?.questions || [];
+      maxScore = qList.length;
+      qList.forEach((q) => {
         const uAns = userAnswers[String(q.id)];
         if (uAns === String(q.correct)) score += 1;
       });
     } else if (selectedTileType === 'hoeren_2') {
-      const v = activeVariant as unknown as { correctAnswers: Record<string, string> };
+      const v = activeVariant as unknown as { correctAnswers?: Record<string, string> };
       maxScore = 4;
       ['28', '29', '30', '31'].forEach((qNum) => {
-        if (userAnswers[qNum]?.toUpperCase() === v.correctAnswers[qNum]?.toUpperCase()) {
+        if (userAnswers[qNum]?.toUpperCase() === v?.correctAnswers?.[qNum]?.toUpperCase()) {
           score += 1;
         }
       });
     } else if (selectedTileType === 'hoeren_schreiben') {
-      const v = activeVariant as unknown as { q41Correct: string };
+      const v = activeVariant as unknown as { q41Correct?: string };
       maxScore = 1;
-      if (userAnswers['41'] === v.q41Correct) score += 1;
+      if (userAnswers['41'] === v?.q41Correct) score += 1;
     } else if (selectedTileType === 'sprachbausteine_1') {
-      const v = activeVariant as unknown as { correctAnswers: Record<number, string> };
+      const v = activeVariant as unknown as { correctAnswers?: Record<number, string> };
       maxScore = 6;
       [46, 47, 48, 49, 50, 51].forEach((gNum) => {
-        if (userAnswers[String(gNum)]?.trim().toLowerCase() === v.correctAnswers[gNum]?.trim().toLowerCase()) {
+        if (userAnswers[String(gNum)]?.trim().toLowerCase() === v?.correctAnswers?.[gNum]?.trim().toLowerCase()) {
           score += 1;
         }
       });
     } else if (selectedTileType === 'sprachbausteine_2') {
-      const v = activeVariant as unknown as { questions: Array<{ id: number; correctIndex: number }> };
+      const v = activeVariant as unknown as { questions?: Array<{ id: number; correctIndex: number }> };
+      const qList = v?.questions || [];
       maxScore = 6;
-      v.questions.forEach((q) => {
+      qList.forEach((q) => {
         if (userAnswers[String(q.id)] === String(q.correctIndex)) {
           score += 1;
         }
@@ -173,10 +209,21 @@ export const TilePractice: React.FC<TilePracticeProps> = ({
 
     setSubmitted(true);
     setCurrentScore({ score, maxScore });
+
+    const attemptData: TileAttemptState = {
+      userAnswers,
+      submitted: true,
+      score,
+      maxScore,
+      completedAt: new Date().toISOString(),
+    };
+    saveTilePracticeAttempt(currentAttemptKey, attemptData);
+    setAttempts((prev) => ({ ...prev, [currentAttemptKey]: attemptData }));
+
     onSaveResult({
       tileType: selectedTileType,
-      modelltestId: activeTest.id,
-      variantId: activeVariant.id,
+      modelltestId: activeTest?.id || 'mt-1',
+      variantId: activeVariant?.id || 'v1',
       score,
       maxScore,
     });
@@ -189,10 +236,10 @@ export const TilePractice: React.FC<TilePracticeProps> = ({
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Top Bar: Select Modelltest & Select Tile & Select Variant */}
-      <div className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-4">
+      <div className="glass-panel p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4 shadow-sm">
         {/* Modelltest Selector */}
         <div>
-          <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+          <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
             Modelltest auswählen:
           </label>
           <div className="flex flex-wrap gap-2">
@@ -200,10 +247,10 @@ export const TilePractice: React.FC<TilePracticeProps> = ({
               <button
                 key={mt.id}
                 onClick={() => handleSelectModelltest(mt.id)}
-                className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${
+                className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
                   selectedModelltestId === mt.id
-                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
-                    : 'glass-card text-slate-300 hover:bg-slate-800 border-slate-700/60'
+                    ? 'bg-indigo-600 text-white shadow-md'
+                    : 'glass-card text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border-slate-300 dark:border-slate-700'
                 }`}
               >
                 {mt.isPremium && <Crown className="w-3.5 h-3.5 text-amber-400" />}
@@ -215,45 +262,68 @@ export const TilePractice: React.FC<TilePracticeProps> = ({
 
         {/* Tile Type Selector */}
         <div>
-          <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+          <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
             Prüfungsteil (Teil) auswählen:
           </label>
           <div className="flex flex-wrap gap-1.5">
-            {TILE_LIST.map((t) => (
-              <button
-                key={t.type}
-                onClick={() => handleSelectTileType(t.type)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                  selectedTileType === t.type
-                    ? 'bg-indigo-600 text-white shadow-md font-extrabold'
-                    : 'bg-slate-900/80 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
+            {TILE_LIST.map((t) => {
+              const tileAttempt = Object.entries(attempts).find(
+                ([k, v]) => k.startsWith(`${selectedModelltestId}_${t.type}_`) && v?.submitted
+              );
+              const isSelected = selectedTileType === t.type;
+
+              return (
+                <button
+                  key={t.type}
+                  onClick={() => handleSelectTileType(t.type)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    isSelected
+                      ? 'bg-indigo-600 text-white shadow-md font-black'
+                      : tileAttempt
+                      ? 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30'
+                      : 'bg-slate-100 dark:bg-slate-900/80 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-800'
+                  }`}
+                >
+                  <span>{t.label}</span>
+                  {tileAttempt && (
+                    <span className="text-[10px] font-black px-1.5 py-0.2 bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 rounded">
+                      ✓ {tileAttempt[1].score}/{tileAttempt[1].maxScore}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
 
         {/* Variant Picker (If multiple variants exist for this tile) */}
         {variants.length > 1 && (
-          <div className="pt-2 border-t border-slate-800/80 flex items-center gap-2">
-            <Layers className="w-4 h-4 text-indigo-400 shrink-0" />
-            <span className="text-xs font-semibold text-slate-300">Variante wählen:</span>
+          <div className="pt-2 border-t border-slate-200 dark:border-slate-800/80 flex items-center gap-2">
+            <Layers className="w-4 h-4 text-indigo-500 shrink-0" />
+            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Variante wählen:</span>
             <div className="flex flex-wrap gap-1.5">
-              {(variants as Array<{ id: string; title: string }>).map((v, idx) => (
-                <button
-                  key={v.id}
-                  onClick={() => handleSelectVariantIndex(idx)}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                    selectedVariantIndex === idx
-                      ? 'bg-indigo-500 text-white shadow-sm'
-                      : 'bg-slate-800/60 text-slate-400 hover:text-white'
-                  }`}
-                >
-                  Variante {idx + 1}: {v.title}
-                </button>
-              ))}
+              {(variants as Array<{ id: string; title: string }>).map((v, idx) => {
+                const varKey = `${selectedModelltestId}_${selectedTileType}_${v.id || idx}`;
+                const varAttempt = attempts[varKey];
+                const isSelected = selectedVariantIndex === idx;
+
+                return (
+                  <button
+                    key={v.id || idx}
+                    onClick={() => handleSelectVariantIndex(idx)}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                      isSelected
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : varAttempt?.submitted
+                        ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
+                        : 'bg-slate-100 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                    }`}
+                  >
+                    <span>Variante {idx + 1}: {v.title}</span>
+                    {varAttempt?.submitted && <span className="text-[10px]">✓</span>}
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
@@ -408,22 +478,20 @@ export const TilePractice: React.FC<TilePracticeProps> = ({
           )}
 
           {/* Bottom Action Controls */}
-          <div className="pt-4 border-t border-slate-800 flex flex-wrap items-center justify-between gap-4">
+          <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-4">
             {submitted ? (
               <button
-                onClick={() => {
-                  setSubmitted(false);
-                  setUserAnswers({});
-                  setCurrentScore(null);
-                }}
-                className="px-5 py-3 glass-card hover:bg-slate-800 text-slate-200 font-bold rounded-xl flex items-center gap-2 transition-colors border border-slate-700/60 text-sm"
+                type="button"
+                onClick={handleResetCurrentTile}
+                className="px-5 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold rounded-xl flex items-center gap-2 transition-colors border border-slate-300 dark:border-slate-700 text-xs sm:text-sm cursor-pointer"
               >
-                <RotateCcw className="w-4 h-4" /> Erneut versuchen (Reset)
+                <RotateCcw className="w-4 h-4" /> Diesen Prüfungsteil wiederholen (Reset)
               </button>
             ) : (
               <button
+                type="button"
                 onClick={handleSubmitAnswers}
-                className="px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-xl shadow-md transition-all flex items-center gap-2 text-sm sm:text-base"
+                className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold rounded-xl shadow-sm hover:shadow-indigo-600/30 transition-all flex items-center gap-2 text-xs sm:text-sm cursor-pointer"
               >
                 Antworten überprüfen <ArrowRight className="w-4 h-4" />
               </button>

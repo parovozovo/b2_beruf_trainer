@@ -498,80 +498,94 @@ export function App() {
       {/* Main Container Body */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 md:pb-8">
         {currentTab === 'dashboard' && (
-          <Dashboard
-            currentUser={currentUser}
-            onSelectMode={setCurrentTab}
-            tileResults={tileResults}
-            onResetTrainingStats={handleResetTrainingStats}
-          />
+          <ErrorBoundary fallbackTitle="Fehler auf der Startseite">
+            <Dashboard
+              currentUser={currentUser}
+              onSelectMode={setCurrentTab}
+              tileResults={tileResults}
+              onResetTrainingStats={handleResetTrainingStats}
+            />
+          </ErrorBoundary>
         )}
 
         {currentTab === 'tile_practice' && (
-          <TilePractice
-            modelltests={modelltests.filter((m) => !m.isHidden)}
-            currentUser={currentUser}
-            onSaveResult={handleSaveTileResult}
-            onOpenPremiumLockedModal={() => setIsPremiumLockedModalOpen(true)}
-          />
+          <ErrorBoundary fallbackTitle="Fehler im Teile-Training">
+            <TilePractice
+              modelltests={modelltests.filter((m) => !m.isHidden)}
+              currentUser={currentUser}
+              onSaveResult={handleSaveTileResult}
+              onOpenPremiumLockedModal={() => setIsPremiumLockedModalOpen(true)}
+            />
+          </ErrorBoundary>
         )}
 
         {currentTab === 'full_exam' && (
-          <FullExamMode
-            modelltests={modelltests.filter((m) => !m.isHidden)}
-            currentUser={currentUser}
-            fullExamResults={fullExamResults}
-            onSaveFullExamResult={handleSaveFullExamResult}
-            onDeleteFullExamResult={handleDeleteFullExamResult}
-            onOpenPremiumLockedModal={() => setIsPremiumLockedModalOpen(true)}
-          />
+          <ErrorBoundary fallbackTitle="Fehler in der Prüfungssimulation">
+            <FullExamMode
+              modelltests={modelltests.filter((m) => !m.isHidden)}
+              currentUser={currentUser}
+              fullExamResults={fullExamResults}
+              onSaveFullExamResult={handleSaveFullExamResult}
+              onDeleteFullExamResult={handleDeleteFullExamResult}
+              onOpenPremiumLockedModal={() => setIsPremiumLockedModalOpen(true)}
+            />
+          </ErrorBoundary>
         )}
 
         {currentTab === 'schreiben' && (
-          <SchreibenModule
-            modelltests={modelltests.filter((m) => !m.isHidden)}
-            forumsbeitragTopics={forumsbeitragTopics}
-            currentUser={currentUser}
-            onOpenPremiumLockedModal={() => setIsPremiumLockedModalOpen(true)}
-            onOpenLoginModal={() => setIsLoginModalOpen(true)}
-          />
+          <ErrorBoundary fallbackTitle="Fehler im Schreib-Modul">
+            <SchreibenModule
+              modelltests={modelltests.filter((m) => !m.isHidden)}
+              forumsbeitragTopics={forumsbeitragTopics}
+              currentUser={currentUser}
+              onOpenPremiumLockedModal={() => setIsPremiumLockedModalOpen(true)}
+              onOpenLoginModal={() => setIsLoginModalOpen(true)}
+            />
+          </ErrorBoundary>
         )}
 
         {currentTab === 'sprechen' && (
-          <SprechenModule
-            sprechenTopics={sprechenTopics}
-            currentUser={currentUser}
-            onOpenPremiumLockedModal={() => setIsPremiumLockedModalOpen(true)}
-            onOpenLoginModal={() => setIsLoginModalOpen(true)}
-          />
+          <ErrorBoundary fallbackTitle="Fehler im Sprech-Modul">
+            <SprechenModule
+              sprechenTopics={sprechenTopics}
+              currentUser={currentUser}
+              onOpenPremiumLockedModal={() => setIsPremiumLockedModalOpen(true)}
+              onOpenLoginModal={() => setIsLoginModalOpen(true)}
+            />
+          </ErrorBoundary>
         )}
 
         {currentTab === 'wortschatz' && (
-          <WortschatzModule
-            items={wortschatzItems}
-            currentUser={currentUser}
-            onOpenLoginModal={() => setIsLoginModalOpen(true)}
-            onOpenPremiumLockedModal={() => setIsPremiumLockedModalOpen(true)}
-            onSelectTab={setCurrentTab}
-          />
+          <ErrorBoundary fallbackTitle="Fehler im Wortschatz-Modul">
+            <WortschatzModule
+              items={wortschatzItems}
+              currentUser={currentUser}
+              onOpenLoginModal={() => setIsLoginModalOpen(true)}
+              onOpenPremiumLockedModal={() => setIsPremiumLockedModalOpen(true)}
+              onSelectTab={setCurrentTab}
+            />
+          </ErrorBoundary>
         )}
 
         {currentTab === 'settings' && (
-          <SettingsPage
-            currentUser={currentUser}
-            onLogout={handleLogout}
-            onOpenLoginModal={() => setIsLoginModalOpen(true)}
-            onNavigateToAdmin={() => {
-              setCurrentTab('admin');
-              window.location.hash = 'admin-beruf';
-            }}
-            onSelectTab={setCurrentTab}
-            promoCodes={promoCodes}
-            onRedeemPromoCode={handleRedeemPromoCode}
-            theme={theme}
-            onToggleTheme={handleToggleTheme}
-            tileResults={tileResults}
-            fullExamResults={fullExamResults}
-          />
+          <ErrorBoundary fallbackTitle="Fehler in den Einstellungen">
+            <SettingsPage
+              currentUser={currentUser}
+              onLogout={handleLogout}
+              onOpenLoginModal={() => setIsLoginModalOpen(true)}
+              onNavigateToAdmin={() => {
+                setCurrentTab('admin');
+                window.location.hash = 'admin-beruf';
+              }}
+              onSelectTab={setCurrentTab}
+              promoCodes={promoCodes}
+              onRedeemPromoCode={handleRedeemPromoCode}
+              theme={theme}
+              onToggleTheme={handleToggleTheme}
+              tileResults={tileResults}
+              fullExamResults={fullExamResults}
+            />
+          </ErrorBoundary>
         )}
 
         {currentTab === 'admin' && (

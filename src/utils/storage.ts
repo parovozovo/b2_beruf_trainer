@@ -752,6 +752,47 @@ export function deleteWrittenEssay(id: string): void {
   localStorage.setItem(KEYS.WRITTEN_ESSAYS, JSON.stringify(essays));
 }
 
+export interface TileAttemptState {
+  userAnswers: Record<string, string>;
+  submitted: boolean;
+  score: number;
+  maxScore: number;
+  completedAt: string;
+}
+
+export function getTilePracticeAttempts(): Record<string, TileAttemptState> {
+  try {
+    const raw = localStorage.getItem('b2_tile_practice_attempts');
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function saveTilePracticeAttempt(key: string, state: TileAttemptState): void {
+  try {
+    const all = getTilePracticeAttempts();
+    all[key] = state;
+    localStorage.setItem('b2_tile_practice_attempts', JSON.stringify(all));
+  } catch (e) {
+    console.warn('Failed to save tile practice attempt:', e);
+  }
+}
+
+export function clearSingleTilePracticeAttempt(key: string): void {
+  try {
+    const all = getTilePracticeAttempts();
+    delete all[key];
+    localStorage.setItem('b2_tile_practice_attempts', JSON.stringify(all));
+  } catch (e) {
+    console.warn('Failed to clear single tile practice attempt:', e);
+  }
+}
+
+export function clearAllTilePracticeAttempts(): void {
+  localStorage.removeItem('b2_tile_practice_attempts');
+}
+
 export function getTileResults(): TileResult[] {
   const data = localStorage.getItem(KEYS.TILE_RESULTS);
   if (!data) return [];
@@ -785,6 +826,7 @@ export function saveTileResult(result: TileResult): void {
 
 export function clearTileResults(): void {
   localStorage.removeItem(KEYS.TILE_RESULTS);
+  clearAllTilePracticeAttempts();
 }
 
 export function getFullExamResults(userId?: string): FullExamResult[] {
