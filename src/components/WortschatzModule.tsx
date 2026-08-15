@@ -224,6 +224,7 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
 
   // Active flashcard deck
   const [flashcardDeck, setFlashcardDeck] = useState<WortschatzItem[]>([]);
+  const prevItemsLengthRef = React.useRef<number>(0);
 
   const rebuildDeck = (
     cat: string,
@@ -260,12 +261,16 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
     setShowFlashcardHint(false);
   };
 
-  // Sync deck when category, items, or filtering preferences change
+  // Only auto-initialize on first mount or when items length genuinely changes (e.g. after DB load)
   useEffect(() => {
-    rebuildDeck(flashcardCategory, items, favorites, learnedIds, hideLearnedCards, isRandomOrder);
-  }, [flashcardCategory, items, hideLearnedCards, isRandomOrder]);
+    if (items.length > 0 && (flashcardDeck.length === 0 || items.length !== prevItemsLengthRef.current)) {
+      prevItemsLengthRef.current = items.length;
+      rebuildDeck(flashcardCategory, items, favorites, learnedIds, hideLearnedCards, isRandomOrder);
+    }
+  }, [items.length]);
 
-  const currentFlashcard = flashcardDeck[cardIndex] || flashcardDeck[0];
+  const safeIndex = flashcardDeck.length > 0 ? Math.min(Math.max(0, cardIndex), flashcardDeck.length - 1) : 0;
+  const currentFlashcard = flashcardDeck[safeIndex];
 
   const handleSelectFlashcardCategory = (cat: string) => {
     setFlashcardCategory(cat);
@@ -276,12 +281,14 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
     const next = !hideLearnedCards;
     setHideLearnedCards(next);
     localStorage.setItem('b2_flashcards_hide_learned', String(next));
+    rebuildDeck(flashcardCategory, items, favorites, learnedIds, next, isRandomOrder);
   };
 
   const handleToggleRandomOrder = () => {
     const next = !isRandomOrder;
     setIsRandomOrder(next);
     localStorage.setItem('b2_flashcards_random', String(next));
+    rebuildDeck(flashcardCategory, items, favorites, learnedIds, hideLearnedCards, next);
   };
 
   const handleReshuffleDeck = () => {
@@ -1283,6 +1290,7 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
             <div className="space-y-4">
               {/* 3D Flip Card Container */}
               <div
+                key={currentFlashcard.id}
                 onClick={() => setIsFlipped(!isFlipped)}
                 className="relative min-h-[340px] sm:min-h-[380px] p-6 sm:p-8 rounded-3xl glass-panel border-2 border-indigo-500/40 shadow-xl cursor-pointer select-none flex flex-col justify-between transition-all hover:border-indigo-500 group"
               >
