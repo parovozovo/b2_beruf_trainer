@@ -50,6 +50,7 @@ import {
   Gift,
   BookOpen,
   Layers,
+  Sparkles,
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../utils/supabase';
 import {
@@ -3584,6 +3585,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
                   >
                     <Plus className="w-4 h-4" /> Neuer Eintrag
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      const promptText = `Erstelle mir eine Liste von 20 hochwertigen B2-Beruf-Deutsch-Ausdrücken (Nomen-Verb-Verbindungen, Redemittel für Briefe/Gespräche, Verben mit Präpositionen oder Geschäftswortschatz) im exakten JSON-Format als Array:\n\n[\n  {\n    "id": "ws-custom-1",\n    "term": "in Betracht ziehen",\n    "category": "nvv",\n    "grammar": "Verb: ziehen",\n    "simpleMeaning": "überlegen, berücksichtigen",\n    "synonyms": "erwägen, einplanen",\n    "exampleSentence": "Wir sollten auch alternative Lieferanten in Betracht ziehen.",\n    "gapExample": "Wir sollten auch alternative Lieferanten in Betracht [ _______ ].",\n    "gapAnswer": "ziehen",\n    "gapOptions": ["ziehen", "nehmen", "setzen", "bringen"],\n    "translations": {\n      "ua": "брати до уваги",\n      "en": "to consider",\n      "ru": "принимать во внимание"\n    },\n    "orderIndex": 1\n  }\n]\n\nErlaubte Kategorien: "nvv", "redemittel", "praepositionen", "geschaeft".\nGib NUR das valide JSON-Array aus, damit ich es direkt über "JSON Import" hochladen kann.`;
+                      navigator.clipboard.writeText(promptText);
+                      alert('📋 ChatGPT/AI-Prompt in die Zwischenablage kopiert!\n\nFügen Sie diesen Prompt einfach in ChatGPT oder Claude ein. Das Ergebnis können Sie direkt über "JSON Import" hochladen.');
+                    }}
+                    className="px-3 py-2 bg-gradient-to-r from-amber-500/20 to-indigo-500/20 border border-amber-500/40 hover:bg-amber-500/30 text-amber-300 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+                    title="Prompt-Vorlage für ChatGPT/Claude kopieren, um hunderte Vokabelkarten im passenden Format zu generieren"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400" /> AI-Prompt Vorlage
                   </button>
 
                   <label className="px-3 py-2 glass-card hover:bg-slate-800 text-slate-300 text-xs font-bold rounded-xl border border-slate-700 transition-all flex items-center gap-1.5 cursor-pointer">

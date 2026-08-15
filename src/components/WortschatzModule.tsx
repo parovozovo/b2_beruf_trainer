@@ -16,6 +16,7 @@ import {
   ArrowLeft,
   XCircle,
   Zap,
+  AlertCircle,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import type { WortschatzItem, WortschatzCategory, User } from '../types';
@@ -107,7 +108,15 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
   };
 
   // Translation state (code -> on-demand cache)
-  const [targetLang, setTargetLang] = useState<string>('ua');
+  const [targetLang, setTargetLang] = useState<string>(() => {
+    return localStorage.getItem('b2_target_lang') || 'ua';
+  });
+
+  const handleSetTargetLang = (code: string) => {
+    setTargetLang(code);
+    localStorage.setItem('b2_target_lang', code);
+  };
+
   const [translationCache, setTranslationCache] = useState<Record<string, string>>(() => {
     try {
       const raw = localStorage.getItem('b2_translations_cache');
@@ -122,14 +131,12 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
     const cacheKey = `${item.id}_${targetLang}`;
     if (translationCache[cacheKey]) return;
 
-    // Check if translation is already statically stored in item
     if (item.translations && item.translations[targetLang]) {
       return;
     }
 
     setTranslatingId(item.id);
     try {
-      // Free on-demand MyMemory translation API
       const res = await fetch(
         `https://api.mymemory.translated.net/get?q=${encodeURIComponent(item.term)}&langpair=de|${targetLang}`
       );
@@ -155,14 +162,12 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
 
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
-      // Category filter
       if (selectedCategoryFilter === 'favorites') {
         if (!favorites.includes(item.id)) return false;
       } else if (selectedCategoryFilter !== 'all' && item.category !== selectedCategoryFilter) {
         return false;
       }
 
-      // Search query
       if (!searchQuery.trim()) return true;
       const q = searchQuery.toLowerCase();
       const inTerm = item.term.toLowerCase().includes(q);
@@ -190,7 +195,6 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
   const [isFlipped, setIsFlipped] = useState<boolean>(false);
   const [showFlashcardHint, setShowFlashcardHint] = useState<boolean>(false);
 
-  // Learned & Review tracking
   const [learnedIds, setLearnedIds] = useState<string[]>(() => {
     try {
       const raw = localStorage.getItem('b2_flashcards_learned');
@@ -238,7 +242,6 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
     handleNextCard();
   };
 
-  // Reset card index when category changes
   useEffect(() => {
     setCardIndex(0);
     setIsFlipped(false);
@@ -250,16 +253,27 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
   const [quizIndex, setQuizIndex] = useState<number>(0);
   const [quizAnswers, setQuizAnswers] = useState<Record<number, string>>({});
   const [quizScore, setQuizScore] = useState<number>(0);
+  const [quizMistakes, setQuizMistakes] = useState<number>(0);
+  const [quizMistakesList, setQuizMistakesList] = useState<Array<{ item: WortschatzItem; userAnswer: string }>>([]);
   const [quizFinished, setQuizFinished] = useState<boolean>(false);
 
-  const startNewQuiz = () => {
-    const eligible = items.filter((i) => i.gapOptions && i.gapOptions.length >= 2 && i.gapAnswer);
-    const shuffled = [...eligible].sort(() => 0.5 - Math.random()).slice(0, 10);
+  const startNewQuiz = (customPool?: WortschatzItem[]) => {
+    const pool = customPool || items.filter((i) => i.gapOptions && i.gapOptions.length >= 2 && i.gapAnswer);
+    const shuffled = [...pool].sort(() => 0.5 - Math.random()).slice(0, 10);
     setQuizQuestions(shuffled);
     setQuizIndex(0);
     setQuizAnswers({});
     setQuizScore(0);
+    setQuizMistakes(0);
+    setQuizMistakesList([]);
     setQuizFinished(false);
+  };
+
+  const handleRetryMistakes = () => {
+    const mistakeItems = quizMistakesList.map((m) => m.item);
+    if (mistakeItems.length > 0) {
+      startNewQuiz(mistakeItems);
+    }
   };
 
   useEffect(() => {
@@ -271,12 +285,15 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
   const currentQuizQuestion = quizQuestions[quizIndex];
 
   const handleSelectQuizOption = (option: string) => {
-    if (quizAnswers[quizIndex] !== undefined) return; // already answered
+    if (quizAnswers[quizIndex] !== undefined) return;
     const isCorrect = option.toLowerCase().trim() === currentQuizQuestion.gapAnswer?.toLowerCase().trim();
 
     setQuizAnswers((prev) => ({ ...prev, [quizIndex]: option }));
     if (isCorrect) {
       setQuizScore((prev) => prev + 1);
+    } else {
+      setQuizMistakes((prev) => prev + 1);
+      setQuizMistakesList((prev) => [...prev, { item: currentQuizQuestion, userAnswer: option }]);
     }
   };
 
@@ -285,8 +302,9 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
       setQuizIndex((prev) => prev + 1);
     } else {
       setQuizFinished(true);
-      if (quizScore + (quizAnswers[quizIndex] === currentQuizQuestion?.gapAnswer ? 1 : 0) >= 7) {
-        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+      const finalScore = quizScore;
+      if (finalScore >= 7) {
+        confetti({ particleCount: 110, spread: 75, origin: { y: 0.6 } });
       }
     }
   };
@@ -440,7 +458,7 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
                 <span className="text-xs font-extrabold text-slate-700 dark:text-slate-300">Übersetzung:</span>
                 <select
                   value={targetLang}
-                  onChange={(e) => setTargetLang(e.target.value)}
+                  onChange={(e) => handleSetTargetLang(e.target.value)}
                   className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
                 >
                   {SUPPORTED_TRANSLATION_LANGUAGES.map((l) => (
@@ -546,7 +564,9 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
                     <div className="pt-2 border-t border-slate-200 dark:border-slate-800/80 flex items-center justify-between gap-2 text-xs">
                       {translationText ? (
                         <div className="text-indigo-700 dark:text-indigo-300 font-bold flex items-center gap-1.5">
-                          <span className="text-xs">🌐</span>
+                          <span className="text-xs">
+                            {SUPPORTED_TRANSLATION_LANGUAGES.find((l) => l.code === targetLang)?.label.split(' ')[0] || '🌐'}
+                          </span>
                           <span>{translationText}</span>
                         </div>
                       ) : (
@@ -573,32 +593,50 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
       {/* ================= TAB 2: KARTEIKARTEN (FLASHCARDS SRS) ================= */}
       {activeTab === 'flashcards' && (
         <div className="max-w-2xl mx-auto space-y-6 animate-fadeIn">
-          {/* Deck selector & Progress */}
+          {/* Deck selector, Language & Progress */}
           <div className="glass-panel p-4 sm:p-5 rounded-2xl border border-slate-300 dark:border-slate-800 space-y-3 shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Deck:</span>
-                <select
-                  value={flashcardCategory}
-                  onChange={(e) => setFlashcardCategory(e.target.value)}
-                  className="px-3 py-1.5 rounded-xl text-xs font-black bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
-                >
-                  <option value="all">🌟 Alle Ausdrücke ({items.length})</option>
-                  <option value="nvv">🔗 Nomen-Verb-Verbindungen ({nvvCount})</option>
-                  <option value="redemittel">💬 Redemittel ({redemittelCount})</option>
-                  <option value="praepositionen">📌 Präpositionen ({praepositionenCount})</option>
-                  <option value="geschaeft">💼 Geschäftswortschatz ({geschaeftCount})</option>
-                  <option value="favorites">⭐ Favoriten ({favorites.length})</option>
-                </select>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Deck:</span>
+                  <select
+                    value={flashcardCategory}
+                    onChange={(e) => setFlashcardCategory(e.target.value)}
+                    className="px-3 py-1.5 rounded-xl text-xs font-black bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                  >
+                    <option value="all">🌟 Alle ({items.length})</option>
+                    <option value="nvv">🔗 NVV ({nvvCount})</option>
+                    <option value="redemittel">💬 Redemittel ({redemittelCount})</option>
+                    <option value="praepositionen">📌 Präpositionen ({praepositionenCount})</option>
+                    <option value="geschaeft">💼 Geschäft ({geschaeftCount})</option>
+                    <option value="favorites">⭐ Favoriten ({favorites.length})</option>
+                  </select>
+                </div>
+
+                {/* Flashcard Language Selector */}
+                <div className="flex items-center gap-1.5">
+                  <Globe className="w-3.5 h-3.5 text-indigo-500" />
+                  <select
+                    value={targetLang}
+                    onChange={(e) => handleSetTargetLang(e.target.value)}
+                    className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                  >
+                    {SUPPORTED_TRANSLATION_LANGUAGES.map((l) => (
+                      <option key={l.code} value={l.code}>
+                        {l.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               {/* Counters */}
-              <div className="flex items-center gap-3 text-xs font-extrabold">
-                <span className="text-emerald-600 dark:text-emerald-400">
+              <div className="flex items-center gap-3 text-xs font-extrabold self-end sm:self-auto">
+                <span className="px-2 py-0.5 rounded-lg bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
                   ✓ Gelernt: {learnedIds.length}
                 </span>
                 <span className="text-slate-500">
-                  Karte {cardIndex + 1} / {flashcardDeck.length || 1}
+                  {cardIndex + 1} / {flashcardDeck.length || 1}
                 </span>
               </div>
             </div>
@@ -694,7 +732,7 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
                     )}
                   </div>
                 ) : (
-                  /* BACK: MEANING, FULL SENTENCE, GRAMMAR, SYNONYMS */
+                  /* BACK: MEANING, FULL SENTENCE, GRAMMAR, SYNONYMS & TRANSLATIONS */
                   <div className="space-y-3.5 text-left my-auto py-2 animate-fadeIn">
                     <div>
                       <span className="text-[11px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
@@ -713,10 +751,10 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
                       "{currentFlashcard.exampleSentence}"
                     </div>
 
-                    {/* Meta info */}
-                    <div className="grid grid-cols-2 gap-2 text-xs">
+                    {/* Meta info & Dynamic Translation */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                       {currentFlashcard.grammar && (
-                        <div className="p-2 bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
+                        <div className="p-2.5 bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
                           <span className="text-slate-500 font-bold block text-[10px] uppercase">
                             Grammatik
                           </span>
@@ -726,16 +764,29 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
                         </div>
                       )}
 
-                      {currentFlashcard.translations.ua && (
-                        <div className="p-2 bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
-                          <span className="text-slate-500 font-bold block text-[10px] uppercase">
-                            🇺🇦 Українська
+                      {/* Selected Target Language Translation */}
+                      <div className="p-2.5 bg-slate-100 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
+                        <span className="text-slate-500 font-bold block text-[10px] uppercase">
+                          {SUPPORTED_TRANSLATION_LANGUAGES.find((l) => l.code === targetLang)?.label || 'Übersetzung'}
+                        </span>
+                        {currentFlashcard.translations[targetLang] || translationCache[`${currentFlashcard.id}_${targetLang}`] ? (
+                          <span className="font-bold text-indigo-700 dark:text-indigo-300">
+                            {currentFlashcard.translations[targetLang] || translationCache[`${currentFlashcard.id}_${targetLang}`]}
                           </span>
-                          <span className="font-semibold text-slate-900 dark:text-white">
-                            {currentFlashcard.translations.ua}
-                          </span>
-                        </div>
-                      )}
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleTranslateOnDemand(currentFlashcard);
+                            }}
+                            className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 mt-0.5 cursor-pointer"
+                          >
+                            <Globe className="w-3 h-3" />
+                            <span>{translatingId === currentFlashcard.id ? 'Lädt...' : 'Übersetzung laden'}</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -799,54 +850,101 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
       {activeTab === 'quiz' && (
         <div className="max-w-2xl mx-auto space-y-6 animate-fadeIn">
           {quizFinished ? (
-            /* Quiz Results Screen */
-            <div className="glass-panel p-8 sm:p-10 rounded-3xl border border-slate-300 dark:border-slate-800 text-center space-y-6 shadow-xl">
+            /* Quiz Results Screen with Mistakes Review */
+            <div className="glass-panel p-6 sm:p-10 rounded-3xl border border-slate-300 dark:border-slate-800 text-center space-y-6 shadow-xl">
               <div className="w-16 h-16 bg-amber-500/20 text-amber-500 rounded-2xl flex items-center justify-center mx-auto border border-amber-500/40">
                 <Award className="w-8 h-8" />
               </div>
 
               <div>
-                <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mb-1">
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mb-2">
                   Quiz abgeschlossen! 🎉
                 </h2>
-                <div className="text-base font-extrabold text-slate-700 dark:text-slate-300">
-                  Ergebnis: {quizScore} von {quizQuestions.length} Punkten (
-                  {Math.round((quizScore / (quizQuestions.length || 1)) * 100)}%)
-                </div>
 
-                {quizScore >= 7 ? (
-                  <div className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-emerald-500/20 border border-emerald-500/40 text-emerald-700 dark:text-emerald-300 font-black rounded-full text-xs sm:text-sm mt-3">
-                    <CheckCircle2 className="w-4 h-4" /> Ausgezeichnete B2-Kollokations-Kenntnisse!
+                {/* Score Pills */}
+                <div className="flex items-center justify-center gap-3 pt-2">
+                  <div className="px-4 py-2 rounded-2xl bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 font-black text-sm">
+                    ✓ Richtig: {quizScore}
                   </div>
-                ) : (
-                  <div className="inline-flex items-center gap-1.5 px-4 py-1.5 bg-amber-500/20 border border-amber-500/40 text-amber-700 dark:text-amber-300 font-black rounded-full text-xs sm:text-sm mt-3">
-                    <RotateCw className="w-4 h-4" /> Wiederholen Sie die Flashcards, um die Wendungen zu festigen.
+                  <div className="px-4 py-2 rounded-2xl bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/40 font-black text-sm">
+                    ✗ Falsch: {quizMistakes}
                   </div>
-                )}
+                  <div className="px-4 py-2 rounded-2xl bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/40 font-black text-sm">
+                    {Math.round((quizScore / (quizQuestions.length || 1)) * 100)}%
+                  </div>
+                </div>
               </div>
 
-              <div className="flex justify-center gap-3 pt-2">
+              {/* Action Buttons */}
+              <div className="flex flex-wrap justify-center gap-3 pt-2">
                 <button
-                  onClick={startNewQuiz}
+                  onClick={() => startNewQuiz()}
                   className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold rounded-2xl shadow-lg transition-colors text-xs sm:text-sm flex items-center gap-2 cursor-pointer"
                 >
                   <RefreshCw className="w-4 h-4" /> Neues Quiz starten (10 Fragen)
                 </button>
+
+                {quizMistakesList.length > 0 && (
+                  <button
+                    onClick={handleRetryMistakes}
+                    className="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-2xl shadow-lg transition-colors text-xs sm:text-sm flex items-center gap-2 cursor-pointer"
+                  >
+                    <RotateCw className="w-4 h-4" /> Nur {quizMistakesList.length} Fehler wiederholen
+                  </button>
+                )}
               </div>
+
+              {/* Mistakes Breakdown List */}
+              {quizMistakesList.length > 0 && (
+                <div className="text-left space-y-3 pt-4 border-t border-slate-200 dark:border-slate-800">
+                  <h4 className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <AlertCircle className="w-4 h-4 text-rose-500" />
+                    Fehler-Analyse ({quizMistakesList.length} Fragen):
+                  </h4>
+
+                  <div className="space-y-2.5">
+                    {quizMistakesList.map(({ item, userAnswer }) => (
+                      <div
+                        key={item.id}
+                        className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 space-y-1.5 text-xs text-slate-800 dark:text-slate-200"
+                      >
+                        <div className="font-extrabold text-sm text-slate-900 dark:text-white">
+                          "{item.gapExample}"
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-rose-600 dark:text-rose-400 font-bold">
+                            Ihre Antwort: ✗ {userAnswer}
+                          </span>
+                          <span className="text-slate-400">•</span>
+                          <span className="text-emerald-600 dark:text-emerald-400 font-black">
+                            Richtig: ✓ {item.gapAnswer}
+                          </span>
+                        </div>
+                        <div className="text-slate-600 dark:text-slate-400 font-medium">
+                          💡 Bedeutung: {item.simpleMeaning} ({item.term})
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           ) : currentQuizQuestion ? (
             /* Active Quiz Question Screen */
             <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-300 dark:border-slate-800 space-y-6 shadow-xl">
-              {/* Question Header & Score */}
-              <div className="flex items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800/80 pb-3">
+              {/* Question Header & Live Scoring Counters (Correct vs Wrong) */}
+              <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800/80 pb-3">
                 <span className="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
                   Frage {quizIndex + 1} von {quizQuestions.length}
                 </span>
 
-                <div className="flex items-center gap-2 text-xs font-extrabold text-slate-700 dark:text-slate-300">
-                  <span>Punkte:</span>
-                  <span className="px-2.5 py-0.5 rounded-lg bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 font-black">
-                    {quizScore}
+                {/* Live Accuracy Counters */}
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-1 rounded-xl bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-black flex items-center gap-1">
+                    ✓ Richtig: {quizScore}
+                  </span>
+                  <span className="px-2.5 py-1 rounded-xl bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30 text-xs font-black flex items-center gap-1">
+                    ✗ Falsch: {quizMistakes}
                   </span>
                 </div>
               </div>
