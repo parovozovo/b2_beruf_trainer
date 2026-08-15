@@ -82,7 +82,10 @@ interface AdminPanelProps {
     sprecher3Situations: Array<{ id: string; title: string; promptText: string }>;
   }) => Promise<{ success: boolean; error?: string }> | void;
   wortschatzItems?: WortschatzItem[];
-  onSaveWortschatz?: (items: WortschatzItem[]) => Promise<{ success: boolean; error?: string }> | void;
+  onSaveWortschatz?: (
+    items: WortschatzItem[],
+    onProgress?: (current: number, total: number, message: string) => void
+  ) => Promise<{ success: boolean; error?: string }> | void;
 }
 
 const FormattingToolbar: React.FC<{
@@ -141,6 +144,26 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [showWortschatzModal, setShowWortschatzModal] = useState(false);
   const [editingWortschatzItem, setEditingWortschatzItem] = useState<WortschatzItem | null>(null);
   const [importPendingItems, setImportPendingItems] = useState<WortschatzItem[] | null>(null);
+
+  // Global Sync & Toast States for Admin
+  const [syncProgress, setSyncProgress] = useState<{
+    isActive: boolean;
+    title: string;
+    current: number;
+    total: number;
+    percent: number;
+    message: string;
+    isComplete: boolean;
+  } | null>(null);
+
+  const [adminToast, setAdminToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+
+  const showAdminToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    setAdminToast({ message, type });
+    setTimeout(() => {
+      setAdminToast((current) => (current?.message === message ? null : current));
+    }, 4000);
+  };
 
   // Wortschatz Form Fields
   const [wsFormTerm, setWsFormTerm] = useState('');
@@ -3572,8 +3595,21 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           if (confirm('⚠️ ACHTUNG: Möchten Sie wirklich ALLE Einträge aus der Wortschatz-Datenbank löschen?\n\nTipp: Klicken Sie vorher auf "JSON Export", um ein Backup zu sichern.')) {
             if (confirm('Letzte Bestätigung: Soll die Wortschatz-Datenbank jetzt komplett geleert werden?')) {
               setWortschatzList([]);
-              if (onSaveWortschatz) await onSaveWortschatz([]);
-              alert('Wortschatz-Datenbank wurde vollständig geleert.');
+              setSyncProgress({
+                isActive: true,
+                title: 'Wortschatz-Datenbank wird geleert...',
+                current: 0,
+                total: 1,
+                percent: 50,
+                message: 'Lösche Einträge aus Cloud und lokalem Speicher...',
+                isComplete: false,
+              });
+              if (onSaveWortschatz) {
+                await onSaveWortschatz([]);
+              }
+              setSyncProgress((prev) => (prev ? { ...prev, isComplete: true, percent: 100, message: 'Fertig!' } : null));
+              setTimeout(() => setSyncProgress(null), 600);
+              showAdminToast('Wortschatz-Datenbank wurde vollständig geleert.', 'info');
             }
           }
         };
@@ -3606,13 +3642,47 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           const nextList = [...wortschatzList, ...processedNewItems];
           setWortschatzList(nextList);
           setImportPendingItems(null);
+
+          setSyncProgress({
+            isActive: true,
+            title: 'Wortschatz wird importiert & synchronisiert',
+            current: 0,
+            total: nextList.length,
+            percent: 0,
+            message: 'Bereite Speicherung in Cloud-Datenbank vor...',
+            isComplete: false,
+          });
+
           if (onSaveWortschatz) {
-            const res = await onSaveWortschatz(nextList);
-            if (res && res.error) {
-              alert('⚠️ Hinweis: Lokal gespeichert, aber Supabase Cloud Sync meldet: ' + res.error);
+            try {
+              const res = await onSaveWortschatz(nextList, (cur, tot, msg) => {
+                const pct = tot > 0 ? Math.round((cur / tot) * 100) : 100;
+                setSyncProgress({
+                  isActive: true,
+                  title: 'Wortschatz wird importiert & synchronisiert',
+                  current: cur,
+                  total: tot,
+                  percent: pct,
+                  message: msg,
+                  isComplete: cur >= tot,
+                });
+              });
+
+              if (res && res.error) {
+                showAdminToast(`⚠️ Lokal gespeichert, aber Supabase Cloud Sync meldet: ${res.error}`, 'error');
+              } else {
+                showAdminToast(`✅ Erfolgreich! +${processedNewItems.length} neue Einträge hinzugefügt (Gesamt: ${nextList.length}).`, 'success');
+              }
+            } catch (e: unknown) {
+              const errMsg = e instanceof Error ? e.message : String(e);
+              showAdminToast(`Fehler beim Speichern: ${errMsg}`, 'error');
+            } finally {
+              setSyncProgress((prev) => (prev ? { ...prev, isComplete: true, percent: 100, message: 'Fertig!' } : null));
+              setTimeout(() => {
+                setSyncProgress(null);
+              }, 700);
             }
           }
-          alert(`Erfolgreich hinzugefügt! +${processedNewItems.length} neue Einträge hinzugefügt. Die Datenbank enthält jetzt insgesamt ${nextList.length} Einträge.`);
         };
 
         const handleExecuteReplaceImport = async (parsed: WortschatzItem[]) => {
@@ -3628,13 +3698,47 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
           setWortschatzList(sanitizedList);
           setImportPendingItems(null);
+
+          setSyncProgress({
+            isActive: true,
+            title: 'Wortschatz-Datenbank wird ersetzt',
+            current: 0,
+            total: sanitizedList.length,
+            percent: 0,
+            message: 'Bereite neue Datenbank vor...',
+            isComplete: false,
+          });
+
           if (onSaveWortschatz) {
-            const res = await onSaveWortschatz(sanitizedList);
-            if (res && res.error) {
-              alert('⚠️ Hinweis: Lokal gespeichert, aber Supabase Cloud Sync meldet: ' + res.error);
+            try {
+              const res = await onSaveWortschatz(sanitizedList, (cur, tot, msg) => {
+                const pct = tot > 0 ? Math.round((cur / tot) * 100) : 100;
+                setSyncProgress({
+                  isActive: true,
+                  title: 'Wortschatz-Datenbank wird ersetzt',
+                  current: cur,
+                  total: tot,
+                  percent: pct,
+                  message: msg,
+                  isComplete: cur >= tot,
+                });
+              });
+
+              if (res && res.error) {
+                showAdminToast(`⚠️ Lokal gespeichert, aber Supabase Cloud Sync meldet: ${res.error}`, 'error');
+              } else {
+                showAdminToast(`✅ Erfolgreich! Datenbank komplett durch ${sanitizedList.length} Einträge ersetzt.`, 'success');
+              }
+            } catch (e: unknown) {
+              const errMsg = e instanceof Error ? e.message : String(e);
+              showAdminToast(`Fehler beim Ersetzen: ${errMsg}`, 'error');
+            } finally {
+              setSyncProgress((prev) => (prev ? { ...prev, isComplete: true, percent: 100, message: 'Fertig!' } : null));
+              setTimeout(() => {
+                setSyncProgress(null);
+              }, 700);
             }
           }
-          alert(`Erfolgreich ersetzt! Die Wortschatz-Datenbank enthält jetzt ${sanitizedList.length} Einträge.`);
         };
 
         const handleImportWortschatzJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -4595,6 +4699,74 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Global Sync Progress Modal with Live Bar & Warning */}
+      {syncProgress && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fadeIn">
+          <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-indigo-500/40 w-full max-w-md space-y-5 shadow-2xl text-center">
+            {/* Animated Icon */}
+            <div className="mx-auto w-16 h-16 rounded-2xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center">
+              {syncProgress.isComplete ? (
+                <CheckCircle className="w-8 h-8 text-emerald-400" />
+              ) : (
+                <RefreshCw className="w-8 h-8 animate-spin text-indigo-400" />
+              )}
+            </div>
+
+            <div className="space-y-1">
+              <h3 className="text-base sm:text-lg font-black text-white">
+                {syncProgress.title}
+              </h3>
+              <p className="text-xs text-slate-400 truncate max-w-xs mx-auto">
+                {syncProgress.message}
+              </p>
+            </div>
+
+            {/* Progress Bar & Percentage */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs font-bold text-slate-400">
+                <span>{syncProgress.current} von {syncProgress.total}</span>
+                <span className="text-emerald-400 font-extrabold">{syncProgress.percent}%</span>
+              </div>
+
+              <div className="w-full bg-slate-900 rounded-full h-3.5 p-0.5 border border-slate-800 overflow-hidden shadow-inner">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-indigo-500 via-indigo-400 to-emerald-400 transition-all duration-200"
+                  style={{ width: `${Math.max(syncProgress.percent, 3)}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Critical Warning: DO NOT LEAVE PAGE */}
+            <div className="p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center gap-2.5 text-left text-xs text-amber-300">
+              <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
+              <div className="font-semibold text-[11px] leading-tight">
+                Bitte schließen oder verlassen Sie diese Seite während des Speichervorgangs nicht.
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating In-App Toast Notification */}
+      {adminToast && (
+        <div
+          className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl backdrop-blur-md border animate-fadeIn text-xs font-extrabold ${
+            adminToast.type === 'error'
+              ? 'bg-rose-950/90 text-rose-200 border-rose-500/40'
+              : adminToast.type === 'info'
+              ? 'bg-slate-900/90 text-slate-200 border-slate-700'
+              : 'bg-emerald-950/90 text-emerald-200 border-emerald-500/40'
+          }`}
+        >
+          {adminToast.type === 'error' ? (
+            <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+          ) : (
+            <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+          )}
+          <span>{adminToast.message}</span>
         </div>
       )}
     </div>

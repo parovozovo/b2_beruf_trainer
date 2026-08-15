@@ -984,12 +984,21 @@ export async function fetchWortschatzAsync(): Promise<WortschatzItem[]> {
   }
 }
 
-export async function saveWortschatzAsync(items: WortschatzItem[]): Promise<{ success: boolean; error?: string }> {
+export async function saveWortschatzAsync(
+  items: WortschatzItem[],
+  onProgress?: (current: number, total: number, message: string) => void
+): Promise<{ success: boolean; error?: string }> {
   saveWortschatzItemsLocal(items);
-  if (!isSupabaseConfigured) return { success: true };
+  if (!isSupabaseConfigured) {
+    if (onProgress) {
+      onProgress(items.length, items.length, 'Lokal im Browser gespeichert');
+    }
+    return { success: true };
+  }
 
   try {
     if (items.length === 0) {
+      if (onProgress) onProgress(0, 1, 'Lösche Einträge aus Supabase...');
       const { data: dbRows, error: selectErr } = await supabase.from('wortschatz_items').select('id');
       if (selectErr) {
         return { success: false, error: `Supabase Error (${selectErr.code}): ${selectErr.message}` };
@@ -999,9 +1008,11 @@ export async function saveWortschatzAsync(items: WortschatzItem[]): Promise<{ su
           await supabase.from('wortschatz_items').delete().eq('id', String(row.id));
         }
       }
+      if (onProgress) onProgress(1, 1, 'Bereinigung abgeschlossen');
       return { success: true };
     }
 
+    if (onProgress) onProgress(0, items.length, 'Prüfe Datenbank-Synchronisation...');
     const activeIds = new Set(items.map((wi) => String(wi.id)));
     const { data: dbRows, error: fetchErr } = await supabase.from('wortschatz_items').select('id');
     if (!fetchErr && dbRows && dbRows.length > 0) {
@@ -1013,7 +1024,12 @@ export async function saveWortschatzAsync(items: WortschatzItem[]): Promise<{ su
       }
     }
 
-    for (const wi of items) {
+    for (let i = 0; i < items.length; i++) {
+      const wi = items[i];
+      if (onProgress) {
+        onProgress(i + 1, items.length, `Speichere (${i + 1}/${items.length}): "${wi.term}"`);
+      }
+
       const { error: upsertErr } = await supabase.from('wortschatz_items').upsert({
         id: String(wi.id),
         term: String(wi.term || ''),
@@ -1026,13 +1042,17 @@ export async function saveWortschatzAsync(items: WortschatzItem[]): Promise<{ su
         gap_answer: wi.gapAnswer ? String(wi.gapAnswer) : null,
         gap_options: Array.isArray(wi.gapOptions) ? wi.gapOptions : [],
         translations: typeof wi.translations === 'object' && wi.translations !== null ? wi.translations : {},
-        order_index: typeof wi.orderIndex === 'number' ? wi.orderIndex : 0,
+        order_index: typeof wi.orderIndex === 'number' ? wi.orderIndex : i + 1,
       });
 
       if (upsertErr) {
         console.error('Wortschatz upsert error:', upsertErr);
         return { success: false, error: `Supabase Upsert Error (${upsertErr.code || 'RLS'}): ${upsertErr.message}` };
       }
+    }
+
+    if (onProgress) {
+      onProgress(items.length, items.length, 'Alle Einträge erfolgreich synchronisiert!');
     }
     return { success: true };
   } catch (e: unknown) {

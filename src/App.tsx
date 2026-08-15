@@ -304,11 +304,16 @@ export function App() {
   }, []);
 
   // Handlers for Data Updates with Supabase Cloud Sync
-  const handleSaveWortschatz = async (items: WortschatzItem[]): Promise<{ success: boolean; error?: string }> => {
+  const handleSaveWortschatz = async (
+    items: WortschatzItem[],
+    onProgress?: (current: number, total: number, message: string) => void
+  ): Promise<{ success: boolean; error?: string }> => {
     setWortschatzItems(items);
-    await saveWortschatzAsync(items);
-    showToast('✅ Wortschatz-Datenbank erfolgreich gespeichert!', 'success');
-    return { success: true };
+    const res = await saveWortschatzAsync(items, onProgress);
+    if (res.success) {
+      showToast('✅ Wortschatz-Datenbank erfolgreich gespeichert!', 'success');
+    }
+    return res;
   };
 
   const handleSaveModelltests = async (tests: Modelltest[]): Promise<{ success: boolean; error?: string }> => {
