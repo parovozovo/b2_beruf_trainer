@@ -152,6 +152,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [wsFormGapOptions, setWsFormGapOptions] = useState('');
   const [wsFormTransUA, setWsFormTransUA] = useState('');
   const [wsFormTransEN, setWsFormTransEN] = useState('');
+  const [wsFormTransRU, setWsFormTransRU] = useState('');
+  const [wsFormTransTR, setWsFormTransTR] = useState('');
+  const [wsFormTransPL, setWsFormTransPL] = useState('');
 
   // Keep local list in sync with parent props
   useEffect(() => {
@@ -3418,6 +3421,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           setWsFormGapOptions('');
           setWsFormTransUA('');
           setWsFormTransEN('');
+          setWsFormTransRU('');
+          setWsFormTransTR('');
+          setWsFormTransPL('');
           setShowWortschatzModal(true);
         };
 
@@ -3434,6 +3440,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           setWsFormGapOptions(item.gapOptions?.join(', ') || '');
           setWsFormTransUA(item.translations.ua || '');
           setWsFormTransEN(item.translations.en || '');
+          setWsFormTransRU(item.translations.ru || '');
+          setWsFormTransTR(item.translations.tr || '');
+          setWsFormTransPL(item.translations.pl || '');
           setShowWortschatzModal(true);
         };
 
@@ -3468,6 +3477,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       ...item.translations,
                       ua: wsFormTransUA.trim() || undefined,
                       en: wsFormTransEN.trim() || undefined,
+                      ru: wsFormTransRU.trim() || undefined,
+                      tr: wsFormTransTR.trim() || undefined,
+                      pl: wsFormTransPL.trim() || undefined,
                     },
                   }
                 : item
@@ -3487,6 +3499,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               translations: {
                 ua: wsFormTransUA.trim() || undefined,
                 en: wsFormTransEN.trim() || undefined,
+                ru: wsFormTransRU.trim() || undefined,
+                tr: wsFormTransTR.trim() || undefined,
+                pl: wsFormTransPL.trim() || undefined,
               },
               orderIndex: wortschatzList.length + 1,
               createdAt: new Date().toISOString(),
@@ -3927,6 +3942,45 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                           placeholder="z. B. to make a decision"
                           value={wsFormTransEN}
                           onChange={(e) => setWsFormTransEN(e.target.value)}
+                          className="w-full p-2.5 rounded-xl glass-input text-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-400 font-bold mb-1">
+                          🇷🇺 Russische Übersetzung:
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="z. B. принять решение"
+                          value={wsFormTransRU}
+                          onChange={(e) => setWsFormTransRU(e.target.value)}
+                          className="w-full p-2.5 rounded-xl glass-input text-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-400 font-bold mb-1">
+                          🇹🇷 Türkische Übersetzung:
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="z. B. karar vermek"
+                          value={wsFormTransTR}
+                          onChange={(e) => setWsFormTransTR(e.target.value)}
+                          className="w-full p-2.5 rounded-xl glass-input text-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-400 font-bold mb-1">
+                          🇵🇱 Polnische Übersetzung:
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="z. B. podjąć decyzję"
+                          value={wsFormTransPL}
+                          onChange={(e) => setWsFormTransPL(e.target.value)}
                           className="w-full p-2.5 rounded-xl glass-input text-white"
                         />
                       </div>

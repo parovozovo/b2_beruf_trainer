@@ -297,6 +297,17 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
 
   const currentQuizQuestion = quizQuestions[quizIndex];
 
+  // Randomize the 4 options so the correct answer is not always first (A)
+  const shuffledQuizOptions = useMemo(() => {
+    if (!currentQuizQuestion?.gapOptions || currentQuizQuestion.gapOptions.length === 0) return [];
+    const opts = [...currentQuizQuestion.gapOptions];
+    for (let i = opts.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [opts[i], opts[j]] = [opts[j], opts[i]];
+    }
+    return opts;
+  }, [currentQuizQuestion?.id, quizIndex]);
+
   const handleSelectQuizOption = (option: string) => {
     if (quizAnswers[quizIndex] !== undefined) return;
     const isCorrect = option.toLowerCase().trim() === currentQuizQuestion.gapAnswer?.toLowerCase().trim();
@@ -1026,9 +1037,9 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
                 </div>
               </div>
 
-              {/* 4 Multiple-Choice Options */}
+              {/* 4 Multiple-Choice Options (Randomized order) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {currentQuizQuestion.gapOptions?.map((opt, optIdx) => {
+                {shuffledQuizOptions.map((opt, optIdx) => {
                   const isSelected = quizAnswers[quizIndex] === opt;
                   const isCorrect = opt.toLowerCase().trim() === currentQuizQuestion.gapAnswer?.toLowerCase().trim();
                   const answered = quizAnswers[quizIndex] !== undefined;
