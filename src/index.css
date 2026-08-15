@@ -4,11 +4,26 @@
 
 @layer base {
   body {
-    @apply min-h-screen font-sans antialiased selection:bg-indigo-600 selection:text-white transition-colors duration-200;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    @apply min-h-screen antialiased selection:bg-indigo-600 selection:text-white transition-colors duration-150;
   }
 }
 
-/* Light Theme: Clean, High-Contrast German Slate & Indigo Palette */
+/* Typography Classes: Serif for German Exam Texts & Sans for UI */
+.font-serif,
+.font-exam,
+.reading-text {
+  font-family: 'Lora', Georgia, 'Times New Roman', serif;
+}
+
+.font-sans,
+.font-ui {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+/* =========================================================================
+   LIGHT THEME: Clean German Precision (Porcelain, Crisp Slate & Deep Cobalt)
+   ========================================================================= */
 .light-theme {
   background-color: #f8fafc;
   color: #0f172a;
@@ -18,19 +33,19 @@
   background-color: #ffffff;
   border: 1px solid #e2e8f0;
   color: #0f172a;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
 }
 
 .light-theme .glass-card {
   background-color: #ffffff;
   border: 1px solid #e2e8f0;
   color: #0f172a;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.02);
 }
 
 .light-theme .glass-card:hover {
-  border-color: #6366f1;
-  box-shadow: 0 4px 12px -2px rgba(99, 102, 241, 0.12);
+  border-color: #4f46e5;
+  background-color: #f8fafc;
 }
 
 .light-theme .glass-input {
@@ -42,99 +57,54 @@
 .light-theme .glass-input:focus {
   outline: none;
   border-color: #4f46e5;
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15);
 }
 
-/* Base Headings & Text in Light Mode */
-.light-theme h1,
-.light-theme h2,
-.light-theme h3,
-.light-theme h4,
-.light-theme label {
+/* Light Theme Reading & Question Text Containers */
+.light-theme .bg-slate-900,
+.light-theme .bg-slate-900\/90,
+.light-theme .bg-slate-900\/80,
+.light-theme .bg-slate-900\/60,
+.light-theme .bg-slate-950,
+.light-theme .bg-slate-950\/90,
+.light-theme .bg-slate-950\/80,
+.light-theme .bg-slate-950\/50,
+.light-theme .bg-slate-950\/30 {
+  background-color: #f8fafc;
+  border-color: #e2e8f0;
   color: #0f172a;
 }
 
-/* Feature Badge pill colors in Light Mode */
-.light-theme .bg-indigo-500\/20,
-.light-theme .bg-indigo-500\/15 {
-  background-color: #e0e7ff !important;
-  color: #3730a3 !important;
-  border-color: #a5b4fc !important;
+.light-theme .bg-slate-900 *,
+.light-theme .bg-slate-950 * {
+  border-color: #e2e8f0;
 }
 
-.light-theme .bg-amber-500\/20,
-.light-theme .bg-amber-500\/15 {
-  background-color: #fef3c7 !important;
-  color: #92400e !important;
-  border-color: #fde68a !important;
+.light-theme .text-slate-100,
+.light-theme .text-slate-200,
+.light-theme .text-slate-300 {
+  color: #1e293b;
 }
 
-.light-theme .bg-emerald-500\/20,
-.light-theme .bg-emerald-500\/15 {
-  background-color: #d1fae5 !important;
-  color: #065f46 !important;
-  border-color: #a7f3d0 !important;
+.light-theme .text-slate-400 {
+  color: #475569;
 }
 
-.light-theme .bg-pink-500\/20,
-.light-theme .bg-pink-500\/15 {
-  background-color: #fce7f3 !important;
-  color: #9d174d !important;
-  border-color: #fbcfe8 !important;
+/* Select dropdowns in Light Mode */
+.light-theme select {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
 }
 
-.light-theme .bg-rose-500\/20,
-.light-theme .bg-rose-500\/15,
-.light-theme .bg-rose-500\/10 {
-  background-color: #ffe4e6 !important;
-  color: #9f1239 !important;
-  border-color: #fecdd3 !important;
-}
-
-.light-theme .bg-violet-500\/20,
-.light-theme .bg-violet-500\/15 {
-  background-color: #ede9fe !important;
-  color: #5b21b6 !important;
-  border-color: #ddd6fe !important;
-}
-
-.light-theme .bg-cyan-500\/20,
-.light-theme .bg-cyan-500\/15 {
-  background-color: #cffafe !important;
-  color: #155e75 !important;
-  border-color: #a5f3fc !important;
-}
-
-/* Ensure crisp white text on solid colored buttons & badges in Light Mode */
-.light-theme button.bg-indigo-600,
-.light-theme button.bg-indigo-600 *,
-.light-theme button.bg-indigo-500,
-.light-theme button.bg-indigo-500 *,
-.light-theme button.bg-amber-600,
-.light-theme button.bg-amber-600 *,
-.light-theme button.bg-amber-500,
-.light-theme button.bg-amber-500 *,
-.light-theme button.bg-emerald-600,
-.light-theme button.bg-emerald-600 *,
-.light-theme button.bg-rose-600,
-.light-theme button.bg-rose-600 *,
-.light-theme button.bg-pink-600,
-.light-theme button.bg-pink-600 *,
-.light-theme .bg-indigo-600,
-.light-theme .bg-amber-600,
-.light-theme .bg-emerald-600,
-.light-theme .bg-rose-600,
-.light-theme .bg-pink-600 {
-  color: #ffffff !important;
-}
-
-.light-theme select,
 .light-theme option {
-  background-color: #ffffff;
-  color: #0f172a;
+  background-color: #ffffff !important;
+  color: #0f172a !important;
 }
 
-/* Dark Theme: Premium Deep Charcoal & Slate Palette */
+/* =========================================================================
+   DARK THEME: Restrained Charcoal, Slate & Electric Indigo Accents
+   ========================================================================= */
 .dark-theme {
   background-color: #090d16;
   color: #f8fafc;
@@ -142,25 +112,23 @@
 
 .dark-theme .glass-panel {
   background: rgba(15, 23, 42, 0.9);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
 .dark-theme .glass-card {
-  background: rgba(30, 41, 59, 0.75);
+  background: rgba(30, 41, 59, 0.7);
   border: 1px solid rgba(255, 255, 255, 0.08);
   color: #f8fafc;
 }
 
 .dark-theme .glass-card:hover {
   border-color: rgba(99, 102, 241, 0.5);
-  box-shadow: 0 0 20px rgba(99, 102, 241, 0.15);
 }
 
 .dark-theme .glass-input {
-  background: rgba(15, 23, 42, 0.8);
+  background: rgba(15, 23, 42, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.12);
   color: #ffffff;
 }
@@ -168,14 +136,31 @@
 .dark-theme .glass-input:focus {
   outline: none;
   border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
 }
 
-/* Common Animations & Micro-Interactions */
+/* Clean, crisp buttons with high contrast */
+.light-theme button.bg-indigo-600,
+.light-theme button.bg-indigo-600 *,
+.light-theme button.bg-emerald-600,
+.light-theme button.bg-emerald-600 *,
+.light-theme button.bg-rose-600,
+.light-theme button.bg-rose-600 *,
+.light-theme button.bg-amber-500,
+.light-theme button.bg-amber-500 * {
+  color: #ffffff !important;
+}
+
+.light-theme button.bg-amber-500,
+.light-theme button.bg-amber-500 * {
+  color: #0f172a !important;
+}
+
+/* Animations */
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(4px);
+    transform: translateY(3px);
   }
   to {
     opacity: 1;
@@ -184,36 +169,10 @@
 }
 
 .animate-fadeIn {
-  animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: fadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Audio Wave Animation */
-@keyframes wave {
-  0%, 100% {
-    height: 4px;
-  }
-  50% {
-    height: 16px;
-  }
-}
-
-.animate-wave-1 {
-  animation: wave 1s ease-in-out infinite;
-}
-.animate-wave-2 {
-  animation: wave 1s ease-in-out 0.2s infinite;
-}
-.animate-wave-3 {
-  animation: wave 1s ease-in-out 0.4s infinite;
-}
-.animate-wave-4 {
-  animation: wave 1s ease-in-out 0.1s infinite;
-}
-.animate-wave-5 {
-  animation: wave 1s ease-in-out 0.3s infinite;
-}
-
-/* Hide scrollbars for clean horizontal tab strips */
+/* No scrollbar */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }

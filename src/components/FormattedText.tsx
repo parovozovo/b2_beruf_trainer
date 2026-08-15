@@ -25,7 +25,7 @@ export const FormattedText: React.FC<FormattedTextProps> = ({ text, className = 
 
   return (
     <div
-      className={`formatted-text-content ${className}`}
+      className={`formatted-text-content font-serif leading-relaxed tracking-normal ${className}`}
       dangerouslySetInnerHTML={{ __html: formattedHtml }}
     />
   );

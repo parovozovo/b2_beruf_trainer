@@ -22,11 +22,9 @@ import {
   Trash2,
   Flame,
   Check,
-  Lock,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import type { WortschatzItem, WortschatzCategory, User } from '../types';
-import { isAdminEmail } from '../utils/storage';
 
 interface WortschatzModuleProps {
   items: WortschatzItem[];
@@ -37,8 +35,6 @@ interface WortschatzModuleProps {
 }
 
 type WortschatzTab = 'lexikon' | 'flashcards' | 'quiz' | 'match';
-
-const FREE_WORTSCHATZ_LIMIT = 25;
 
 const CATEGORY_LABELS: Record<WortschatzCategory, { label: string; icon: string; color: string; desc: string }> = {
   nvv: {
@@ -91,19 +87,15 @@ const SUPPORTED_TRANSLATION_LANGUAGES = [
 
 export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
   items,
-  currentUser,
+  currentUser: _currentUser,
   onOpenLoginModal: _onOpenLoginModal,
-  onOpenPremiumLockedModal,
+  onOpenPremiumLockedModal: _onOpenPremiumLockedModal,
   onSelectTab: _onSelectTab,
 }) => {
   const [activeTab, setActiveTab] = useState<WortschatzTab>('lexikon');
   const [showResetConfirmModal, setShowResetConfirmModal] = useState(false);
 
-  const isPremiumUser = !!(
-    currentUser?.isPremium ||
-    currentUser?.role === 'admin' ||
-    (currentUser?.email && isAdminEmail(currentUser.email))
-  );
+  // Favorites state (persisted in localStorage)
 
   // Favorites state (persisted in localStorage)
   const [favorites, setFavorites] = useState<string[]>(() => {
@@ -709,8 +701,7 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredItems.map((item, idx) => {
-                const isLocked = !isPremiumUser && idx >= FREE_WORTSCHATZ_LIMIT;
+              {filteredItems.map((item) => {
                 const catDef = CATEGORY_LABELS[item.category] || CATEGORY_LABELS.nvv;
                 const isFav = favorites.includes(item.id);
                 const cacheKey = `${item.id}_${targetLang}`;
@@ -720,11 +711,7 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
                 return (
                   <div
                     key={item.id}
-                    className={`glass-panel p-5 rounded-2xl border transition-all flex flex-col justify-between gap-4 shadow-sm hover:shadow-md ${
-                      isLocked
-                        ? 'border-amber-500/30 bg-amber-500/5'
-                        : 'border-slate-200 dark:border-slate-800 hover:border-indigo-500/40'
-                    }`}
+                    className="glass-panel p-5 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-indigo-500/40 transition-all flex flex-col justify-between gap-4 shadow-sm hover:shadow-md"
                   >
                     {/* Top Row: Category & Action Icons */}
                     <div className="space-y-2">
@@ -739,14 +726,6 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
                             <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
                               {item.grammar}
                             </span>
-                          )}
-                          {isLocked && (
-                            <button
-                              onClick={onOpenPremiumLockedModal}
-                              className="px-2 py-0.5 rounded-lg text-[10px] font-black bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/30 flex items-center gap-1 cursor-pointer hover:bg-amber-500/30 transition-colors"
-                            >
-                              <Lock className="w-3 h-3" /> Premium
-                            </button>
                           )}
                         </div>
 
@@ -1529,38 +1508,38 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
 
       {/* ================= STATS RESET CONFIRMATION MODAL ================= */}
       {showResetConfirmModal && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4 text-slate-900 dark:text-white animate-fadeIn">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-rose-500/15 text-rose-500 flex items-center justify-center shrink-0">
-                <Trash2 className="w-6 h-6" />
+              <div className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 border border-rose-500/20">
+                <Trash2 className="w-5 h-5" />
               </div>
               <div>
                 <h3 className="font-extrabold text-base text-slate-900 dark:text-white">
                   Lernfortschritt zurücksetzen?
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Diese Aktion kann nicht rückgängig gemacht werden.
+                  Gelernt-Status und Statistiken werden auf 0 gesetzt.
                 </p>
               </div>
             </div>
 
-            <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
-              Möchten Sie Ihren gesamten Lernfortschritt für den Wortschatz (Gelernt-Status, Quiz-Punkte & Fehlerliste) wirklich zurücksetzen?
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+              Möchten Sie Ihren gesamten Lernfortschritt für den Wortschatz wirklich unwiderruflich zurücksetzen?
             </p>
 
-            <div className="flex items-center justify-end gap-2 pt-2">
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
               <button
                 type="button"
                 onClick={() => setShowResetConfirmModal(false)}
-                className="px-4 py-2.5 glass-card text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-lg text-xs transition-colors cursor-pointer"
               >
                 Abbrechen
               </button>
               <button
                 type="button"
                 onClick={handleExecuteResetStats}
-                className="px-4 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-extrabold rounded-xl text-xs shadow-md transition-colors cursor-pointer"
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-extrabold rounded-lg text-xs shadow-sm transition-colors cursor-pointer"
               >
                 Ja, zurücksetzen
               </button>
