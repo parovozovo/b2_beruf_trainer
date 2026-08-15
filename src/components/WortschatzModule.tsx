@@ -17,6 +17,7 @@ import {
   XCircle,
   Zap,
   AlertCircle,
+  SlidersHorizontal,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import type { WortschatzItem, WortschatzCategory, User } from '../types';
@@ -249,6 +250,8 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
   }, [flashcardCategory]);
 
   // ================= 3. COLLOCATIONS QUIZ STATE =================
+  const [quizCategory, setQuizCategory] = useState<string>('all');
+  const [quizQuestionCount, setQuizQuestionCount] = useState<number>(10);
   const [quizQuestions, setQuizQuestions] = useState<WortschatzItem[]>([]);
   const [quizIndex, setQuizIndex] = useState<number>(0);
   const [quizAnswers, setQuizAnswers] = useState<Record<number, string>>({});
@@ -257,9 +260,19 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
   const [quizMistakesList, setQuizMistakesList] = useState<Array<{ item: WortschatzItem; userAnswer: string }>>([]);
   const [quizFinished, setQuizFinished] = useState<boolean>(false);
 
-  const startNewQuiz = (customPool?: WortschatzItem[]) => {
-    const pool = customPool || items.filter((i) => i.gapOptions && i.gapOptions.length >= 2 && i.gapAnswer);
-    const shuffled = [...pool].sort(() => 0.5 - Math.random()).slice(0, 10);
+  const startNewQuiz = (customPool?: WortschatzItem[], customLimit?: number) => {
+    let pool = customPool;
+    if (!pool) {
+      const eligible = items.filter((i) => i.gapOptions && i.gapOptions.length >= 2 && i.gapAnswer);
+      if (quizCategory === 'all') {
+        pool = eligible;
+      } else {
+        pool = eligible.filter((i) => i.category === quizCategory);
+      }
+    }
+
+    const limit = customLimit || (quizQuestionCount === -1 ? pool.length : quizQuestionCount);
+    const shuffled = [...pool].sort(() => 0.5 - Math.random()).slice(0, limit);
     setQuizQuestions(shuffled);
     setQuizIndex(0);
     setQuizAnswers({});
@@ -272,7 +285,7 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
   const handleRetryMistakes = () => {
     const mistakeItems = quizMistakesList.map((m) => m.item);
     if (mistakeItems.length > 0) {
-      startNewQuiz(mistakeItems);
+      startNewQuiz(mistakeItems, mistakeItems.length);
     }
   };
 
@@ -849,6 +862,60 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
       {/* ================= TAB 3: COLLOCATIONS QUIZ (TRAINER) ================= */}
       {activeTab === 'quiz' && (
         <div className="max-w-2xl mx-auto space-y-6 animate-fadeIn">
+          {/* Quiz Configuration & Filter Bar */}
+          <div className="glass-panel p-4 sm:p-5 rounded-2xl border border-slate-300 dark:border-slate-800 space-y-3 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Category selector */}
+                <div className="flex items-center gap-1.5">
+                  <SlidersHorizontal className="w-3.5 h-3.5 text-indigo-500" />
+                  <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Bereich:</span>
+                  <select
+                    value={quizCategory}
+                    onChange={(e) => {
+                      setQuizCategory(e.target.value);
+                      setTimeout(() => startNewQuiz(), 0);
+                    }}
+                    className="px-2.5 py-1.5 rounded-xl text-xs font-black bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                  >
+                    <option value="all">🌟 Alle Bereiche</option>
+                    <option value="nvv">🔗 NVV</option>
+                    <option value="redemittel">💬 Redemittel</option>
+                    <option value="praepositionen">📌 Präpositionen</option>
+                    <option value="geschaeft">💼 Geschäft</option>
+                  </select>
+                </div>
+
+                {/* Question Count selector */}
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Länge:</span>
+                  <select
+                    value={quizQuestionCount}
+                    onChange={(e) => {
+                      const count = Number(e.target.value);
+                      setQuizQuestionCount(count);
+                      setTimeout(() => startNewQuiz(undefined, count === -1 ? undefined : count), 0);
+                    }}
+                    className="px-2.5 py-1.5 rounded-xl text-xs font-black bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                  >
+                    <option value={10}>10 Fragen</option>
+                    <option value={20}>20 Fragen</option>
+                    <option value={30}>30 Fragen</option>
+                    <option value={-1}>Alle Fragen</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Restart Button */}
+              <button
+                onClick={() => startNewQuiz()}
+                className="px-3 py-1.5 rounded-xl bg-indigo-600/15 hover:bg-indigo-600/25 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 text-xs font-black flex items-center gap-1.5 transition-all self-end sm:self-auto cursor-pointer"
+              >
+                <RefreshCw className="w-3.5 h-3.5" /> Neu mischen
+              </button>
+            </div>
+          </div>
+
           {quizFinished ? (
             /* Quiz Results Screen with Mistakes Review */
             <div className="glass-panel p-6 sm:p-10 rounded-3xl border border-slate-300 dark:border-slate-800 text-center space-y-6 shadow-xl">
@@ -881,7 +948,7 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
                   onClick={() => startNewQuiz()}
                   className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold rounded-2xl shadow-lg transition-colors text-xs sm:text-sm flex items-center gap-2 cursor-pointer"
                 >
-                  <RefreshCw className="w-4 h-4" /> Neues Quiz starten (10 Fragen)
+                  <RefreshCw className="w-4 h-4" /> Neues Quiz starten ({quizQuestions.length} Fragen)
                 </button>
 
                 {quizMistakesList.length > 0 && (
