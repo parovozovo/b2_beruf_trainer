@@ -25,6 +25,9 @@ import {
   Check,
   RotateCcw,
   Shuffle,
+  ListOrdered,
+  Trophy,
+  Filter,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import type { WortschatzItem, WortschatzCategory, User } from '../types';
@@ -186,6 +189,16 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
   const [isFlipped, setIsFlipped] = useState<boolean>(false);
   const [showFlashcardHint, setShowFlashcardHint] = useState<boolean>(false);
 
+  // Filter mode: only unlearned vs all cards
+  const [hideLearnedCards, setHideLearnedCards] = useState<boolean>(() => {
+    return localStorage.getItem('b2_flashcards_hide_learned') !== 'false';
+  });
+
+  // Order mode: random shuffle vs sequential order
+  const [isRandomOrder, setIsRandomOrder] = useState<boolean>(() => {
+    return localStorage.getItem('b2_flashcards_random') !== 'false';
+  });
+
   const [learnedIds, setLearnedIds] = useState<string[]>(() => {
     try {
       const raw = localStorage.getItem('b2_flashcards_learned');
@@ -195,26 +208,42 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
     }
   });
 
-  // Persistent, stable flashcard deck (reshuffled only on category change or explicit 'Neu mischen')
-  const [flashcardDeck, setFlashcardDeck] = useState<WortschatzItem[]>(() => {
-    if (items.length > 1) {
-      const shuffled = [...items];
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-      }
-      return shuffled;
-    }
-    return [...items];
-  });
+  // Full category items (unfiltered by learned state)
+  const fullCategoryItems = useMemo(() => {
+    if (flashcardCategory === 'all') return items;
+    if (flashcardCategory === 'favorites') return items.filter((i) => favorites.includes(i.id));
+    return items.filter((i) => i.category === flashcardCategory);
+  }, [items, flashcardCategory, favorites]);
 
-  const rebuildDeck = (cat: string, allItems: WortschatzItem[], favs: string[]) => {
+  const catTotalCount = fullCategoryItems.length;
+  const catLearnedCount = useMemo(() => {
+    return fullCategoryItems.filter((i) => learnedIds.includes(i.id)).length;
+  }, [fullCategoryItems, learnedIds]);
+  const catRemainingCount = Math.max(catTotalCount - catLearnedCount, 0);
+  const catProgressPercent = catTotalCount > 0 ? Math.round((catLearnedCount / catTotalCount) * 100) : 0;
+
+  // Active flashcard deck
+  const [flashcardDeck, setFlashcardDeck] = useState<WortschatzItem[]>([]);
+
+  const rebuildDeck = (
+    cat: string,
+    allItems: WortschatzItem[],
+    favs: string[],
+    currentLearned: string[],
+    onlyUnlearned: boolean,
+    random: boolean
+  ) => {
     let list: WortschatzItem[];
     if (cat === 'all') list = [...allItems];
     else if (cat === 'favorites') list = allItems.filter((i) => favs.includes(i.id));
     else list = allItems.filter((i) => i.category === cat);
 
-    if (list.length > 1) {
+    // If onlyUnlearned is active, filter out already learned cards
+    if (onlyUnlearned) {
+      list = list.filter((i) => !currentLearned.includes(i.id));
+    }
+
+    if (random && list.length > 1) {
       const shuffled = [...list];
       for (let i = shuffled.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -222,27 +251,57 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
       }
       setFlashcardDeck(shuffled);
     } else {
-      setFlashcardDeck(list);
+      // Sequential sort by orderIndex or original list order
+      const sorted = [...list].sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
+      setFlashcardDeck(sorted);
     }
     setCardIndex(0);
     setIsFlipped(false);
     setShowFlashcardHint(false);
   };
 
-  // Sync deck when items prop changes
+  // Sync deck when category, items, or filtering preferences change
   useEffect(() => {
-    rebuildDeck(flashcardCategory, items, favorites);
-  }, [items]);
+    rebuildDeck(flashcardCategory, items, favorites, learnedIds, hideLearnedCards, isRandomOrder);
+  }, [flashcardCategory, items, hideLearnedCards, isRandomOrder]);
 
   const currentFlashcard = flashcardDeck[cardIndex] || flashcardDeck[0];
 
   const handleSelectFlashcardCategory = (cat: string) => {
     setFlashcardCategory(cat);
-    rebuildDeck(cat, items, favorites);
+    rebuildDeck(cat, items, favorites, learnedIds, hideLearnedCards, isRandomOrder);
+  };
+
+  const handleToggleHideLearned = () => {
+    const next = !hideLearnedCards;
+    setHideLearnedCards(next);
+    localStorage.setItem('b2_flashcards_hide_learned', String(next));
+  };
+
+  const handleToggleRandomOrder = () => {
+    const next = !isRandomOrder;
+    setIsRandomOrder(next);
+    localStorage.setItem('b2_flashcards_random', String(next));
   };
 
   const handleReshuffleDeck = () => {
-    rebuildDeck(flashcardCategory, items, favorites);
+    rebuildDeck(flashcardCategory, items, favorites, learnedIds, hideLearnedCards, true);
+  };
+
+  const handleResetCategoryProgress = (cat: string) => {
+    const idsInCat = new Set(
+      (cat === 'all'
+        ? items
+        : cat === 'favorites'
+        ? items.filter((i) => favorites.includes(i.id))
+        : items.filter((i) => i.category === cat)
+      ).map((i) => i.id)
+    );
+
+    const nextLearned = learnedIds.filter((id) => !idsInCat.has(id));
+    setLearnedIds(nextLearned);
+    localStorage.setItem('b2_flashcards_learned', JSON.stringify(nextLearned));
+    rebuildDeck(cat, items, favorites, nextLearned, hideLearnedCards, isRandomOrder);
   };
 
   const handleNextCard = () => {
@@ -254,26 +313,72 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
   const handlePrevCard = () => {
     setIsFlipped(false);
     setShowFlashcardHint(false);
-    setCardIndex((prev) => (prev - 1 >= 0 ? prev - 1 : flashcardDeck.length - 1));
+    setCardIndex((prev) => (prev - 1 >= 0 ? prev - 1 : Math.max(flashcardDeck.length - 1, 0)));
   };
 
   const handleMarkLearned = (id: string) => {
-    setLearnedIds((prev) => {
-      const next = prev.includes(id) ? prev : [...prev, id];
-      localStorage.setItem('b2_flashcards_learned', JSON.stringify(next));
-      return next;
-    });
-    handleNextCard();
+    const nextLearned = learnedIds.includes(id) ? learnedIds : [...learnedIds, id];
+    setLearnedIds(nextLearned);
+    localStorage.setItem('b2_flashcards_learned', JSON.stringify(nextLearned));
+
+    if (hideLearnedCards) {
+      // Remove this card from active deck
+      const nextDeck = flashcardDeck.filter((c) => c.id !== id);
+      setFlashcardDeck(nextDeck);
+      setIsFlipped(false);
+      setShowFlashcardHint(false);
+      if (cardIndex >= nextDeck.length) {
+        setCardIndex(Math.max(nextDeck.length - 1, 0));
+      }
+      if (nextDeck.length === 0 && catTotalCount > 0) {
+        confetti({ particleCount: 60, spread: 70, origin: { y: 0.6 } });
+      }
+    } else {
+      handleNextCard();
+    }
   };
 
   const handleMarkNeedReview = (id: string) => {
-    setLearnedIds((prev) => {
-      const next = prev.filter((x) => x !== id);
-      localStorage.setItem('b2_flashcards_learned', JSON.stringify(next));
-      return next;
-    });
+    const nextLearned = learnedIds.filter((x) => x !== id);
+    setLearnedIds(nextLearned);
+    localStorage.setItem('b2_flashcards_learned', JSON.stringify(nextLearned));
     handleNextCard();
   };
+
+  // Keyboard Navigation for Flashcards
+  useEffect(() => {
+    if (activeTab !== 'flashcards' || flashcardDeck.length === 0) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)) return;
+
+      if (e.code === 'Space' || e.code === 'Enter') {
+        e.preventDefault();
+        setIsFlipped((prev) => !prev);
+      } else if (e.code === 'ArrowRight') {
+        e.preventDefault();
+        handleNextCard();
+      } else if (e.code === 'ArrowLeft') {
+        e.preventDefault();
+        handlePrevCard();
+      } else if (e.key === '1' || e.key.toLowerCase() === 'r') {
+        e.preventDefault();
+        if (currentFlashcard) handleMarkNeedReview(currentFlashcard.id);
+      } else if (e.key === '2' || e.key.toLowerCase() === 'g') {
+        e.preventDefault();
+        if (currentFlashcard) handleMarkLearned(currentFlashcard.id);
+      } else if (e.key.toLowerCase() === 't') {
+        e.preventDefault();
+        setShowFlashcardHint((prev) => !prev);
+      } else if (e.key.toLowerCase() === 'a') {
+        e.preventDefault();
+        if (currentFlashcard) speakGerman(currentFlashcard.term);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeTab, flashcardDeck, cardIndex, currentFlashcard, hideLearnedCards]);
 
   // ================= 3. COLLOCATIONS QUIZ STATE =================
   const [quizCategory, setQuizCategory] = useState<string>('all');
@@ -988,16 +1093,18 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
       {/* ================= TAB 2: KARTEIKARTEN (FLASHCARDS SRS) ================= */}
       {activeTab === 'flashcards' && (
         <div className="max-w-2xl mx-auto space-y-6 animate-fadeIn">
-          {/* Deck selector, Language & Progress */}
-          <div className="glass-panel p-4 sm:p-5 rounded-2xl border border-slate-300 dark:border-slate-800 space-y-3 shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          {/* Deck selector, Mode toggles, Language & SRS Progress Banner */}
+          <div className="glass-panel p-4 sm:p-5 rounded-2xl border border-slate-300 dark:border-slate-800 space-y-4 shadow-sm">
+            {/* Row 1: Deck, Order mode, Filter mode, Language */}
+            <div className="flex flex-wrap items-center justify-between gap-2.5">
               <div className="flex flex-wrap items-center gap-2">
+                {/* Category selector */}
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Deck:</span>
                   <select
                     value={flashcardCategory}
                     onChange={(e) => handleSelectFlashcardCategory(e.target.value)}
-                    className="px-3 py-1.5 rounded-xl text-xs font-black bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                    className="px-3 py-1.5 rounded-xl text-xs font-black bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white cursor-pointer"
                   >
                     <option value="all">🌟 Alle ({items.length})</option>
                     <option value="nvv">🔗 NVV ({nvvCount})</option>
@@ -1010,70 +1117,167 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
                   </select>
                 </div>
 
-                {/* Reshuffle Button */}
+                {/* Random vs Sequential Order Toggle */}
                 <button
                   type="button"
-                  onClick={handleReshuffleDeck}
-                  className="px-2.5 py-1.5 rounded-xl text-xs font-extrabold bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 flex items-center gap-1.5 transition-colors cursor-pointer"
-                  title="Karten dieser Kategorie in zufälliger Reihenfolge neu mischen"
+                  onClick={handleToggleRandomOrder}
+                  className={`px-2.5 py-1.5 rounded-xl text-xs font-extrabold border flex items-center gap-1.5 transition-all cursor-pointer ${
+                    isRandomOrder
+                      ? 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/40'
+                      : 'bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700'
+                  }`}
+                  title={isRandomOrder ? 'Zufallsmodus aktiv (Klicken für normale Reihenfolge)' : 'Reihenfolge 1, 2, 3... (Klicken für Zufallsmodus)'}
                 >
-                  <Shuffle className="w-3.5 h-3.5" />
-                  <span>Neu mischen</span>
+                  {isRandomOrder ? (
+                    <>
+                      <Shuffle className="w-3.5 h-3.5 text-indigo-500" />
+                      <span>Zufällig</span>
+                    </>
+                  ) : (
+                    <>
+                      <ListOrdered className="w-3.5 h-3.5 text-indigo-500" />
+                      <span>Nach Reihenfolge</span>
+                    </>
+                  )}
                 </button>
 
-                {/* Flashcard Language Selector */}
-                <div className="flex items-center gap-1.5">
-                  <Globe className="w-3.5 h-3.5 text-indigo-500" />
-                  <select
-                    value={targetLang}
-                    onChange={(e) => handleSetTargetLang(e.target.value)}
-                    className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                {/* Reshuffle button if Random is active */}
+                {isRandomOrder && (
+                  <button
+                    type="button"
+                    onClick={handleReshuffleDeck}
+                    className="p-1.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-900 text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 border border-slate-300 dark:border-slate-700 transition-colors cursor-pointer"
+                    title="Deck neu mischen"
                   >
-                    {SUPPORTED_TRANSLATION_LANGUAGES.map((l) => (
-                      <option key={l.code} value={l.code}>
-                        {l.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                    <RotateCcw className="w-3.5 h-3.5" />
+                  </button>
+                )}
+
+                {/* Filter Mode Toggle: Unlearned only vs All */}
+                <button
+                  type="button"
+                  onClick={handleToggleHideLearned}
+                  className={`px-2.5 py-1.5 rounded-xl text-xs font-extrabold border flex items-center gap-1.5 transition-all cursor-pointer ${
+                    hideLearnedCards
+                      ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/40'
+                      : 'bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700'
+                  }`}
+                  title={hideLearnedCards ? 'Gelernte Karten werden ausgeblendet' : 'Alle Karten inklusive gelernte anzeigen'}
+                >
+                  <Filter className="w-3.5 h-3.5 text-amber-500" />
+                  <span>{hideLearnedCards ? `Nur ungelernte (${catRemainingCount})` : `Alle (${catTotalCount})`}</span>
+                </button>
               </div>
 
-              {/* Counters */}
-              <div className="flex items-center gap-3 text-xs font-extrabold self-end sm:self-auto">
-                <span className="px-2 py-0.5 rounded-lg bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
-                  ✓ Gelernt: {learnedIds.length}
-                </span>
-                <span className="text-slate-500">
-                  {cardIndex + 1} / {flashcardDeck.length || 1}
-                </span>
+              {/* Flashcard Language Selector */}
+              <div className="flex items-center gap-1.5">
+                <Globe className="w-3.5 h-3.5 text-indigo-500" />
+                <select
+                  value={targetLang}
+                  onChange={(e) => handleSetTargetLang(e.target.value)}
+                  className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white cursor-pointer"
+                >
+                  {SUPPORTED_TRANSLATION_LANGUAGES.map((l) => (
+                    <option key={l.code} value={l.code}>
+                      {l.label}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
-            {/* Visual Progress Bar */}
-            <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
-              <div
-                className="bg-indigo-600 h-2 transition-all duration-300 rounded-full"
-                style={{
-                  width: `${
-                    flashcardDeck.length > 0
-                      ? Math.round(((cardIndex + 1) / flashcardDeck.length) * 100)
-                      : 0
-                  }%`,
-                }}
-              />
+            {/* Row 2: Live Category SRS Stats Bar & Reset Progress */}
+            <div className="pt-2 border-t border-slate-200 dark:border-slate-800/80 space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-bold">
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 rounded-lg bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30">
+                    ⏳ Noch zu lernen: <strong>{catRemainingCount}</strong> von {catTotalCount}
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-lg bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                    ✓ Gelernt: <strong>{catLearnedCount}</strong> ({catProgressPercent}%)
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {flashcardDeck.length > 0 && (
+                    <span className="text-slate-500 font-mono">
+                      Karte {cardIndex + 1} / {flashcardDeck.length}
+                    </span>
+                  )}
+                  {catLearnedCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => handleResetCategoryProgress(flashcardCategory)}
+                      className="text-[11px] font-bold text-slate-500 hover:text-rose-500 transition-colors flex items-center gap-1 cursor-pointer"
+                      title="Lernfortschritt für dieses Deck zurücksetzen"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                      <span>Deck zurücksetzen</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Category Progress Bar */}
+              <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
+                <div
+                  className="bg-gradient-to-r from-indigo-500 to-emerald-500 h-2 transition-all duration-300 rounded-full"
+                  style={{ width: `${catProgressPercent}%` }}
+                />
+              </div>
             </div>
           </div>
 
           {/* Flashcard Body */}
           {flashcardDeck.length === 0 ? (
-            <div className="glass-panel p-12 rounded-3xl border border-slate-300 dark:border-slate-800 text-center space-y-4">
-              <BookOpen className="w-12 h-12 text-slate-400 mx-auto" />
-              <h3 className="text-lg font-black text-slate-900 dark:text-white">
-                Keine Karten in diesem Deck
-              </h3>
-              <p className="text-xs text-slate-500">
-                Wählen Sie eine andere Kategorie oder fügen Sie Ausdrücke zu Ihren Favoriten hinzu.
-              </p>
+            <div className="glass-panel p-8 sm:p-12 rounded-3xl border border-slate-300 dark:border-slate-800 text-center space-y-5 animate-fadeIn">
+              {catTotalCount > 0 && catRemainingCount === 0 ? (
+                <>
+                  <div className="w-16 h-16 mx-auto rounded-2xl bg-amber-500/20 text-amber-500 border border-amber-500/30 flex items-center justify-center">
+                    <Trophy className="w-9 h-9" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+                      Glückwunsch! Alle {catTotalCount} Begriffe gemeistert! 🎉
+                    </h3>
+                    <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 max-w-md mx-auto">
+                      Sie haben alle Karten in diesem Deck erfolgreich als "Gelernt" markiert.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => handleResetCategoryProgress(flashcardCategory)}
+                      className="px-5 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                      <span>Deck zurücksetzen & erneut üben</span>
+                    </button>
+
+                    {hideLearnedCards && (
+                      <button
+                        type="button"
+                        onClick={handleToggleHideLearned}
+                        className="px-5 py-3 rounded-2xl glass-card text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-800 font-extrabold text-xs transition-all flex items-center gap-2 cursor-pointer"
+                      >
+                        <BookOpen className="w-4 h-4" />
+                        <span>Alle {catTotalCount} Karten zur Wiederholung anzeigen</span>
+                      </button>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <BookOpen className="w-12 h-12 text-slate-400 mx-auto" />
+                  <h3 className="text-lg font-black text-slate-900 dark:text-white">
+                    Keine Karten in diesem Deck
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Wählen Sie eine andere Kategorie oder fügen Sie Ausdrücke zu Ihren Favoriten hinzu.
+                  </p>
+                </>
+              )}
             </div>
           ) : (
             <div className="space-y-4">
@@ -1158,7 +1362,7 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
                           speakGerman(currentFlashcard.term);
                         }}
                         className="p-2.5 rounded-2xl bg-indigo-600 text-white hover:bg-indigo-500 shadow-md transition-colors shrink-0 cursor-pointer"
-                        title="Ausdruck anhören"
+                        title="Ausdruck anhören (A)"
                       >
                         <Volume2 className="w-5 h-5" />
                       </button>
@@ -1212,44 +1416,49 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
                     className="text-amber-600 dark:text-amber-400 font-extrabold hover:underline flex items-center gap-1 cursor-pointer"
                   >
                     <HelpCircle className="w-3.5 h-3.5" />
-                    <span>{showFlashcardHint ? 'Tipp verbergen' : 'Tipp anzeigen'}</span>
+                    <span>{showFlashcardHint ? 'Tipp verbergen (T)' : 'Tipp anzeigen (T)'}</span>
                   </button>
 
                   <span className="font-bold flex items-center gap-1 text-indigo-600 dark:text-indigo-400">
-                    <RotateCw className="w-3.5 h-3.5" /> {isFlipped ? 'Zurückdrehen' : 'Klicken zum Aufdecken'}
+                    <RotateCw className="w-3.5 h-3.5" /> {isFlipped ? 'Zurückdrehen (Leertaste)' : 'Klicken zum Aufdecken (Leertaste)'}
                   </span>
                 </div>
               </div>
 
               {/* Action Buttons: Noch üben vs Gelernt */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
                 <button
                   onClick={handlePrevCard}
                   className="px-4 py-3 rounded-2xl glass-card text-slate-700 dark:text-slate-300 font-extrabold text-xs flex items-center justify-center gap-1.5 border border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-800 transition-all cursor-pointer"
                 >
-                  <ArrowLeft className="w-4 h-4" /> Vorherige
+                  <ArrowLeft className="w-4 h-4" /> Vorherige (←)
                 </button>
 
                 <button
                   onClick={() => handleMarkNeedReview(currentFlashcard.id)}
                   className="px-4 py-3 rounded-2xl bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/40 font-black text-xs flex items-center justify-center gap-1.5 hover:bg-rose-500/30 transition-all cursor-pointer"
                 >
-                  <XCircle className="w-4 h-4 text-rose-500" /> Noch üben
+                  <XCircle className="w-4 h-4 text-rose-500" /> Noch üben (1)
                 </button>
 
                 <button
                   onClick={() => handleMarkLearned(currentFlashcard.id)}
-                  className="px-4 py-3 rounded-2xl bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 font-black text-xs flex items-center justify-center gap-1.5 hover:bg-emerald-500/30 transition-all cursor-pointer"
+                  className="px-4 py-3 rounded-2xl bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 font-black text-xs flex items-center justify-center gap-1.5 hover:bg-emerald-500/30 transition-all cursor-pointer shadow-sm"
                 >
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Gelernt!
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Gelernt! (2)
                 </button>
 
                 <button
                   onClick={handleNextCard}
                   className="px-4 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-md transition-all cursor-pointer"
                 >
-                  Nächste <ArrowRight className="w-4 h-4" />
+                  Nächste (→) <ArrowRight className="w-4 h-4" />
                 </button>
+              </div>
+
+              {/* Keyboard navigation helper pill */}
+              <div className="text-center text-[10px] text-slate-400 font-medium pt-1">
+                ⌨️ Tastatur: <kbd className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-mono">Leertaste</kbd> Umdrehen · <kbd className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-mono">→</kbd> Weiter · <kbd className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-mono">1</kbd> Noch üben · <kbd className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-mono">2</kbd> Gelernt
               </div>
             </div>
           )}
