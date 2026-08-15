@@ -918,6 +918,12 @@ export async function seedInitialDataToSupabase(): Promise<void> {
 
 export function getWortschatzItemsLocal(): WortschatzItem[] {
   try {
+    const isMigrated = localStorage.getItem('b2_ws_migrated_v3');
+    if (!isMigrated) {
+      localStorage.removeItem(KEYS.WORTSCHATZ_ITEMS);
+      localStorage.setItem('b2_ws_migrated_v3', 'true');
+      return [];
+    }
     const raw = localStorage.getItem(KEYS.WORTSCHATZ_ITEMS);
     if (raw === null) {
       return [];
@@ -935,6 +941,7 @@ export function getWortschatzItemsLocal(): WortschatzItem[] {
 export function saveWortschatzItemsLocal(items: WortschatzItem[]): void {
   try {
     localStorage.setItem(KEYS.WORTSCHATZ_ITEMS, JSON.stringify(items));
+    localStorage.setItem('b2_ws_migrated_v3', 'true');
   } catch (e) {
     console.error('Failed to save wortschatz to localStorage:', e);
   }
@@ -989,7 +996,10 @@ export async function saveWortschatzAsync(items: WortschatzItem[]): Promise<{ su
 
   try {
     if (items.length === 0) {
-      const { data: dbRows } = await supabase.from('wortschatz_items').select('id');
+      const { data: dbRows, error: selectErr } = await supabase.from('wortschatz_items').select('id');
+      if (selectErr) {
+        return { success: false, error: `Supabase Error (${selectErr.code}): ${selectErr.message}` };
+      }
       if (dbRows && dbRows.length > 0) {
         for (const row of dbRows) {
           await supabase.from('wortschatz_items').delete().eq('id', String(row.id));
@@ -1011,22 +1021,23 @@ export async function saveWortschatzAsync(items: WortschatzItem[]): Promise<{ su
 
     for (const wi of items) {
       const { error: upsertErr } = await supabase.from('wortschatz_items').upsert({
-        id: wi.id,
-        term: wi.term,
-        category: wi.category,
-        grammar: wi.grammar || null,
-        simple_meaning: wi.simpleMeaning,
-        synonyms: wi.synonyms || null,
-        example_sentence: wi.exampleSentence,
-        gap_example: wi.gapExample || null,
-        gap_answer: wi.gapAnswer || null,
-        gap_options: wi.gapOptions || null,
-        translations: wi.translations || {},
+        id: String(wi.id),
+        term: String(wi.term || ''),
+        category: String(wi.category || 'nvv'),
+        grammar: wi.grammar ? String(wi.grammar) : null,
+        simple_meaning: String(wi.simpleMeaning || ''),
+        synonyms: wi.synonyms ? String(wi.synonyms) : null,
+        example_sentence: String(wi.exampleSentence || ''),
+        gap_example: wi.gapExample ? String(wi.gapExample) : null,
+        gap_answer: wi.gapAnswer ? String(wi.gapAnswer) : null,
+        gap_options: Array.isArray(wi.gapOptions) ? wi.gapOptions : [],
+        translations: typeof wi.translations === 'object' && wi.translations !== null ? wi.translations : {},
         order_index: typeof wi.orderIndex === 'number' ? wi.orderIndex : 0,
       });
 
       if (upsertErr) {
-        console.warn('Wortschatz upsert error:', upsertErr.message);
+        console.error('Wortschatz upsert error:', upsertErr);
+        return { success: false, error: `Supabase Upsert Error (${upsertErr.code || 'RLS'}): ${upsertErr.message}` };
       }
     }
     return { success: true };

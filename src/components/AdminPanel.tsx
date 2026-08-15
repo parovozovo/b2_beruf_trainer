@@ -3580,7 +3580,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           const file = e.target.files?.[0];
           if (!file) return;
           const reader = new FileReader();
-          reader.onload = (event) => {
+          reader.onload = async (event) => {
             try {
               const parsed = JSON.parse(event.target?.result as string);
               if (Array.isArray(parsed)) {
@@ -3598,7 +3598,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   nextList = [...wortschatzList, ...newItems];
                 }
                 setWortschatzList(nextList);
-                if (onSaveWortschatz) onSaveWortschatz(nextList);
+                if (onSaveWortschatz) {
+                  const res = await onSaveWortschatz(nextList);
+                  if (res && res.error) {
+                    alert('⚠️ Hinweis: Lokal gespeichert, aber Supabase Cloud Sync meldet: ' + res.error);
+                  }
+                }
                 alert(`Erfolgreich! Die Wortschatz-Datenbank enthält jetzt ${nextList.length} Einträge.`);
               } else {
                 alert('Ungültiges Format. Erwartet wird ein JSON-Array von WortschatzItem-Objekten.');
