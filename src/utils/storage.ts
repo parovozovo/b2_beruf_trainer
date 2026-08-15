@@ -1024,30 +1024,34 @@ export async function saveWortschatzAsync(
       }
     }
 
-    for (let i = 0; i < items.length; i++) {
-      const wi = items[i];
-      if (onProgress) {
-        onProgress(i + 1, items.length, `Speichere (${i + 1}/${items.length}): "${wi.term}"`);
-      }
+    const rowsToUpsert = items.map((wi, i) => ({
+      id: String(wi.id),
+      term: String(wi.term || ''),
+      category: String(wi.category || 'nvv'),
+      grammar: wi.grammar ? String(wi.grammar) : null,
+      simple_meaning: String(wi.simpleMeaning || ''),
+      synonyms: wi.synonyms ? String(wi.synonyms) : null,
+      example_sentence: String(wi.exampleSentence || ''),
+      gap_example: wi.gapExample ? String(wi.gapExample) : null,
+      gap_answer: wi.gapAnswer ? String(wi.gapAnswer) : null,
+      gap_options: Array.isArray(wi.gapOptions) ? wi.gapOptions : [],
+      translations: typeof wi.translations === 'object' && wi.translations !== null ? wi.translations : {},
+      order_index: typeof wi.orderIndex === 'number' ? wi.orderIndex : i + 1,
+    }));
 
-      const { error: upsertErr } = await supabase.from('wortschatz_items').upsert({
-        id: String(wi.id),
-        term: String(wi.term || ''),
-        category: String(wi.category || 'nvv'),
-        grammar: wi.grammar ? String(wi.grammar) : null,
-        simple_meaning: String(wi.simpleMeaning || ''),
-        synonyms: wi.synonyms ? String(wi.synonyms) : null,
-        example_sentence: String(wi.exampleSentence || ''),
-        gap_example: wi.gapExample ? String(wi.gapExample) : null,
-        gap_answer: wi.gapAnswer ? String(wi.gapAnswer) : null,
-        gap_options: Array.isArray(wi.gapOptions) ? wi.gapOptions : [],
-        translations: typeof wi.translations === 'object' && wi.translations !== null ? wi.translations : {},
-        order_index: typeof wi.orderIndex === 'number' ? wi.orderIndex : i + 1,
-      });
+    const chunkSize = 50;
+    for (let i = 0; i < rowsToUpsert.length; i += chunkSize) {
+      const chunk = rowsToUpsert.slice(i, i + chunkSize);
+      const { error: upsertErr } = await supabase.from('wortschatz_items').upsert(chunk);
 
       if (upsertErr) {
-        console.error('Wortschatz upsert error:', upsertErr);
+        console.error('Wortschatz batch upsert error:', upsertErr);
         return { success: false, error: `Supabase Upsert Error (${upsertErr.code || 'RLS'}): ${upsertErr.message}` };
+      }
+
+      if (onProgress) {
+        const currentDone = Math.min(i + chunkSize, rowsToUpsert.length);
+        onProgress(currentDone, rowsToUpsert.length, `Speichere ${currentDone} von ${rowsToUpsert.length} Begriffen...`);
       }
     }
 

@@ -3651,26 +3651,26 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
           setSyncProgress({
             isActive: true,
-            title: 'Wortschatz wird importiert & synchronisiert',
+            title: `+${processedNewItems.length} neue Begriffe werden importiert`,
             current: 0,
-            total: nextList.length,
+            total: processedNewItems.length,
             percent: 0,
-            message: 'Bereite Speicherung in Cloud-Datenbank vor...',
+            message: 'Schneller Cloud-Bulk-Sync...',
             isComplete: false,
           });
 
           if (onSaveWortschatz) {
             try {
-              const res = await onSaveWortschatz(nextList, (cur, tot, msg) => {
+              const res = await onSaveWortschatz(nextList, (cur, tot) => {
                 const pct = tot > 0 ? Math.round((cur / tot) * 100) : 100;
                 setSyncProgress({
                   isActive: true,
-                  title: 'Wortschatz wird importiert & synchronisiert',
-                  current: cur,
-                  total: tot,
+                  title: `+${processedNewItems.length} neue Begriffe werden importiert`,
+                  current: Math.round((pct / 100) * processedNewItems.length),
+                  total: processedNewItems.length,
                   percent: pct,
-                  message: msg,
-                  isComplete: cur >= tot,
+                  message: 'Synchronisiere mit Supabase Cloud...',
+                  isComplete: pct >= 100,
                 });
               });
 
