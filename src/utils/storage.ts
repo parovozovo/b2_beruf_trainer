@@ -1,5 +1,6 @@
 import type { User, UserRole, PromoCode, Modelltest, ForumsbeitragTopic, WrittenEssayRecord, FullExamResult, TileResult, WortschatzItem } from '../types';
 import { INITIAL_PROMO_CODES, INITIAL_FORUMSBEITRAG_TOPICS, INITIAL_MODELLTESTS, INITIAL_SPRECHEN_TOPICS } from '../data/initialData';
+import { DEFAULT_WORTSCHATZ_ITEMS } from '../data/defaultWortschatz';
 import { supabase, isSupabaseConfigured } from './supabase';
 
 const KEYS = {
@@ -918,30 +919,23 @@ export async function seedInitialDataToSupabase(): Promise<void> {
 
 export function getWortschatzItemsLocal(): WortschatzItem[] {
   try {
-    const isMigrated = localStorage.getItem('b2_ws_migrated_v3');
-    if (!isMigrated) {
-      localStorage.removeItem(KEYS.WORTSCHATZ_ITEMS);
-      localStorage.setItem('b2_ws_migrated_v3', 'true');
-      return [];
-    }
     const raw = localStorage.getItem(KEYS.WORTSCHATZ_ITEMS);
-    if (raw === null) {
-      return [];
+    if (!raw) {
+      return DEFAULT_WORTSCHATZ_ITEMS;
     }
     const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) {
+    if (Array.isArray(parsed) && parsed.length > 0) {
       return parsed;
     }
-    return [];
+    return DEFAULT_WORTSCHATZ_ITEMS;
   } catch {
-    return [];
+    return DEFAULT_WORTSCHATZ_ITEMS;
   }
 }
 
 export function saveWortschatzItemsLocal(items: WortschatzItem[]): void {
   try {
     localStorage.setItem(KEYS.WORTSCHATZ_ITEMS, JSON.stringify(items));
-    localStorage.setItem('b2_ws_migrated_v3', 'true');
   } catch (e) {
     console.error('Failed to save wortschatz to localStorage:', e);
   }
