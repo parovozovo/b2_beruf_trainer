@@ -61,6 +61,18 @@ const CATEGORY_LABELS: Record<WortschatzCategory, { label: string; icon: string;
     color: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
     desc: 'Fachbegriffe aus Arbeitsrecht, Vertragswesen & Büroalltag',
   },
+  konnektoren: {
+    label: 'Konnektoren (Satzbau)',
+    icon: '🔀',
+    color: 'border-violet-500/40 bg-violet-500/10 text-violet-600 dark:text-violet-400',
+    desc: 'Zweiteilige Konnektoren & Satzverbindungen (zwar... aber, infolgedessen...)',
+  },
+  kollokationen: {
+    label: 'Kollokationen (Wortschatz)',
+    icon: '💎',
+    color: 'border-cyan-500/40 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400',
+    desc: 'Feste Wortverbindungen & beruflicher Fachwortschatz',
+  },
 };
 
 const SUPPORTED_TRANSLATION_LANGUAGES = [
@@ -193,6 +205,8 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
   const redemittelCount = useMemo(() => items.filter((i) => i.category === 'redemittel').length, [items]);
   const praepositionenCount = useMemo(() => items.filter((i) => i.category === 'praepositionen').length, [items]);
   const geschaeftCount = useMemo(() => items.filter((i) => i.category === 'geschaeft').length, [items]);
+  const konnektorenCount = useMemo(() => items.filter((i) => i.category === 'konnektoren').length, [items]);
+  const kollokationenCount = useMemo(() => items.filter((i) => i.category === 'kollokationen').length, [items]);
 
   // ================= 2. FLASHCARDS (SRS) STATE =================
   const [flashcardCategory, setFlashcardCategory] = useState<string>('all');
@@ -604,6 +618,28 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
               </button>
 
               <button
+                onClick={() => setSelectedCategoryFilter('konnektoren')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                  selectedCategoryFilter === 'konnektoren'
+                    ? 'bg-indigo-600 text-white shadow-md'
+                    : 'glass-card text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border-slate-300 dark:border-slate-800'
+                }`}
+              >
+                🔀 Konnektoren ({konnektorenCount})
+              </button>
+
+              <button
+                onClick={() => setSelectedCategoryFilter('kollokationen')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                  selectedCategoryFilter === 'kollokationen'
+                    ? 'bg-indigo-600 text-white shadow-md'
+                    : 'glass-card text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border-slate-300 dark:border-slate-800'
+                }`}
+              >
+                💎 Kollokationen ({kollokationenCount})
+              </button>
+
+              <button
                 onClick={() => setSelectedCategoryFilter('favorites')}
                 className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
                   selectedCategoryFilter === 'favorites'
@@ -785,6 +821,8 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
                     <option value="redemittel">💬 Redemittel ({redemittelCount})</option>
                     <option value="praepositionen">📌 Präpositionen ({praepositionenCount})</option>
                     <option value="geschaeft">💼 Geschäft ({geschaeftCount})</option>
+                    <option value="konnektoren">🔀 Konnektoren ({konnektorenCount})</option>
+                    <option value="kollokationen">💎 Kollokationen ({kollokationenCount})</option>
                     <option value="favorites">⭐ Favoriten ({favorites.length})</option>
                   </select>
                 </div>
@@ -882,19 +920,14 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
 
                 {/* Center Content */}
                 {!isFlipped ? (
-                  /* FRONT: MEANING / PROMPT & GAP EXERCISE (NO SPOILER!) */
+                  /* FRONT: MEANING / PROMPT & GAP EXERCISE (NO SPOILER, NO TRANSLATION ON FRONT) */
                   <div className="space-y-4 text-center my-auto py-4 animate-fadeIn">
                     <div className="inline-block px-3.5 py-1 bg-indigo-500/15 border border-indigo-500/30 rounded-full text-xs font-extrabold text-indigo-700 dark:text-indigo-300">
-                      💡 Gesuchte Bedeutung / Wendung:
+                      💡 Gesuchte Bedeutung / Kontext:
                     </div>
 
                     <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
                       "{currentFlashcard.simpleMeaning}"
-                      {currentFlashcard.translations[targetLang] && (
-                        <div className="text-sm font-bold text-indigo-600 dark:text-indigo-400 mt-1 opacity-90">
-                          ({currentFlashcard.translations[targetLang]})
-                        </div>
-                      )}
                     </div>
 
                     {/* Sentence with Gap */}
@@ -1061,6 +1094,8 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
                     <option value="redemittel">💬 Redemittel</option>
                     <option value="praepositionen">📌 Präpositionen</option>
                     <option value="geschaeft">💼 Geschäft</option>
+                    <option value="konnektoren">🔀 Konnektoren</option>
+                    <option value="kollokationen">💎 Kollokationen</option>
                   </select>
                 </div>
 
@@ -1298,6 +1333,8 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
                   >
                     <option value="nvv">🔗 NVV (Nomen ↔ Verben)</option>
                     <option value="praepositionen">📌 Präpositionen</option>
+                    <option value="konnektoren">🔀 Konnektoren</option>
+                    <option value="kollokationen">💎 Kollokationen</option>
                     <option value="all">🌟 Alle Ausdrücke</option>
                   </select>
                 </div>

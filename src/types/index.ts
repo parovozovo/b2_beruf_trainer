@@ -252,7 +252,7 @@ export interface TrainingStatsSummary {
   freeAttemptsCount: number;
 }
 
-export type WortschatzCategory = 'nvv' | 'redemittel' | 'praepositionen' | 'geschaeft';
+export type WortschatzCategory = 'nvv' | 'redemittel' | 'praepositionen' | 'geschaeft' | 'konnektoren' | 'kollokationen';
 
 export interface WortschatzItem {
   id: string;

@@ -3717,6 +3717,26 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   >
                     💼 Geschäft ({wortschatzList.filter((x) => x.category === 'geschaeft').length})
                   </button>
+                  <button
+                    onClick={() => setWortschatzCatFilter('konnektoren')}
+                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      wortschatzCatFilter === 'konnektoren'
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-slate-900/80 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    🔀 Konnektoren ({wortschatzList.filter((x) => x.category === 'konnektoren').length})
+                  </button>
+                  <button
+                    onClick={() => setWortschatzCatFilter('kollokationen')}
+                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      wortschatzCatFilter === 'kollokationen'
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-slate-900/80 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    💎 Kollokationen ({wortschatzList.filter((x) => x.category === 'kollokationen').length})
+                  </button>
                 </div>
 
                 <div className="relative w-full sm:w-64">
@@ -3858,6 +3878,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                           <option value="redemittel">💬 Redemittel (Schreiben/Sprechen)</option>
                           <option value="praepositionen">📌 Verben mit Präpositionen</option>
                           <option value="geschaeft">💼 Geschäftswortschatz</option>
+                          <option value="konnektoren">🔀 Konnektoren (Satzbau)</option>
+                          <option value="kollokationen">💎 Kollokationen (Wortschatz)</option>
                         </select>
                       </div>
                     </div>
