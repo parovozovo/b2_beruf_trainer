@@ -439,8 +439,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [parsedBulkTopics, setParsedBulkTopics] = useState<Array<{ title: string; promptText: string }>>([]);
 
   // Active Modelltest & Variants Lookup
-  const activeTest = modelltests.find((m) => m.id === selectedModelltestId) || modelltests[0];
-  const existingVariants = ((activeTest?.variants[selectedTileType] as unknown) || []) as Array<{
+  const activeTest = (modelltests || []).find((m) => m?.id === selectedModelltestId) || (modelltests || [])[0];
+  const existingVariants = ((activeTest?.variants?.[selectedTileType] || []) as unknown) as Array<{
     id: string;
     title: string;
     textBlock?: string;
@@ -652,7 +652,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
     const updatedTests = modelltests.map((m) => {
       if (m.id !== selectedModelltestId) return m;
-      const currentList = ((m.variants[selectedTileType] as unknown) || []) as Array<Record<string, unknown>>;
+      const currentList = ((m?.variants?.[selectedTileType] as unknown) || []) as Array<Record<string, unknown>>;
       const filtered = currentList.filter((v) => v.id !== vId);
       return {
         ...m,
@@ -912,7 +912,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
     const updatedTests = modelltests.map((m) => {
       if (m.id !== selectedModelltestId) return m;
-      const currentList = ((m.variants[selectedTileType] as unknown) || []) as Array<Record<string, unknown>>;
+      const currentList = ((m?.variants?.[selectedTileType] as unknown) || []) as Array<Record<string, unknown>>;
       let newList: Record<string, unknown>[] = [];
       if (selectedVariantId === 'new') {
         newList = [...currentList, constructedVariant];
@@ -2341,7 +2341,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                             Antwortoptionen (Radio anklicken für Richtig):
                           </label>
 
-                          {q.options.map((optText, optIdx) => (
+                          {(q.options || []).map((optText, optIdx) => (
                             <div key={optIdx} className="flex items-center gap-2">
                               <label className="flex items-center gap-1.5 text-xs text-slate-300 font-bold cursor-pointer shrink-0">
                                 <input
@@ -2535,7 +2535,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       'sprachbausteine_1',
                       'sprachbausteine_2',
                     ].map((t) => {
-                      const vList = mt.variants[t as TileType] || [];
+                      const vList = mt?.variants?.[t as TileType] || [];
                       const vCount = Array.isArray(vList) ? vList.length : 0;
                       return (
                         <button
@@ -2698,7 +2698,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       <td className="p-3">{code.durationDays} Tage</td>
                       <td className="p-3 font-bold">{code.usedCount} / {code.maxUses}</td>
                       <td className="p-3 max-w-xs">
-                        {code.usedByEmails && code.usedByEmails.length > 0 ? (
+                        {code.usedByEmails && Array.isArray(code.usedByEmails) && code.usedByEmails.length > 0 ? (
                           <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto pr-1">
                             {code.usedByEmails.map((emailItem, idx) => (
                               <span
@@ -3192,14 +3192,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60 font-medium">
-                  {usersList
+                  {(usersList || [])
                     .filter(
                       (u) =>
-                        u.name.toLowerCase().includes(userSearchText.toLowerCase()) ||
-                        u.email.toLowerCase().includes(userSearchText.toLowerCase())
+                        (u?.name || '').toLowerCase().includes(userSearchText.toLowerCase()) ||
+                        (u?.email || '').toLowerCase().includes(userSearchText.toLowerCase())
                     )
                     .map((u) => {
-                      const isSelfOrAdmin = u.role === 'admin' || isAdminEmail(u.email);
+                      const isSelfOrAdmin = u?.role === 'admin' || isAdminEmail(u?.email || '');
+                      const initial = (u?.name || u?.email || 'U').slice(0, 2).toUpperCase();
 
                       return (
                         <tr key={u.id} className="hover:bg-slate-900/50 transition-colors">
@@ -3207,11 +3208,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                           <td className="py-3 px-3">
                             <div className="flex items-center gap-3">
                               <div className="w-9 h-9 bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 rounded-xl flex items-center justify-center font-black text-xs shrink-0">
-                                {u.name.slice(0, 2).toUpperCase()}
+                                {initial}
                               </div>
                               <div>
-                                <div className="font-bold text-white text-sm">{u.name}</div>
-                                <div className="text-slate-400 text-[11px] font-mono">{u.email}</div>
+                                <div className="font-bold text-white text-sm">{u?.name || 'Benutzer'}</div>
+                                <div className="text-slate-400 text-[11px] font-mono">{u?.email || ''}</div>
                               </div>
                             </div>
                           </td>
@@ -3470,11 +3471,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           setWsFormGapExample(item.gapExample || '');
           setWsFormGapAnswer(item.gapAnswer || '');
           setWsFormGapOptions(item.gapOptions?.join(', ') || '');
-          setWsFormTransUA(item.translations.ua || '');
-          setWsFormTransEN(item.translations.en || '');
-          setWsFormTransRU(item.translations.ru || '');
-          setWsFormTransTR(item.translations.tr || '');
-          setWsFormTransPL(item.translations.pl || '');
+          setWsFormTransUA(item.translations?.ua || '');
+          setWsFormTransEN(item.translations?.en || '');
+          setWsFormTransRU(item.translations?.ru || '');
+          setWsFormTransTR(item.translations?.tr || '');
+          setWsFormTransPL(item.translations?.pl || '');
           setShowWortschatzModal(true);
         };
 
@@ -3506,7 +3507,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     gapAnswer: wsFormGapAnswer.trim() || undefined,
                     gapOptions: parsedOptions && parsedOptions.length > 0 ? parsedOptions : undefined,
                     translations: {
-                      ...item.translations,
+                      ...(item.translations || {}),
                       ua: wsFormTransUA.trim() || undefined,
                       en: wsFormTransEN.trim() || undefined,
                       ru: wsFormTransRU.trim() || undefined,
@@ -3620,16 +3621,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           e.target.value = '';
         };
 
-        const filteredWortschatz = wortschatzList.filter((item) => {
+        const filteredWortschatz = (wortschatzList || []).filter((item) => {
+          if (!item) return false;
           if (wortschatzCatFilter !== 'all' && item.category !== wortschatzCatFilter) return false;
           if (!wortschatzSearch.trim()) return true;
           const q = wortschatzSearch.toLowerCase();
           return (
-            item.term.toLowerCase().includes(q) ||
-            item.simpleMeaning.toLowerCase().includes(q) ||
+            (item.term || '').toLowerCase().includes(q) ||
+            (item.simpleMeaning || '').toLowerCase().includes(q) ||
             item.grammar?.toLowerCase().includes(q) ||
-            item.exampleSentence.toLowerCase().includes(q) ||
-            item.translations.ua?.toLowerCase().includes(q)
+            (item.exampleSentence || '').toLowerCase().includes(q) ||
+            item.translations?.ua?.toLowerCase().includes(q) ||
+            item.translations?.en?.toLowerCase().includes(q) ||
+            item.translations?.ru?.toLowerCase().includes(q)
           );
         });
 
@@ -3827,8 +3831,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                           </td>
 
                           <td className="py-3 px-4 max-w-[220px]">
-                            <div className="text-slate-200 font-medium truncate">{item.simpleMeaning}</div>
-                            {item.translations.ua && (
+                            <div className="text-slate-200 font-medium truncate">{item.simpleMeaning || ''}</div>
+                            {item.translations?.ua && (
                               <div className="text-[11px] text-amber-300 font-medium truncate mt-0.5">
                                 🇺🇦 {item.translations.ua}
                               </div>

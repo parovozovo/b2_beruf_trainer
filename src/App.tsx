@@ -41,6 +41,7 @@ import { SprechenModule } from './components/SprechenModule';
 import { AdminPanel } from './components/AdminPanel';
 import { SettingsPage } from './components/SettingsPage';
 import { WortschatzModule } from './components/WortschatzModule';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { LoginModal } from './components/LoginModal';
 import { PromoModal } from './components/PromoModal';
 import { PremiumLockedModal } from './components/PremiumLockedModal';
@@ -576,18 +577,20 @@ export function App() {
         {currentTab === 'admin' && (
           <div>
             {currentUser && currentUser.role === 'admin' && isAdminEmail(currentUser.email) ? (
-              <AdminPanel
-                modelltests={modelltests}
-                onSaveModelltests={handleSaveModelltests}
-                promoCodes={promoCodes}
-                onSavePromoCodes={handleSavePromoCodes}
-                forumsbeitragTopics={forumsbeitragTopics}
-                onSaveForumsbeitragTopics={handleSaveForumsbeitragTopics}
-                sprechenTopics={sprechenTopics}
-                onSaveSprechenTopics={handleSaveSprechenTopics}
-                wortschatzItems={wortschatzItems}
-                onSaveWortschatz={handleSaveWortschatz}
-              />
+              <ErrorBoundary fallbackTitle="Admin-Bereich Anzeigefehler">
+                <AdminPanel
+                  modelltests={modelltests}
+                  onSaveModelltests={handleSaveModelltests}
+                  promoCodes={promoCodes}
+                  onSavePromoCodes={handleSavePromoCodes}
+                  forumsbeitragTopics={forumsbeitragTopics}
+                  onSaveForumsbeitragTopics={handleSaveForumsbeitragTopics}
+                  sprechenTopics={sprechenTopics}
+                  onSaveSprechenTopics={handleSaveSprechenTopics}
+                  wortschatzItems={wortschatzItems}
+                  onSaveWortschatz={handleSaveWortschatz}
+                />
+              </ErrorBoundary>
             ) : (
               <div className="glass-panel p-10 rounded-3xl text-center max-w-md mx-auto my-12 border border-rose-500/30 space-y-4">
                 <h3 className="text-xl font-bold text-white">Zugriff verweigert 🔒</h3>
