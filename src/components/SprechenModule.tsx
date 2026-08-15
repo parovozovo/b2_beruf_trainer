@@ -1,8 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { Mic, Play, Pause, RotateCcw, CheckCircle2, Sparkles, ArrowRight, Volume2, User, Users, RefreshCw, List, Shuffle, X, Edit3 } from 'lucide-react';
+import {
+  Mic,
+  Play,
+  Pause,
+  RotateCcw,
+  CheckCircle2,
+  Sparkles,
+  ArrowRight,
+  Volume2,
+  User as UserIcon,
+  Users,
+  RefreshCw,
+  List,
+  Shuffle,
+  X,
+  Edit3,
+  Lock,
+} from 'lucide-react';
 import { playChimeSound } from '../utils/audio';
 import { FormattedText } from './FormattedText';
 import confetti from 'canvas-confetti';
+
+import type { User } from '../types';
+import { isAdminEmail } from '../utils/storage';
 
 interface SprechenModuleProps {
   sprechenTopics: {
@@ -10,9 +30,26 @@ interface SprechenModuleProps {
     sprecher2Topics: Array<{ id: string; title: string; promptText: string }>;
     sprecher3Situations: Array<{ id: string; title: string; promptText: string }>;
   };
+  currentUser?: User | null;
+  onOpenPremiumLockedModal?: () => void;
+  onOpenLoginModal?: () => void;
 }
 
-export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }) => {
+const FREE_SPRECHEN_2_LIMIT = 30;
+const FREE_SPRECHEN_3_LIMIT = 20;
+
+export const SprechenModule: React.FC<SprechenModuleProps> = ({
+  sprechenTopics,
+  currentUser,
+  onOpenPremiumLockedModal,
+  onOpenLoginModal: _onOpenLoginModal,
+}) => {
+  const isPremiumUser = !!(
+    currentUser?.isPremium ||
+    currentUser?.role === 'admin' ||
+    (currentUser?.email && isAdminEmail(currentUser.email))
+  );
+
   const [activePart, setActivePart] = useState<'1A' | '2' | '3' | 'finish'>('1A');
 
   // Mode Selection: 'einzel' (1 Person) vs 'paar' (2 Personen - Partner-Simulation)
@@ -110,8 +147,9 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
 
   const initPart2 = () => {
     setActivePart('2');
-    const topics = sprechenTopics.sprecher2Topics;
-    const shuffled = [...topics].sort(() => 0.5 - Math.random());
+    const allTopics = sprechenTopics.sprecher2Topics;
+    const availablePool = isPremiumUser ? allTopics : allTopics.slice(0, FREE_SPRECHEN_2_LIMIT);
+    const shuffled = [...availablePool].sort(() => 0.5 - Math.random());
     const topA = shuffled[0] || null;
     const topB = shuffled[1] || shuffled[0] || null;
 
@@ -127,8 +165,9 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
 
   const initPart3 = () => {
     setActivePart('3');
-    const situations = sprechenTopics.sprecher3Situations;
-    const shuffled = [...situations].sort(() => 0.5 - Math.random());
+    const allSituations = sprechenTopics.sprecher3Situations;
+    const availablePool = isPremiumUser ? allSituations : allSituations.slice(0, FREE_SPRECHEN_3_LIMIT);
+    const shuffled = [...availablePool].sort(() => 0.5 - Math.random());
     const sitA = shuffled[0] || null;
     const sitB = shuffled[1] || shuffled[0] || null;
 
@@ -145,13 +184,15 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
   // Re-randomize topics for active part
   const handleRandomizeTopics = () => {
     if (activePart === '2') {
-      const topics = sprechenTopics.sprecher2Topics;
-      const shuffled = [...topics].sort(() => 0.5 - Math.random());
+      const allTopics = sprechenTopics.sprecher2Topics;
+      const availablePool = isPremiumUser ? allTopics : allTopics.slice(0, FREE_SPRECHEN_2_LIMIT);
+      const shuffled = [...availablePool].sort(() => 0.5 - Math.random());
       setSelectedTopicA(shuffled[0] || null);
       setSelectedTopicB(shuffled[1] || shuffled[0] || null);
     } else if (activePart === '3') {
-      const situations = sprechenTopics.sprecher3Situations;
-      const shuffled = [...situations].sort(() => 0.5 - Math.random());
+      const allSituations = sprechenTopics.sprecher3Situations;
+      const availablePool = isPremiumUser ? allSituations : allSituations.slice(0, FREE_SPRECHEN_3_LIMIT);
+      const shuffled = [...availablePool].sort(() => 0.5 - Math.random());
       setSelectedTopicA(shuffled[0] || null);
       setSelectedTopicB(shuffled[1] || shuffled[0] || null);
     } else if (activePart === '1A') {
@@ -271,7 +312,7 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              <User className="w-3.5 h-3.5" /> Einzelmodus (1 Person)
+              <UserIcon className="w-3.5 h-3.5" /> Einzelmodus (1 Person)
             </button>
             <button
               type="button"
@@ -643,20 +684,40 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({ sprechenTopics }
             {/* Topic List */}
             <div className="p-4 overflow-y-auto space-y-3 flex-1">
               {currentAvailableTopics.map((t, idx) => {
+                const isLocked =
+                  !isPremiumUser &&
+                  ((activePart === '2' && idx >= FREE_SPRECHEN_2_LIMIT) ||
+                    (activePart === '3' && idx >= FREE_SPRECHEN_3_LIMIT));
+
                 const currentSelected = modalTargetPartner === 'A' ? selectedTopicA : selectedTopicB;
                 const isSelected = currentSelected?.title === t.title;
 
                 return (
                   <div
                     key={idx}
-                    onClick={() => handleAssignTopicToPartner(modalTargetPartner, t)}
+                    onClick={() => {
+                      if (isLocked) {
+                        onOpenPremiumLockedModal?.();
+                      } else {
+                        handleAssignTopicToPartner(modalTargetPartner, t);
+                      }
+                    }}
                     className={`p-4 rounded-2xl cursor-pointer transition-all border ${
-                      isSelected
+                      isLocked
+                        ? 'bg-amber-500/10 border-amber-500/30 text-amber-300 hover:border-amber-500/50'
+                        : isSelected
                         ? 'bg-emerald-500/25 border-emerald-500 text-white shadow-lg'
                         : 'glass-card border-slate-800 text-slate-200 hover:border-slate-700'
                     }`}
                   >
-                    <div className="font-extrabold text-xs mb-1.5 text-emerald-400">{t.title}</div>
+                    <div className="flex items-center justify-between gap-2 mb-1.5">
+                      <div className="font-extrabold text-xs text-emerald-400">{t.title}</div>
+                      {isLocked && (
+                        <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-lg text-[10px] font-black flex items-center gap-1 shrink-0">
+                          <Lock className="w-3 h-3" /> Premium
+                        </span>
+                      )}
+                    </div>
                     <FormattedText text={t.promptText} className="text-xs text-slate-300 leading-relaxed font-sans" />
                   </div>
                 );

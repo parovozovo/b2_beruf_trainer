@@ -1,13 +1,29 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import type { Modelltest, ForumsbeitragTopic, WrittenEssayRecord, User } from '../types';
-import { FileEdit, Timer, Copy, Trash2, CheckCircle2, History, FileText, RotateCcw, Shuffle, ChevronDown, BookOpen } from 'lucide-react';
+import {
+  FileEdit,
+  Timer,
+  Copy,
+  Trash2,
+  CheckCircle2,
+  History,
+  FileText,
+  RotateCcw,
+  Shuffle,
+  ChevronDown,
+  BookOpen,
+  Lock,
+  Crown,
+} from 'lucide-react';
 import { FormattedText } from './FormattedText';
-import { getWrittenEssays, saveWrittenEssay, deleteWrittenEssay } from '../utils/storage';
+import { getWrittenEssays, saveWrittenEssay, deleteWrittenEssay, isAdminEmail } from '../utils/storage';
 
 interface SchreibenModuleProps {
   modelltests: Modelltest[];
   forumsbeitragTopics: ForumsbeitragTopic[];
   currentUser: User | null;
+  onOpenPremiumLockedModal?: () => void;
+  onOpenLoginModal?: () => void;
 }
 
 interface ActiveTopicState {
@@ -17,12 +33,22 @@ interface ActiveTopicState {
   promptText: string;
 }
 
+const FREE_FORUM_TOPICS_COUNT = 30;
+
 export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
   modelltests,
   forumsbeitragTopics,
   currentUser,
+  onOpenPremiumLockedModal,
+  onOpenLoginModal: _onOpenLoginModal,
 }) => {
   const [taskType, setTaskType] = useState<'beschwerde' | 'forumsbeitrag'>('beschwerde');
+
+  const isPremiumUser = !!(
+    currentUser?.isPremium ||
+    currentUser?.role === 'admin' ||
+    (currentUser?.email && isAdminEmail(currentUser.email))
+  );
 
   // Extract all available Beschwerde topics from modelltests
   const beschwerdeTopics = useMemo(() => {
@@ -278,11 +304,15 @@ export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
                       {idx + 1}. {topic.title}
                     </option>
                   ))
-                : allForumsTopics.map((topic, idx) => (
-                    <option key={topic.id} value={topic.id}>
-                      {idx + 1}. {topic.title}
-                    </option>
-                  ))}
+                : allForumsTopics.map((topic, idx) => {
+                    const isLocked = !isPremiumUser && idx >= FREE_FORUM_TOPICS_COUNT;
+                    return (
+                      <option key={topic.id} value={topic.id}>
+                        {isLocked ? '🔒 [Premium] ' : ''}
+                        {idx + 1}. {topic.title}
+                      </option>
+                    );
+                  })}
             </select>
           </div>
 
@@ -302,6 +332,27 @@ export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Left Column: Context, E-Mails & Task Prompt (5 cols) */}
           <div className="lg:col-span-5 space-y-4">
+            {/* Premium Lock Banner if topic is locked */}
+            {!isPremiumUser &&
+              taskType === 'forumsbeitrag' &&
+              allForumsTopics.findIndex((t) => t.id === activeTopic.id) >= FREE_FORUM_TOPICS_COUNT && (
+                <div className="p-4 bg-amber-500/15 border-2 border-amber-500/40 rounded-2xl space-y-2.5 text-xs text-amber-900 dark:text-amber-200 animate-fadeIn">
+                  <div className="flex items-center gap-2 font-black text-sm">
+                    <Lock className="w-4 h-4 text-amber-500 shrink-0" />
+                    <span>Premium-Thema (Freischalten)</span>
+                  </div>
+                  <p className="leading-relaxed opacity-90">
+                    Die Themen 1–30 sind dauerhaft kostenlos verfügbar. Schalten Sie Premium frei, um unbegrenzten Zugriff auf alle Forenthemen und Korrekturen zu erhalten.
+                  </p>
+                  <button
+                    onClick={onOpenPremiumLockedModal}
+                    className="w-full py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black rounded-xl shadow-md flex items-center justify-center gap-1.5 cursor-pointer text-xs"
+                  >
+                    <Crown className="w-4 h-4" /> Alle Themen mit Premium freischalten
+                  </button>
+                </div>
+              )}
+
             <div className="glass-panel p-5 rounded-2xl border border-slate-300 dark:border-slate-800 space-y-4 shadow-sm">
               <div className="flex items-center justify-between gap-2 flex-wrap pb-2 border-b border-slate-200 dark:border-slate-800">
                 <span className="px-3 py-1 bg-pink-500/10 text-pink-600 dark:text-pink-400 rounded-lg text-xs font-extrabold border border-pink-500/20">

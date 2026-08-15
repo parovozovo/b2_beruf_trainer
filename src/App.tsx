@@ -530,11 +530,18 @@ export function App() {
             modelltests={modelltests.filter((m) => !m.isHidden)}
             forumsbeitragTopics={forumsbeitragTopics}
             currentUser={currentUser}
+            onOpenPremiumLockedModal={() => setIsPremiumLockedModalOpen(true)}
+            onOpenLoginModal={() => setIsLoginModalOpen(true)}
           />
         )}
 
         {currentTab === 'sprechen' && (
-          <SprechenModule sprechenTopics={sprechenTopics} />
+          <SprechenModule
+            sprechenTopics={sprechenTopics}
+            currentUser={currentUser}
+            onOpenPremiumLockedModal={() => setIsPremiumLockedModalOpen(true)}
+            onOpenLoginModal={() => setIsLoginModalOpen(true)}
+          />
         )}
 
         {currentTab === 'wortschatz' && (
