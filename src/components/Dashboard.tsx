@@ -133,123 +133,185 @@ export const Dashboard: React.FC<DashboardProps> = ({
         )}
       </div>
 
-      {/* ================= SECTION 3: LERN-MODULE (4 ЛАНКОНІЧНІ ТА ЕЛЕГАНТНІ КАРТКИ) ================= */}
+      {/* ================= SECTION 3: LERN-MODULE (5 VOLLBREITE ELEGANTE KARTEN) ================= */}
       <div className="space-y-6 pt-4 border-t border-slate-200 dark:border-slate-800">
         <div>
           <span className="text-xs font-black uppercase text-indigo-600 dark:text-indigo-400 tracking-wider">
-            Lern-Modul Auswählen
+            Lern-Module & Prüfungsbereiche
           </span>
           <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mt-1">
             Wählen Sie ein Lern-Modul 🎯
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-4">
           {/* Card 1: Teile-Training */}
-          <div className="glass-panel p-6 sm:p-8 rounded-3xl border-2 border-indigo-500/30 hover:border-indigo-500/60 transition-all space-y-4 shadow-sm flex flex-col justify-between">
-            <div className="space-y-3">
-              <div className="w-14 h-14 rounded-2xl bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center border border-indigo-500/30">
+          <div className="glass-panel p-6 sm:p-7 rounded-3xl border border-indigo-500/30 hover:border-indigo-500/70 transition-all shadow-md flex flex-col md:flex-row md:items-center justify-between gap-6 group">
+            <div className="flex items-start sm:items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center border border-indigo-500/30 shrink-0 group-hover:scale-105 transition-transform">
                 <Dumbbell className="w-7 h-7" />
               </div>
-              <h3 className="text-2xl font-black text-slate-900 dark:text-white">
-                Teile-Training
-              </h3>
-              <p className="text-sm text-slate-700 dark:text-slate-300 font-medium leading-relaxed">
-                Gezieltes Training aller 12 Einzelteile von Lesen 1 bis Sprachbausteine 2 mit sofortiger automatischer Auswertung.
-              </p>
+              <div className="space-y-1.5 max-w-2xl">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="px-2.5 py-0.5 bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 rounded-full text-[11px] font-bold">
+                    📚 12 Prüfungsteile
+                  </span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                    Lesen, Hören, Schreiben, Sprachbausteine
+                  </span>
+                </div>
+                <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">
+                  Kachel-Training (Einzelteile)
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
+                  Gezieltes Training aller 12 Einzelteile von Lesen 1 bis Sprachbausteine 2 mit sofortiger automatischer Auswertung und Lösungsschlüsseln.
+                </p>
+              </div>
             </div>
+
             <button
               onClick={() => onSelectMode('tile_practice')}
-              className="w-full py-3.5 px-5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all"
+              className="w-full md:w-auto py-3.5 px-6 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg hover:shadow-indigo-600/30 transition-all shrink-0 cursor-pointer"
             >
-              Teile-Training starten <ArrowRight className="w-4 h-4" />
+              <span>Teile-Training starten</span>
+              <ArrowRight className="w-4 h-4" />
             </button>
           </div>
 
           {/* Card 2: Komplettprüfung */}
-          <div className="glass-panel p-6 sm:p-8 rounded-3xl border-2 border-amber-500/30 hover:border-amber-500/60 transition-all space-y-4 shadow-sm flex flex-col justify-between">
-            <div className="space-y-3">
-              <div className="w-14 h-14 rounded-2xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-500/30">
+          <div className="glass-panel p-6 sm:p-7 rounded-3xl border border-amber-500/30 hover:border-amber-500/70 transition-all shadow-md flex flex-col md:flex-row md:items-center justify-between gap-6 group">
+            <div className="flex items-start sm:items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-500/30 shrink-0 group-hover:scale-105 transition-transform">
                 <Award className="w-7 h-7" />
               </div>
-              <h3 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
-                Komplettprüfung {isPremium && <Sparkles className="w-4 h-4 text-amber-500" />}
-              </h3>
-              <p className="text-sm text-slate-700 dark:text-slate-300 font-medium leading-relaxed">
-                Vollständige Simulation aller 57 Fragen unter realen Prüfungsbedingungen mit Countdown-Timer.
-              </p>
+              <div className="space-y-1.5 max-w-2xl">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="px-2.5 py-0.5 bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 rounded-full text-[11px] font-bold flex items-center gap-1">
+                    <Timer className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" /> 130 Min. Countdown
+                  </span>
+                  {isPremium && (
+                    <span className="px-2.5 py-0.5 bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 rounded-full text-[11px] font-bold flex items-center gap-1">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Premium
+                    </span>
+                  )}
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                    Offizielles DTB / telc Format
+                  </span>
+                </div>
+                <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">
+                  Vollständige Prüfungssimulation (Fragen 1–57)
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
+                  Absolvieren Sie die komplette B2 Beruf Prüfung unter realen Bedingungen. Mit Prüfungs-Timer, automatischer Punkteberechnung und detaillierter Fehleranalyse.
+                </p>
+              </div>
             </div>
+
             <button
               onClick={() => onSelectMode('full_exam')}
-              className="w-full py-3.5 px-5 bg-amber-600 hover:bg-amber-700 text-white font-extrabold rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all"
+              className="w-full md:w-auto py-3.5 px-6 bg-amber-600 hover:bg-amber-500 text-white font-extrabold rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg hover:shadow-amber-600/30 transition-all shrink-0 cursor-pointer"
             >
-              Prüfungssimulation starten <ArrowRight className="w-4 h-4" />
+              <span>Prüfungssimulation starten</span>
+              <ArrowRight className="w-4 h-4" />
             </button>
           </div>
 
           {/* Card 3: Schreiben */}
-          <div className="glass-panel p-6 sm:p-8 rounded-3xl border-2 border-pink-500/30 hover:border-pink-500/60 transition-all space-y-4 shadow-sm flex flex-col justify-between">
-            <div className="space-y-3">
-              <div className="w-14 h-14 rounded-2xl bg-pink-500/20 text-pink-600 dark:text-pink-400 flex items-center justify-center border border-pink-500/30">
+          <div className="glass-panel p-6 sm:p-7 rounded-3xl border border-pink-500/30 hover:border-pink-500/70 transition-all shadow-md flex flex-col md:flex-row md:items-center justify-between gap-6 group">
+            <div className="flex items-start sm:items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-pink-500/15 text-pink-600 dark:text-pink-400 flex items-center justify-center border border-pink-500/30 shrink-0 group-hover:scale-105 transition-transform">
                 <FileEdit className="w-7 h-7" />
               </div>
-              <h3 className="text-2xl font-black text-slate-900 dark:text-white">
-                Schreiben (Q58)
-              </h3>
-              <p className="text-sm text-slate-700 dark:text-slate-300 font-medium leading-relaxed">
-                Verfassen von professionellen Beschwerdebriefen und Forenbeiträgen mit Wortzähler.
-              </p>
+              <div className="space-y-1.5 max-w-2xl">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="px-2.5 py-0.5 bg-pink-500/15 text-pink-800 dark:text-pink-300 border border-pink-500/30 rounded-full text-[11px] font-bold">
+                    📝 Q58 Schreibaufgabe
+                  </span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                    Forenbeitrag & Beschwerdebrief
+                  </span>
+                </div>
+                <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">
+                  Schreibtrainer (Forenbeiträge & Firmenkorrespondenz)
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
+                  Verfassen Sie professionelle E-Mails, Reklamationen und Forenbeiträge. Mit integriertem Live-Wortzähler, Textformatierung und Musterlösungen.
+                </p>
+              </div>
             </div>
+
             <button
               onClick={() => onSelectMode('schreiben')}
-              className="w-full py-3.5 px-5 bg-pink-600 hover:bg-pink-700 text-white font-extrabold rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all"
+              className="w-full md:w-auto py-3.5 px-6 bg-pink-600 hover:bg-pink-500 text-white font-extrabold rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg hover:shadow-pink-600/30 transition-all shrink-0 cursor-pointer"
             >
-              Schreiben-Trainer öffnen <ArrowRight className="w-4 h-4" />
+              <span>Schreibtrainer öffnen</span>
+              <ArrowRight className="w-4 h-4" />
             </button>
           </div>
 
           {/* Card 4: Sprechen */}
-          <div className="glass-panel p-6 sm:p-8 rounded-3xl border-2 border-emerald-500/30 hover:border-emerald-500/60 transition-all space-y-4 shadow-sm flex flex-col justify-between">
-            <div className="space-y-3">
-              <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-500/30">
+          <div className="glass-panel p-6 sm:p-7 rounded-3xl border border-emerald-500/30 hover:border-emerald-500/70 transition-all shadow-md flex flex-col md:flex-row md:items-center justify-between gap-6 group">
+            <div className="flex items-start sm:items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-500/30 shrink-0 group-hover:scale-105 transition-transform">
                 <Mic className="w-7 h-7" />
               </div>
-              <h3 className="text-2xl font-black text-slate-900 dark:text-white">
-                Sprechen (1A, 2, 3)
-              </h3>
-              <p className="text-sm text-slate-700 dark:text-slate-300 font-medium leading-relaxed">
-                Mündliches Prüfungstraining im Einzel- oder Paarmodus mit Rund-Timer und Akustik-Gong.
-              </p>
+              <div className="space-y-1.5 max-w-2xl">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="px-2.5 py-0.5 bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 rounded-full text-[11px] font-bold">
+                    🗣️ Mündliche Prüfung (Teil 1A, 2 & 3)
+                  </span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                    Einzel- & Paarmodus mit Gong-Signal
+                  </span>
+                </div>
+                <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">
+                  Sprechtrainer: Vortrag, Kollegen-Gespräch & Diskussion
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
+                  Simulation aller 3 Teile der mündlichen Prüfung. Mit Rundentimer, Glocken-Signal, Leitpunkten und themenspezifischen Redemitteln.
+                </p>
+              </div>
             </div>
+
             <button
               onClick={() => onSelectMode('sprechen')}
-              className="w-full py-3.5 px-5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
+              className="w-full md:w-auto py-3.5 px-6 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg hover:shadow-emerald-600/30 transition-all shrink-0 cursor-pointer"
             >
-              Sprechen-Trainer öffnen <ArrowRight className="w-4 h-4" />
+              <span>Sprechtrainer öffnen</span>
+              <ArrowRight className="w-4 h-4" />
             </button>
           </div>
 
-          {/* Card 5: Wortschatz & Nomen-Verb-Verbindungen (In Vorbereitung) */}
-          <div className="md:col-span-2 glass-panel p-6 sm:p-8 rounded-3xl border-2 border-indigo-500/40 hover:border-indigo-500/80 transition-all space-y-4 shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 bg-gradient-to-r from-indigo-950/30 via-slate-900/60 to-slate-950">
-            <div className="space-y-2 max-w-2xl">
-              <div className="flex items-center gap-2">
-                <span className="px-3 py-1 bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-full text-xs font-bold flex items-center gap-1.5 animate-pulse">
-                  <Sparkles className="w-3.5 h-3.5" /> In Vorbereitung
-                </span>
-                <span className="text-xs text-slate-400 font-medium">B2 Beruf Spezial</span>
+          {/* Card 5: Wortschatz & Nomen-Verb-Verbindungen */}
+          <div className="glass-panel p-6 sm:p-7 rounded-3xl border border-violet-500/30 hover:border-violet-500/70 transition-all shadow-md flex flex-col md:flex-row md:items-center justify-between gap-6 group">
+            <div className="flex items-start sm:items-center gap-4">
+              <div className="w-14 h-14 rounded-2xl bg-violet-500/15 text-violet-600 dark:text-violet-400 flex items-center justify-center border border-violet-500/30 shrink-0 group-hover:scale-105 transition-transform">
+                <Sparkles className="w-7 h-7" />
               </div>
-              <h3 className="text-2xl font-black text-slate-900 dark:text-white">
-                Wortschatz & Nomen-Verb-Verbindungen 📚
-              </h3>
-              <p className="text-sm text-slate-700 dark:text-slate-300 font-medium leading-relaxed">
-                Interaktive Karteikarten, 600+ berufsbezogene Fachbegriffe nach Branchen und feste Wendungen für maximale Punkte im Schreib- und Sprechteil.
-              </p>
+              <div className="space-y-1.5 max-w-2xl">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="px-2.5 py-0.5 bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/30 rounded-full text-[11px] font-bold flex items-center gap-1">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" /> In Vorbereitung
+                  </span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                    B2 Beruf Spezial
+                  </span>
+                </div>
+                <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">
+                  Wortschatz & Nomen-Verb-Verbindungen 📚
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
+                  Interaktive Karteikarten, 600+ berufsbezogene Fachbegriffe nach Branchen (Büro, Medizin, Technik, Handel) und feste Wendungen für maximale Punkte im Schreib- und Sprechteil.
+                </p>
+              </div>
             </div>
+
             <button
               onClick={() => onSelectMode('wortschatz')}
-              className="w-full sm:w-auto py-3.5 px-6 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg transition-all shrink-0 cursor-pointer"
+              className="w-full md:w-auto py-3.5 px-6 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg hover:shadow-indigo-600/30 transition-all shrink-0 cursor-pointer"
             >
-              Vorschau & Karteikarten ansehen <ArrowRight className="w-4 h-4" />
+              <span>Vorschau ansehen</span>
+              <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </div>

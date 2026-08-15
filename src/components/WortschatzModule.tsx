@@ -173,25 +173,25 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
   const currentFlashcard = SAMPLE_NVV[currentCardIndex % SAMPLE_NVV.length];
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 animate-fadeIn">
+    <div className="max-w-6xl mx-auto space-y-6 animate-fadeIn pb-12">
       {/* Hero Teaser Banner */}
-      <div className="relative overflow-hidden glass-panel p-6 sm:p-8 rounded-3xl border border-indigo-500/30 shadow-2xl bg-gradient-to-br from-indigo-950/40 via-slate-900/80 to-slate-950">
+      <div className="relative overflow-hidden glass-panel p-6 sm:p-8 rounded-3xl border border-indigo-500/30 shadow-xl">
         <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-3 max-w-2xl">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="px-3 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full text-xs font-bold flex items-center gap-1.5 animate-pulse">
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" /> In Vorbereitung (Q1 2026)
+              <span className="px-3 py-1 bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/30 rounded-full text-xs font-bold flex items-center gap-1.5 animate-pulse">
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" /> In Vorbereitung (Q1 2026)
               </span>
-              <span className="px-3 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-full text-xs font-bold">
+              <span className="px-3 py-1 bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 rounded-full text-xs font-bold">
                 B2 DTB Beruf Spezial
               </span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-              Wortschatz & Nomen-Verb-Verbindungen
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+              Wortschatz & Nomen-Verb-Verbindungen 📚
             </h1>
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
               Meistern Sie den prüfungsrelevanten Fachwortschatz für die B2 Beruf Prüfung. Lernen Sie über 600 berufsbezogene Begriffe, feste Redewendungen und Nomen-Verb-Verbindungen mit interaktiven Karteikarten, Beispielsätzen und Audio-Aussprache.
             </p>
           </div>
@@ -221,37 +221,37 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
 
       {/* Feature Roadmap & Highlights */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="glass-panel p-4 rounded-2xl border border-slate-800 flex items-start gap-3">
-          <div className="p-2.5 bg-indigo-500/20 text-indigo-400 rounded-xl shrink-0">
+        <div className="glass-panel p-4 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-start gap-3 shadow-sm">
+          <div className="p-2.5 bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 rounded-xl shrink-0">
             <Layers className="w-5 h-5" />
           </div>
           <div>
-            <h4 className="text-xs font-bold text-white">Spaced Repetition System</h4>
-            <p className="text-[11px] text-slate-400 mt-0.5">
+            <h4 className="text-xs font-bold text-slate-900 dark:text-white">Spaced Repetition System</h4>
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5 font-medium">
               Intelligenter Algorithmus wiederholt schwierige Wörter exakt im richtigen Zeitintervall.
             </p>
           </div>
         </div>
 
-        <div className="glass-panel p-4 rounded-2xl border border-slate-800 flex items-start gap-3">
-          <div className="p-2.5 bg-amber-500/20 text-amber-400 rounded-xl shrink-0">
+        <div className="glass-panel p-4 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-start gap-3 shadow-sm">
+          <div className="p-2.5 bg-amber-500/15 text-amber-600 dark:text-amber-400 rounded-xl shrink-0">
             <Volume2 className="w-5 h-5" />
           </div>
           <div>
-            <h4 className="text-xs font-bold text-white">Deutsche Audio-Aussprache</h4>
-            <p className="text-[11px] text-slate-400 mt-0.5">
+            <h4 className="text-xs font-bold text-slate-900 dark:text-white">Deutsche Audio-Aussprache</h4>
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5 font-medium">
               Hören Sie jedes Wort in authentischer deutscher Muttersprachler-Aussprache.
             </p>
           </div>
         </div>
 
-        <div className="glass-panel p-4 rounded-2xl border border-slate-800 flex items-start gap-3">
-          <div className="p-2.5 bg-emerald-500/20 text-emerald-400 rounded-xl shrink-0">
+        <div className="glass-panel p-4 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-start gap-3 shadow-sm">
+          <div className="p-2.5 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 rounded-xl shrink-0">
             <CheckCircle2 className="w-5 h-5" />
           </div>
           <div>
-            <h4 className="text-xs font-bold text-white">Prüfungsfokus B2 Beruf</h4>
-            <p className="text-[11px] text-slate-400 mt-0.5">
+            <h4 className="text-xs font-bold text-slate-900 dark:text-white">Prüfungsfokus B2 Beruf</h4>
+            <p className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5 font-medium">
               Fokus auf Nomen-Verb-Verbindungen für Höchstpunkte im Prüfungsteil Schreiben & Sprechen.
             </p>
           </div>
@@ -259,13 +259,13 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
       </div>
 
       {/* Navigation Sub-Tabs */}
-      <div className="flex items-center gap-2 bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800 text-xs">
+      <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-900/90 p-1.5 rounded-2xl border border-slate-300 dark:border-slate-800 text-xs">
         <button
           onClick={() => setActiveSection('nvv')}
           className={`flex-1 py-2.5 px-4 rounded-xl font-bold transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer ${
             activeSection === 'nvv'
               ? 'bg-indigo-600 text-white shadow-md'
-              : 'text-slate-400 hover:text-white'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
           <BookOpen className="w-3.5 h-3.5" /> Nomen-Verb-Verbindungen (NVV)
@@ -276,7 +276,7 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
           className={`flex-1 py-2.5 px-4 rounded-xl font-bold transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer ${
             activeSection === 'branchen'
               ? 'bg-indigo-600 text-white shadow-md'
-              : 'text-slate-400 hover:text-white'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
           <Briefcase className="w-3.5 h-3.5" /> Fachwortschatz nach Branchen
@@ -287,7 +287,7 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
           className={`flex-1 py-2.5 px-4 rounded-xl font-bold transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer ${
             activeSection === 'flashcards'
               ? 'bg-indigo-600 text-white shadow-md'
-              : 'text-slate-400 hover:text-white'
+              : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
           }`}
         >
           <RotateCw className="w-3.5 h-3.5" /> Interaktive Karteikarten (Vorschau)
@@ -299,8 +299,8 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
         <div className="space-y-4">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
             <div>
-              <h3 className="text-base font-bold text-white">Top Nomen-Verb-Verbindungen für B2</h3>
-              <p className="text-xs text-slate-400">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white">Top Nomen-Verb-Verbindungen für B2</h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
                 Diese Wendungen werden in der Prüfung B2 Beruf besonders hoch bewertet.
               </p>
             </div>
@@ -312,7 +312,7 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="NVV suchen..."
-                className="w-full pl-9 pr-3 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                className="w-full pl-9 pr-3 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-800 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
               />
             </div>
           </div>
@@ -321,35 +321,35 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
             {filteredNVV.map((item, idx) => (
               <div
                 key={idx}
-                className="glass-panel p-4 rounded-2xl border border-slate-800/80 hover:border-indigo-500/40 transition-all space-y-2.5"
+                className="glass-panel p-4 rounded-2xl border border-slate-200 dark:border-slate-800 hover:border-indigo-500/40 transition-all space-y-2.5 shadow-sm"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">
+                    <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
                       {item.category}
                     </span>
-                    <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                       {item.nvv}
                       <button
                         onClick={() => handleSpeak(item.nvv)}
                         title="Aussprache anhören"
-                        className="p-1 text-slate-400 hover:text-amber-400 rounded-md transition-colors cursor-pointer"
+                        className="p-1 text-slate-500 hover:text-amber-500 rounded-md transition-colors cursor-pointer"
                       >
                         <Volume2 className="w-3.5 h-3.5" />
                       </button>
                     </h4>
                   </div>
-                  <span className="px-2 py-0.5 bg-slate-800 text-slate-300 rounded text-[10px] font-mono shrink-0">
+                  <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded text-[10px] font-mono shrink-0 border border-slate-200 dark:border-slate-700">
                     = {item.simpleVerb}
                   </span>
                 </div>
 
-                <div className="p-2.5 bg-slate-900/60 rounded-xl border border-slate-800 text-xs text-slate-300 italic">
+                <div className="p-2.5 bg-slate-50 dark:bg-slate-900/60 rounded-xl border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 italic font-medium">
                   „{item.example}“
                 </div>
 
-                <div className="text-[11px] text-slate-400">
-                  <span className="text-slate-500 font-semibold">Bedeutung:</span> {item.meaning}
+                <div className="text-[11px] text-slate-600 dark:text-slate-400 font-medium">
+                  <span className="text-slate-800 dark:text-slate-400 font-semibold">Bedeutung:</span> {item.meaning}
                 </div>
               </div>
             ))}
@@ -361,8 +361,8 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
       {activeSection === 'branchen' && (
         <div className="space-y-4">
           <div>
-            <h3 className="text-base font-bold text-white">Berufsbezogener Fachwortschatz nach Sparten</h3>
-            <p className="text-xs text-slate-400">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">Berufsbezogener Fachwortschatz nach Sparten</h3>
+            <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
               Spezifische Vokabelpakete für Ihren Arbeitsbereich in Deutschland.
             </p>
           </div>
@@ -373,15 +373,15 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
               return (
                 <div
                   key={branch.id}
-                  className="glass-panel p-5 rounded-2xl border border-slate-800 space-y-3"
+                  className="glass-panel p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-3 shadow-sm"
                 >
                   <div className="flex items-center gap-3">
                     <div className={`p-3 rounded-xl bg-gradient-to-br ${branch.color} text-white shadow-md`}>
                       <IconComp className="w-5 h-5" />
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-white">{branch.title}</h4>
-                      <span className="text-[11px] font-mono text-indigo-400 font-semibold">
+                      <h4 className="text-sm font-bold text-slate-900 dark:text-white">{branch.title}</h4>
+                      <span className="text-[11px] font-mono text-indigo-600 dark:text-indigo-400 font-bold">
                         {branch.wordsCount}
                       </span>
                     </div>
@@ -393,7 +393,7 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
                       {branch.examples.map((ex, i) => (
                         <span
                           key={i}
-                          className="px-2.5 py-1 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-300 font-medium"
+                          className="px-2.5 py-1 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-xs text-slate-800 dark:text-slate-300 font-semibold"
                         >
                           {ex}
                         </span>
@@ -404,7 +404,7 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
                   <div className="pt-2">
                     <button
                       onClick={handleToggleBookmark}
-                      className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                      className="w-full py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer border border-slate-200 dark:border-slate-700"
                     >
                       <span>Paket vormerken</span>
                       <ChevronRight className="w-3.5 h-3.5" />
@@ -421,29 +421,29 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
       {activeSection === 'flashcards' && (
         <div className="max-w-md mx-auto space-y-4 py-2">
           <div className="text-center space-y-1">
-            <h3 className="text-base font-bold text-white">Digitale Karteikarte (Vorschau)</h3>
-            <p className="text-xs text-slate-400">
+            <h3 className="text-base font-bold text-slate-900 dark:text-white">Digitale Karteikarte (Vorschau)</h3>
+            <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
               Klicken Sie auf die Karte, um die Übersetzung und Beispielsätze anzuzeigen.
             </p>
           </div>
 
           <div
             onClick={() => setIsFlipped(!isFlipped)}
-            className="cursor-pointer min-h-[220px] p-6 glass-panel rounded-3xl border border-indigo-500/40 shadow-xl flex flex-col items-center justify-center text-center space-y-3 transition-transform duration-300 hover:scale-[1.02] bg-gradient-to-b from-slate-900 to-slate-950"
+            className="cursor-pointer min-h-[220px] p-6 glass-panel rounded-3xl border border-indigo-500/40 shadow-xl flex flex-col items-center justify-center text-center space-y-3 transition-transform duration-300 hover:scale-[1.02] bg-white dark:bg-slate-900"
           >
-            <span className="px-2.5 py-0.5 bg-indigo-500/20 text-indigo-300 text-[10px] font-bold rounded-full uppercase tracking-wider">
+            <span className="px-2.5 py-0.5 bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 text-[10px] font-bold rounded-full uppercase tracking-wider">
               {currentFlashcard.category} • Karte {((currentCardIndex % SAMPLE_NVV.length) + 1)} von {SAMPLE_NVV.length}
             </span>
 
             {!isFlipped ? (
               <div className="space-y-2 animate-fadeIn">
-                <div className="text-xl font-extrabold text-white">{currentFlashcard.nvv}</div>
-                <p className="text-xs text-slate-400">Tippen zum Umdrehen</p>
+                <div className="text-xl font-extrabold text-slate-900 dark:text-white">{currentFlashcard.nvv}</div>
+                <p className="text-xs text-slate-500">Tippen zum Umdrehen</p>
               </div>
             ) : (
               <div className="space-y-2 animate-fadeIn">
-                <div className="text-sm font-bold text-amber-400">= {currentFlashcard.meaning}</div>
-                <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800 text-xs text-slate-300 italic">
+                <div className="text-sm font-bold text-amber-600 dark:text-amber-400">= {currentFlashcard.meaning}</div>
+                <div className="p-3 bg-slate-50 dark:bg-slate-900/80 rounded-xl border border-slate-200 dark:border-slate-800 text-xs text-slate-800 dark:text-slate-300 italic font-medium">
                   „{currentFlashcard.example}“
                 </div>
               </div>
@@ -455,7 +455,7 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
                 e.stopPropagation();
                 handleSpeak(currentFlashcard.nvv);
               }}
-              className="p-2 bg-slate-800 hover:bg-slate-700 text-amber-400 rounded-xl transition-all mt-2 cursor-pointer"
+              className="p-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-amber-600 dark:text-amber-400 rounded-xl transition-all mt-2 cursor-pointer border border-slate-200 dark:border-slate-700"
             >
               <Volume2 className="w-4 h-4" />
             </button>
@@ -467,14 +467,14 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
                 setIsFlipped(false);
                 setCurrentCardIndex((prev) => (prev > 0 ? prev - 1 : SAMPLE_NVV.length - 1));
               }}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition-all cursor-pointer"
+              className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-300 text-xs font-bold rounded-xl transition-all cursor-pointer border border-slate-200 dark:border-slate-700"
             >
               ← Vorherige
             </button>
 
             <button
               onClick={() => setIsFlipped(!isFlipped)}
-              className="px-4 py-2 bg-indigo-600/20 text-indigo-300 border border-indigo-500/30 text-xs font-bold rounded-xl hover:bg-indigo-600/30 transition-all flex items-center gap-1.5 cursor-pointer"
+              className="px-4 py-2 bg-indigo-50 dark:bg-indigo-600/20 text-indigo-700 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-500/30 text-xs font-bold rounded-xl hover:bg-indigo-100 dark:hover:bg-indigo-600/30 transition-all flex items-center gap-1.5 cursor-pointer"
             >
               <RotateCw className="w-3.5 h-3.5" /> Umdrehen
             </button>
@@ -484,7 +484,7 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
                 setIsFlipped(false);
                 setCurrentCardIndex((prev) => prev + 1);
               }}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition-all cursor-pointer"
+              className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-300 text-xs font-bold rounded-xl transition-all cursor-pointer border border-slate-200 dark:border-slate-700"
             >
               Nächste →
             </button>
@@ -493,10 +493,10 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
       )}
 
       {/* Bottom CTA to start exams */}
-      <div className="glass-panel p-6 rounded-3xl border border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="glass-panel p-6 rounded-3xl border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
         <div>
-          <h4 className="text-sm font-bold text-white">Möchten Sie Ihr Wissen sofort in echten Prüfungen anwenden?</h4>
-          <p className="text-xs text-slate-400">
+          <h4 className="text-sm font-bold text-slate-900 dark:text-white">Möchten Sie Ihr Wissen sofort in echten Prüfungen anwenden?</h4>
+          <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
             Starten Sie das Kacheltraining für alle 12 Prüfungsteile oder absolvieren Sie eine Komplettprüfung.
           </p>
         </div>
