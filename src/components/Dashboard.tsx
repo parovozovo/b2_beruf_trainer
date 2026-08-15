@@ -283,25 +283,25 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
 
           {/* Card 5: Wortschatz & Nomen-Verb-Verbindungen */}
-          <div className="glass-panel p-6 sm:p-7 rounded-3xl border border-violet-500/30 hover:border-violet-500/70 transition-all shadow-md flex flex-col md:flex-row md:items-center justify-between gap-6 group">
+          <div className="glass-panel p-6 sm:p-7 rounded-3xl border border-indigo-500/30 hover:border-indigo-500/70 transition-all shadow-md flex flex-col md:flex-row md:items-center justify-between gap-6 group">
             <div className="flex items-start sm:items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-violet-500/15 text-violet-600 dark:text-violet-400 flex items-center justify-center border border-violet-500/30 shrink-0 group-hover:scale-105 transition-transform">
+              <div className="w-14 h-14 rounded-2xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center border border-indigo-500/30 shrink-0 group-hover:scale-105 transition-transform">
                 <Sparkles className="w-7 h-7" />
               </div>
               <div className="space-y-1.5 max-w-2xl">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="px-2.5 py-0.5 bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/30 rounded-full text-[11px] font-bold flex items-center gap-1">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-500" /> In Vorbereitung
+                  <span className="px-2.5 py-0.5 bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 rounded-full text-[11px] font-bold flex items-center gap-1">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" /> 4 Interaktive Modi
                   </span>
                   <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                    B2 Beruf Spezial
+                    Lexikon, Karteikarten (SRS), Quiz & NVV Match
                   </span>
                 </div>
                 <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">
-                  Wortschatz & Nomen-Verb-Verbindungen 📚
+                  Wortschatz & Nomen-Verb-Verbindungen (Hub)
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
-                  Interaktive Karteikarten, 600+ berufsbezogene Fachbegriffe nach Branchen (Büro, Medizin, Technik, Handel) und feste Wendungen für maximale Punkte im Schreib- und Sprechteil.
+                  Spaced-Repetition Karteikarten, Kollokations-Trainer, Zuordnungsspiel und 600+ berufsbezogene Wendungen für maximale Punkte im Schreib- und Sprechteil.
                 </p>
               </div>
             </div>
@@ -310,7 +310,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               onClick={() => onSelectMode('wortschatz')}
               className="w-full md:w-auto py-3.5 px-6 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg hover:shadow-indigo-600/30 transition-all shrink-0 cursor-pointer"
             >
-              <span>Vorschau ansehen</span>
+              <span>Wortschatz-Hub öffnen</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>

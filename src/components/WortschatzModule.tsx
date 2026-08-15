@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import {
   BookOpen,
   Sparkles,
@@ -22,6 +23,7 @@ import {
   Trash2,
   Flame,
   Check,
+  RotateCcw,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import type { WortschatzItem, WortschatzCategory, User } from '../types';
@@ -35,6 +37,7 @@ interface WortschatzModuleProps {
 }
 
 type WortschatzTab = 'lexikon' | 'flashcards' | 'quiz' | 'match';
+type ResetTarget = 'all' | 'flashcards' | 'quiz' | 'match' | null;
 
 const CATEGORY_LABELS: Record<WortschatzCategory, { label: string; icon: string; color: string; desc: string }> = {
   nvv: {
@@ -93,9 +96,6 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
   onSelectTab: _onSelectTab,
 }) => {
   const [activeTab, setActiveTab] = useState<WortschatzTab>('lexikon');
-  const [showResetConfirmModal, setShowResetConfirmModal] = useState(false);
-
-  // Favorites state (persisted in localStorage)
 
   // Favorites state (persisted in localStorage)
   const [favorites, setFavorites] = useState<string[]>(() => {
@@ -461,101 +461,253 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
     }
   };
 
-  // ================= 5. GLOBAL STATS RESET =================
-  const handleResetAllStats = () => {
-    setShowResetConfirmModal(true);
+  // ================= 5. GRANULAR & GLOBAL STATS RESET =================
+  const [resetTarget, setResetTarget] = useState<ResetTarget>(null);
+
+  const handleExecuteReset = () => {
+    if (resetTarget === 'all') {
+      localStorage.removeItem('b2_flashcards_learned');
+      localStorage.removeItem('b2_wortschatz_favorites');
+      setLearnedIds([]);
+      setFavorites([]);
+      setQuizScore(0);
+      setQuizMistakes(0);
+      setQuizMistakesList([]);
+      setQuizAnswers({});
+      setQuizFinished(false);
+      setMatchedItemIds([]);
+    } else if (resetTarget === 'flashcards') {
+      localStorage.removeItem('b2_flashcards_learned');
+      setLearnedIds([]);
+      setCardIndex(0);
+    } else if (resetTarget === 'quiz') {
+      setQuizScore(0);
+      setQuizMistakes(0);
+      setQuizMistakesList([]);
+      setQuizAnswers({});
+      setQuizFinished(false);
+      startNewQuiz();
+    } else if (resetTarget === 'match') {
+      startNewMatchGame();
+    }
+    setResetTarget(null);
   };
 
-  const handleExecuteResetStats = () => {
-    localStorage.removeItem('b2_flashcards_learned');
-    setLearnedIds([]);
-    setQuizScore(0);
-    setQuizMistakes(0);
-    setQuizMistakesList([]);
-    setShowResetConfirmModal(false);
-  };
+  const learnedPercent = Math.round((learnedIds.length / (items.length || 1)) * 100);
 
   return (
-    <div className="space-y-6 animate-fadeIn pb-16">
+    <div className="space-y-6 pb-16">
       {/* ================= HERO HEADER ================= */}
-      <div className="relative overflow-hidden rounded-3xl glass-panel p-6 sm:p-8 border border-indigo-500/30 shadow-lg">
-        <div className="absolute right-0 top-0 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative z-10 space-y-3 max-w-3xl">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-500/20 text-amber-900 dark:text-amber-300 rounded-full text-xs font-extrabold border border-amber-500/30">
+      <div className="relative overflow-hidden rounded-2xl glass-panel p-6 sm:p-7 border border-indigo-500/30 shadow-sm">
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-500/15 text-amber-800 dark:text-amber-300 rounded-full text-xs font-black border border-amber-500/30">
               <Sparkles className="w-3.5 h-3.5 text-amber-500" /> B2 Beruf Vokabel- & Grammatik-Hub
             </div>
 
             {/* Global Stats Counter & Reset Button */}
-            <div className="flex items-center gap-2">
-              <span className="px-3 py-1 rounded-xl bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-black flex items-center gap-1">
-                <Flame className="w-3.5 h-3.5 text-amber-500" /> {learnedIds.length} / {items.length} gelernt
-              </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-2 px-3 py-1 bg-slate-100 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 text-xs font-black text-slate-800 dark:text-slate-200">
+                <Flame className="w-3.5 h-3.5 text-amber-500" />
+                <span>{learnedIds.length} / {items.length} gelernt ({learnedPercent}%)</span>
+              </div>
+
+              <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300">
+                <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                <span>{favorites.length} gemerkt</span>
+              </div>
+
               <button
-                onClick={handleResetAllStats}
-                title="Lernfortschritt und Statistiken zurücksetzen"
-                className="px-2.5 py-1 rounded-xl glass-card hover:bg-rose-500/20 text-slate-500 hover:text-rose-400 border border-slate-300 dark:border-slate-700 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+                type="button"
+                onClick={() => setResetTarget('all')}
+                title="Gesamten Lernfortschritt zurücksetzen"
+                className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-900 hover:bg-rose-500/15 hover:text-rose-600 dark:hover:text-rose-400 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
               >
-                <Trash2 className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Stats reset</span>
+                <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                <span>Fortschritt zurücksetzen</span>
               </button>
             </div>
           </div>
 
-          <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-slate-900 dark:text-white">
-            Wortschatz & Nomen-Verb-Verbindungen
-          </h1>
-          <p className="text-sm sm:text-base text-slate-700 dark:text-slate-300 leading-relaxed font-semibold">
-            Beherrschen Sie die wichtigsten berufsbezogenen Wendungen, Redemittel und Präpositionen für die telc / BAMF
-            Deutsch-Test für den Beruf (DTB) B2 Prüfung.
-          </p>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+              Wortschatz & Nomen-Verb-Verbindungen
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-medium mt-1 max-w-3xl">
+              Beherrschen Sie die wichtigsten berufsbezogenen Wendungen, Redemittel und Präpositionen für die telc / BAMF Deutsch-Test für den Beruf (DTB) B2 Prüfung.
+            </p>
+          </div>
 
-          {/* 4 Interactive Mode Tabs Switcher */}
-          <div className="flex flex-wrap gap-2 pt-3">
-            <button
+          {/* ================= 4 RICH INTERACTIVE MODE SELECTION CARDS ================= */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
+            {/* Card 1: Übersicht & Suche */}
+            <div
               onClick={() => setActiveTab('lexikon')}
-              className={`px-4 py-2.5 rounded-2xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+              className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col justify-between gap-3 text-left ${
                 activeTab === 'lexikon'
-                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
-                  : 'glass-card text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border-slate-300 dark:border-slate-700'
+                  ? 'bg-indigo-50/70 dark:bg-indigo-950/40 border-indigo-600 shadow-sm ring-1 ring-indigo-500/30'
+                  : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-indigo-500/40 hover:bg-slate-50 dark:hover:bg-slate-900/60'
               }`}
             >
-              <BookOpen className="w-4 h-4" /> 🗂️ Übersicht & Suche ({items.length})
-            </button>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="w-8 h-8 rounded-lg bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold">
+                    <BookOpen className="w-4 h-4" />
+                  </span>
+                  {activeTab === 'lexikon' && (
+                    <span className="px-2 py-0.5 rounded-md bg-indigo-600 text-white text-[10px] font-black uppercase">
+                      Aktiv
+                    </span>
+                  )}
+                </div>
+                <h3 className="font-black text-sm text-slate-900 dark:text-white">1. Übersicht & Suche</h3>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-snug">
+                  Vollständiges Lexikon aller Begriffe mit Filtern, Beispielsätzen & Audio.
+                </p>
+              </div>
+              <div className="pt-2 border-t border-slate-200/80 dark:border-slate-800/80 flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-400 font-bold">
+                <span>📚 {items.length} Begriffe</span>
+                <span>⭐ {favorites.length} gemerkt</span>
+              </div>
+            </div>
 
-            <button
+            {/* Card 2: Karteikarten (SRS) */}
+            <div
               onClick={() => setActiveTab('flashcards')}
-              className={`px-4 py-2.5 rounded-2xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+              className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col justify-between gap-3 text-left relative group ${
                 activeTab === 'flashcards'
-                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
-                  : 'glass-card text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border-slate-300 dark:border-slate-700'
+                  ? 'bg-indigo-50/70 dark:bg-indigo-950/40 border-indigo-600 shadow-sm ring-1 ring-indigo-500/30'
+                  : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-indigo-500/40 hover:bg-slate-50 dark:hover:bg-slate-900/60'
               }`}
             >
-              <RotateCw className="w-4 h-4" /> 🃏 Karteikarten (SRS)
-            </button>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="w-8 h-8 rounded-lg bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold">
+                    <RotateCw className="w-4 h-4" />
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {activeTab === 'flashcards' && (
+                      <span className="px-2 py-0.5 rounded-md bg-indigo-600 text-white text-[10px] font-black uppercase">
+                        Aktiv
+                      </span>
+                    )}
+                    {learnedIds.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setResetTarget('flashcards');
+                        }}
+                        title="Karteikarten-Fortschritt zurücksetzen"
+                        className="p-1 rounded-md text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <h3 className="font-black text-sm text-slate-900 dark:text-white">2. Karteikarten (SRS)</h3>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-snug">
+                  Spaced Repetition zum Einprägen mit Lückentext & Übersetzung.
+                </p>
+              </div>
+              <div className="pt-2 border-t border-slate-200/80 dark:border-slate-800/80 flex items-center justify-between text-[11px] font-bold">
+                <span className="text-emerald-700 dark:text-emerald-400">🔥 {learnedIds.length} / {items.length} gelernt</span>
+                <span className="text-slate-500 dark:text-slate-400">{learnedPercent}%</span>
+              </div>
+            </div>
 
-            <button
+            {/* Card 3: Kollokations-Quiz */}
+            <div
               onClick={() => setActiveTab('quiz')}
-              className={`px-4 py-2.5 rounded-2xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+              className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col justify-between gap-3 text-left relative group ${
                 activeTab === 'quiz'
-                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
-                  : 'glass-card text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border-slate-300 dark:border-slate-700'
+                  ? 'bg-indigo-50/70 dark:bg-indigo-950/40 border-indigo-600 shadow-sm ring-1 ring-indigo-500/30'
+                  : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-indigo-500/40 hover:bg-slate-50 dark:hover:bg-slate-900/60'
               }`}
             >
-              <Zap className="w-4 h-4 text-amber-500" /> 🎯 Kollokations-Quiz (Trainer)
-            </button>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="w-8 h-8 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold">
+                    <Zap className="w-4 h-4 text-amber-500" />
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {activeTab === 'quiz' && (
+                      <span className="px-2 py-0.5 rounded-md bg-indigo-600 text-white text-[10px] font-black uppercase">
+                        Aktiv
+                      </span>
+                    )}
+                    {(quizScore > 0 || quizMistakesList.length > 0) && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setResetTarget('quiz');
+                        }}
+                        title="Quiz-Ergebnis & Fehlerliste zurücksetzen"
+                        className="p-1 rounded-md text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <h3 className="font-black text-sm text-slate-900 dark:text-white">3. Kollokations-Quiz</h3>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-snug">
+                  4-Optionen Lückentext-Trainer mit gezieltem Fehlertraining.
+                </p>
+              </div>
+              <div className="pt-2 border-t border-slate-200/80 dark:border-slate-800/80 flex items-center justify-between text-[11px] font-bold">
+                <span className="text-indigo-600 dark:text-indigo-400">🎯 {quizScore} / {quizQuestions.length || 10} Punkte</span>
+                {quizMistakesList.length > 0 && <span className="text-rose-500">{quizMistakesList.length} Fehler</span>}
+              </div>
+            </div>
 
-            <button
+            {/* Card 4: Zuordnungsspiel */}
+            <div
               onClick={() => setActiveTab('match')}
-              className={`px-4 py-2.5 rounded-2xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+              className={`p-4 rounded-xl border transition-all cursor-pointer flex flex-col justify-between gap-3 text-left relative group ${
                 activeTab === 'match'
-                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
-                  : 'glass-card text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border-slate-300 dark:border-slate-700'
+                  ? 'bg-indigo-50/70 dark:bg-indigo-950/40 border-indigo-600 shadow-sm ring-1 ring-indigo-500/30'
+                  : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-indigo-500/40 hover:bg-slate-50 dark:hover:bg-slate-900/60'
               }`}
             >
-              <Puzzle className="w-4 h-4 text-emerald-400" /> 🧩 Zuordnungsspiel (NVV Match)
-            </button>
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <span className="w-8 h-8 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
+                    <Puzzle className="w-4 h-4 text-emerald-500" />
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    {activeTab === 'match' && (
+                      <span className="px-2 py-0.5 rounded-md bg-indigo-600 text-white text-[10px] font-black uppercase">
+                        Aktiv
+                      </span>
+                    )}
+                    {matchedItemIds.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setResetTarget('match');
+                        }}
+                        title="Zuordnungsspiel neu starten"
+                        className="p-1 rounded-md text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <h3 className="font-black text-sm text-slate-900 dark:text-white">4. Zuordnungsspiel</h3>
+                <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-snug">
+                  Verbinden Sie Nomen und die passenden Verben schnell per Klick.
+                </p>
+              </div>
+              <div className="pt-2 border-t border-slate-200/80 dark:border-slate-800/80 flex items-center justify-between text-[11px] font-bold">
+                <span className="text-emerald-700 dark:text-emerald-400">🧩 {matchedItemIds.length} / {activeMatchItems.length} gelöst</span>
+                <span className="text-slate-500 dark:text-slate-400">{matchAttempts} Versuche</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1506,47 +1658,73 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
         </div>
       )}
 
-      {/* ================= STATS RESET CONFIRMATION MODAL ================= */}
-      {showResetConfirmModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4 text-slate-900 dark:text-white animate-fadeIn">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 border border-rose-500/20">
-                <Trash2 className="w-5 h-5" />
+      {/* ================= BULLETPROOF PORTAL RESET CONFIRMATION MODAL ================= */}
+      {resetTarget &&
+        createPortal(
+          <div
+            className="fixed inset-0 bg-slate-950/40 dark:bg-black/70 backdrop-blur-sm z-[99999] flex items-center justify-center p-4"
+            onClick={() => setResetTarget(null)}
+          >
+            <div
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 text-slate-900 dark:text-white animate-fadeIn relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 border border-rose-500/20">
+                  <Trash2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base text-slate-900 dark:text-white">
+                    {resetTarget === 'all'
+                      ? 'Gesamten Fortschritt zurücksetzen?'
+                      : resetTarget === 'flashcards'
+                      ? 'Karteikarten-Fortschritt zurücksetzen?'
+                      : resetTarget === 'quiz'
+                      ? 'Quiz-Statistik zurücksetzen?'
+                      : 'Zuordnungsspiel neu starten?'}
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {resetTarget === 'all'
+                      ? 'Alle gelernten Vokabeln & Quiz-Daten werden zurückgesetzt.'
+                      : resetTarget === 'flashcards'
+                      ? 'Gelernt-Status der Karteikarten wird auf 0 gesetzt.'
+                      : resetTarget === 'quiz'
+                      ? 'Punkte und Fehlerliste werden geleert.'
+                      : 'Ein neues Spiel mit neuen Paaren wird gestartet.'}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="font-extrabold text-base text-slate-900 dark:text-white">
-                  Lernfortschritt zurücksetzen?
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Gelernt-Status und Statistiken werden auf 0 gesetzt.
-                </p>
+
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
+                {resetTarget === 'all'
+                  ? 'Möchten Sie Ihren gesamten Lernfortschritt für alle Wortschatz-Bereiche unwiderruflich zurücksetzen?'
+                  : resetTarget === 'flashcards'
+                  ? 'Möchten Sie den Lernstatus aller Karteikarten zurücksetzen und den Stapel von vorne beginnen?'
+                  : resetTarget === 'quiz'
+                  ? 'Möchten Sie Ihre Quiz-Punkte und die aktuelle Fehlerliste zurücksetzen?'
+                  : 'Möchten Sie das aktuelle Zuordnungsspiel abbrechen und eine neue Runde starten?'}
+              </p>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setResetTarget(null)}
+                  className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-lg text-xs transition-colors cursor-pointer border border-slate-200 dark:border-slate-700"
+                >
+                  Abbrechen
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExecuteReset}
+                  className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-extrabold rounded-lg text-xs shadow-sm transition-colors cursor-pointer"
+                >
+                  Ja, zurücksetzen
+                </button>
               </div>
             </div>
-
-            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-              Möchten Sie Ihren gesamten Lernfortschritt für den Wortschatz wirklich unwiderruflich zurücksetzen?
-            </p>
-
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
-              <button
-                type="button"
-                onClick={() => setShowResetConfirmModal(false)}
-                className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-lg text-xs transition-colors cursor-pointer"
-              >
-                Abbrechen
-              </button>
-              <button
-                type="button"
-                onClick={handleExecuteResetStats}
-                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-extrabold rounded-lg text-xs shadow-sm transition-colors cursor-pointer"
-              >
-                Ja, zurücksetzen
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </div>
   );
 };
