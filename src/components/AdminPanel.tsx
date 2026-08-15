@@ -3567,20 +3567,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           dlAnchor.click();
         };
 
-        const handleClearAllWortschatz = () => {
+        const handleClearAllWortschatz = async () => {
           if (confirm('⚠️ ACHTUNG: Möchten Sie wirklich ALLE Einträge aus der Wortschatz-Datenbank löschen?\n\nTipp: Klicken Sie vorher auf "JSON Export", um ein Backup zu sichern.')) {
             if (confirm('Letzte Bestätigung: Soll die Wortschatz-Datenbank jetzt komplett geleert werden?')) {
               setWortschatzList([]);
-              if (onSaveWortschatz) onSaveWortschatz([]);
+              if (onSaveWortschatz) await onSaveWortschatz([]);
               alert('Wortschatz-Datenbank wurde vollständig geleert.');
             }
           }
         };
 
-        const handleResetToDefaultWortschatz = () => {
+        const handleResetToDefaultWortschatz = async () => {
           if (confirm(`Möchten Sie den Standard-Wortschatz (${DEFAULT_WORTSCHATZ_ITEMS.length} telc B2 Beruf Einträge) wiederherstellen?`)) {
             setWortschatzList(DEFAULT_WORTSCHATZ_ITEMS);
-            if (onSaveWortschatz) onSaveWortschatz(DEFAULT_WORTSCHATZ_ITEMS);
+            if (onSaveWortschatz) await onSaveWortschatz(DEFAULT_WORTSCHATZ_ITEMS);
             alert('Standard-Wortschatz erfolgreich wiederhergestellt!');
           }
         };

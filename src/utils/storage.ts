@@ -937,12 +937,12 @@ export async function seedInitialDataToSupabase(): Promise<void> {
 export function getWortschatzItemsLocal(): WortschatzItem[] {
   try {
     const raw = localStorage.getItem(KEYS.WORTSCHATZ_ITEMS);
-    if (!raw) {
+    if (raw === null) {
       localStorage.setItem(KEYS.WORTSCHATZ_ITEMS, JSON.stringify(DEFAULT_WORTSCHATZ_ITEMS));
       return DEFAULT_WORTSCHATZ_ITEMS;
     }
     const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed) && parsed.length > 0) {
+    if (Array.isArray(parsed)) {
       return parsed;
     }
     return DEFAULT_WORTSCHATZ_ITEMS;
@@ -974,7 +974,7 @@ export async function fetchWortschatzAsync(): Promise<WortschatzItem[]> {
       return local;
     }
 
-    if (data && Array.isArray(data) && data.length > 0) {
+    if (data && Array.isArray(data)) {
       const mapped: WortschatzItem[] = data.map((d: Record<string, unknown>) => ({
         id: String(d.id),
         term: String(d.term || ''),
@@ -1002,29 +1002,47 @@ export async function fetchWortschatzAsync(): Promise<WortschatzItem[]> {
   }
 }
 
-export async function saveWortschatzAsync(items: WortschatzItem[]): Promise<void> {
+export async function saveWortschatzAsync(items: WortschatzItem[]): Promise<{ success: boolean; error?: string }> {
   saveWortschatzItemsLocal(items);
-  if (!isSupabaseConfigured) return;
+  if (!isSupabaseConfigured) return { success: true };
 
   try {
+    const activeIds = new Set(items.map((wi) => String(wi.id)));
+    const { data: dbRows, error: fetchErr } = await supabase.from('wortschatz_items').select('id');
+    if (!fetchErr && dbRows && dbRows.length > 0) {
+      for (const row of dbRows) {
+        const idStr = String(row.id);
+        if (!activeIds.has(idStr)) {
+          await supabase.from('wortschatz_items').delete().eq('id', idStr);
+        }
+      }
+    }
+
     for (const wi of items) {
-      await supabase.from('wortschatz_items').upsert({
+      const { error: upsertErr } = await supabase.from('wortschatz_items').upsert({
         id: wi.id,
         term: wi.term,
         category: wi.category,
-        grammar: wi.grammar,
+        grammar: wi.grammar || null,
         simple_meaning: wi.simpleMeaning,
-        synonyms: wi.synonyms,
+        synonyms: wi.synonyms || null,
         example_sentence: wi.exampleSentence,
-        gap_example: wi.gapExample,
-        gap_answer: wi.gapAnswer,
-        gap_options: wi.gapOptions,
-        translations: wi.translations,
-        order_index: wi.orderIndex,
+        gap_example: wi.gapExample || null,
+        gap_answer: wi.gapAnswer || null,
+        gap_options: wi.gapOptions || null,
+        translations: wi.translations || {},
+        order_index: typeof wi.orderIndex === 'number' ? wi.orderIndex : 0,
       });
+
+      if (upsertErr) {
+        console.warn('Wortschatz upsert error:', upsertErr.message);
+      }
     }
-  } catch (e) {
+    return { success: true };
+  } catch (e: unknown) {
     console.error('Error syncing wortschatz to Supabase:', e);
+    const msg = e instanceof Error ? e.message : 'Supabase Sync Error';
+    return { success: false, error: msg };
   }
 }
 
