@@ -41,6 +41,7 @@ import {
   CheckCircle,
   AlertTriangle,
   RefreshCw,
+  ChevronRight,
   X,
   Users,
   UserCheck,
@@ -139,6 +140,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [wortschatzCatFilter, setWortschatzCatFilter] = useState<string>('all');
   const [showWortschatzModal, setShowWortschatzModal] = useState(false);
   const [editingWortschatzItem, setEditingWortschatzItem] = useState<WortschatzItem | null>(null);
+  const [importPendingItems, setImportPendingItems] = useState<WortschatzItem[] | null>(null);
 
   // Wortschatz Form Fields
   const [wsFormTerm, setWsFormTerm] = useState('');
@@ -3576,6 +3578,65 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           }
         };
 
+        const handleExecuteMergeImport = async (parsed: WortschatzItem[]) => {
+          const existingIds = new Set(wortschatzList.map((i) => i.id));
+          const existingTerms = new Set(wortschatzList.map((i) => (i.term || '').toLowerCase().trim()));
+
+          const processedNewItems: WortschatzItem[] = [];
+          for (let idx = 0; idx < parsed.length; idx++) {
+            const rawItem = parsed[idx];
+            if (!rawItem || !rawItem.term) continue;
+            const termKey = rawItem.term.toLowerCase().trim();
+            if (existingTerms.has(termKey)) {
+              // Same exact term already exists in list, skip duplicate
+              continue;
+            }
+            let uniqueId = rawItem.id;
+            if (!uniqueId || existingIds.has(uniqueId)) {
+              uniqueId = `ws-${rawItem.category || 'item'}-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 6)}`;
+            }
+            existingIds.add(uniqueId);
+            existingTerms.add(termKey);
+            processedNewItems.push({
+              ...rawItem,
+              id: uniqueId,
+            });
+          }
+
+          const nextList = [...wortschatzList, ...processedNewItems];
+          setWortschatzList(nextList);
+          setImportPendingItems(null);
+          if (onSaveWortschatz) {
+            const res = await onSaveWortschatz(nextList);
+            if (res && res.error) {
+              alert('⚠️ Hinweis: Lokal gespeichert, aber Supabase Cloud Sync meldet: ' + res.error);
+            }
+          }
+          alert(`Erfolgreich hinzugefügt! +${processedNewItems.length} neue Einträge hinzugefügt. Die Datenbank enthält jetzt insgesamt ${nextList.length} Einträge.`);
+        };
+
+        const handleExecuteReplaceImport = async (parsed: WortschatzItem[]) => {
+          const seenIds = new Set<string>();
+          const sanitizedList: WortschatzItem[] = parsed.map((item, idx) => {
+            let id = item.id;
+            if (!id || seenIds.has(id)) {
+              id = `ws-${item.category || 'item'}-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 6)}`;
+            }
+            seenIds.add(id);
+            return { ...item, id };
+          });
+
+          setWortschatzList(sanitizedList);
+          setImportPendingItems(null);
+          if (onSaveWortschatz) {
+            const res = await onSaveWortschatz(sanitizedList);
+            if (res && res.error) {
+              alert('⚠️ Hinweis: Lokal gespeichert, aber Supabase Cloud Sync meldet: ' + res.error);
+            }
+          }
+          alert(`Erfolgreich ersetzt! Die Wortschatz-Datenbank enthält jetzt ${sanitizedList.length} Einträge.`);
+        };
+
         const handleImportWortschatzJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
           const file = e.target.files?.[0];
           if (!file) return;
@@ -3583,37 +3644,20 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           reader.onload = async (event) => {
             try {
               const parsed = JSON.parse(event.target?.result as string);
-              if (Array.isArray(parsed)) {
-                const replace = confirm(
-                  `${parsed.length} Wortschatz-Einträge gefunden.\n\n` +
-                  `• OK = Bisherige Datenbank VOLLSTÄNDIG ERSETZEN (${parsed.length} Einträge)\n` +
-                  `• Abbrechen = Neue Einträge HINZUFÜGEN (Zusammenführen mit bestehenden ${wortschatzList.length})`
-                );
-                let nextList: WortschatzItem[];
-                if (replace) {
-                  nextList = parsed;
+              if (Array.isArray(parsed) && parsed.length > 0) {
+                if (wortschatzList.length === 0) {
+                  await handleExecuteReplaceImport(parsed);
                 } else {
-                  const existingIds = new Set(wortschatzList.map((i) => i.id));
-                  const newItems = parsed.filter((i) => !existingIds.has(i.id));
-                  nextList = [...wortschatzList, ...newItems];
+                  setImportPendingItems(parsed);
                 }
-                setWortschatzList(nextList);
-                if (onSaveWortschatz) {
-                  const res = await onSaveWortschatz(nextList);
-                  if (res && res.error) {
-                    alert('⚠️ Hinweis: Lokal gespeichert, aber Supabase Cloud Sync meldet: ' + res.error);
-                  }
-                }
-                alert(`Erfolgreich! Die Wortschatz-Datenbank enthält jetzt ${nextList.length} Einträge.`);
               } else {
-                alert('Ungültiges Format. Erwartet wird ein JSON-Array von WortschatzItem-Objekten.');
+                alert('Ungültiges Format. Erwartet wird ein nicht-leeres JSON-Array von WortschatzItem-Objekten.');
               }
             } catch (err) {
               alert('Fehler beim Parsen der JSON-Datei: ' + err);
             }
           };
           reader.readAsText(file);
-          // reset input value so re-importing the same file triggers onChange
           e.target.value = '';
         };
 
@@ -4097,6 +4141,77 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       </button>
                     </div>
                   </form>
+                </div>
+              </div>
+            )}
+
+            {/* Modal: Import Mode Choice (Merge vs Replace) */}
+            {importPendingItems && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
+                <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-700 w-full max-w-md space-y-5 shadow-2xl">
+                  <div className="flex items-center gap-3">
+                    <div className="p-3 bg-indigo-500/20 text-indigo-400 rounded-2xl border border-indigo-500/30">
+                      <Layers className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-white">Wortschatz-Import ({importPendingItems.length} Einträge)</h3>
+                      <p className="text-xs text-slate-400">
+                        Aktuell in der Datenbank: <span className="text-emerald-400 font-bold">{wortschatzList.length} Begriffe</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-slate-300">
+                    Wie möchten Sie die neuen <strong>{importPendingItems.length} Einträge</strong> importieren?
+                  </p>
+
+                  <div className="space-y-2.5">
+                    <button
+                      type="button"
+                      onClick={() => handleExecuteMergeImport(importPendingItems)}
+                      className="w-full p-3.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold rounded-2xl flex items-center justify-between transition-all cursor-pointer shadow-sm hover:scale-[1.01]"
+                    >
+                      <div className="flex items-center gap-2 text-left">
+                        <Plus className="w-4 h-4 shrink-0" />
+                        <div>
+                          <div>Hinzufügen & Zusammenführen (Merge)</div>
+                          <div className="text-[10px] font-normal text-emerald-200">
+                            Behält bestehende {wortschatzList.length} und fügt neue hinzu (Total: ~{wortschatzList.length + importPendingItems.length})
+                          </div>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 shrink-0" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (confirm(`Sind Sie sicher? Die bisherigen ${wortschatzList.length} Einträge werden komplett gelöscht und durch die neuen ${importPendingItems.length} ersetzt!`)) {
+                          handleExecuteReplaceImport(importPendingItems);
+                        }
+                      }}
+                      className="w-full p-3.5 bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/40 text-rose-300 text-xs font-extrabold rounded-2xl flex items-center justify-between transition-all cursor-pointer hover:scale-[1.01]"
+                    >
+                      <div className="flex items-center gap-2 text-left">
+                        <RefreshCw className="w-4 h-4 shrink-0" />
+                        <div>
+                          <div>Bisherige Datenbank ersetzen</div>
+                          <div className="text-[10px] font-normal text-rose-300/80">
+                            Löscht alte {wortschatzList.length} und speichert nur die neuen {importPendingItems.length}
+                          </div>
+                        </div>
+                      </div>
+                      <ChevronRight className="w-4 h-4 shrink-0" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setImportPendingItems(null)}
+                      className="w-full py-2.5 text-center text-xs font-bold text-slate-400 hover:text-white transition-colors cursor-pointer"
+                    >
+                      Abbrechen
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
