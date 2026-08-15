@@ -1424,8 +1424,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       </div>
 
       {/* Tier 1: Main Admin Hub Switcher */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-2 bg-slate-900/90 rounded-3xl border border-slate-800 shadow-xl">
-        <div className="flex items-center gap-1.5 p-1 bg-slate-950/80 rounded-2xl border border-slate-800 overflow-x-auto">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-2.5 bg-slate-900 rounded-3xl border border-slate-800 shadow-xl">
+        <div className="flex items-center gap-1.5 p-1 bg-slate-950 rounded-2xl border border-slate-800 overflow-x-auto">
           <button
             onClick={() => {
               setAdminHub('content');
@@ -1433,33 +1433,50 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 setActiveTab('modelltests');
               }
             }}
-            className={`px-5 py-2.5 rounded-xl font-extrabold text-xs transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
+            className={`px-5 py-2.5 rounded-xl font-black text-xs transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
               adminHub === 'content'
-                ? 'bg-gradient-to-r from-rose-600 to-amber-600 text-white shadow-lg shadow-rose-900/30'
-                : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
+                : 'text-slate-300 hover:text-white hover:bg-slate-800'
             }`}
           >
-            <BookOpen className="w-4 h-4" />
+            <BookOpen className="w-4 h-4 text-indigo-200" />
             <span>📚 Inhalte & Prüfungen</span>
-            <span className="px-1.5 py-0.5 bg-black/30 rounded text-[10px]">Content</span>
+            <span
+              className={`px-1.5 py-0.5 rounded text-[10px] font-extrabold ${
+                adminHub === 'content' ? 'bg-indigo-700 text-white' : 'bg-slate-800 text-slate-300'
+              }`}
+            >
+              Content
+            </span>
           </button>
 
           <button
             onClick={() => {
               setAdminHub('users_system');
-              if (activeTab === 'modelltests' || activeTab === 'forumsbeitrag' || activeTab === 'sprechen' || activeTab === 'wortschatz') {
+              if (
+                activeTab === 'modelltests' ||
+                activeTab === 'forumsbeitrag' ||
+                activeTab === 'sprechen' ||
+                activeTab === 'wortschatz'
+              ) {
                 setActiveTab('users');
               }
             }}
-            className={`px-5 py-2.5 rounded-xl font-extrabold text-xs transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
+            className={`px-5 py-2.5 rounded-xl font-black text-xs transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
               adminHub === 'users_system'
-                ? 'bg-gradient-to-r from-rose-600 to-amber-600 text-white shadow-lg shadow-rose-900/30'
-                : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
+                : 'text-slate-300 hover:text-white hover:bg-slate-800'
             }`}
           >
-            <Users className="w-4 h-4" />
+            <Users className="w-4 h-4 text-indigo-200" />
             <span>⚙️ Benutzer & App-Verwaltung</span>
-            <span className="px-1.5 py-0.5 bg-black/30 rounded text-[10px]">System</span>
+            <span
+              className={`px-1.5 py-0.5 rounded text-[10px] font-extrabold ${
+                adminHub === 'users_system' ? 'bg-indigo-700 text-white' : 'bg-slate-800 text-slate-300'
+              }`}
+            >
+              System
+            </span>
           </button>
         </div>
 
@@ -1467,13 +1484,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
           <button
             onClick={() => onSaveModelltests(modelltests)}
-            className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md cursor-pointer transition-all"
+            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-xl flex items-center gap-1.5 shadow-md cursor-pointer transition-all"
           >
-            <RefreshCw className="w-3.5 h-3.5" /> Mit Supabase синхронізація
+            <RefreshCw className="w-3.5 h-3.5" /> Mit Supabase synchronisieren
           </button>
           <button
             onClick={handleExportDataJSON}
-            className="px-3 py-2 glass-card hover:bg-slate-800 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 flex items-center gap-1.5 cursor-pointer transition-all"
+            className="px-3.5 py-2 glass-card hover:bg-slate-800 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 flex items-center gap-1.5 cursor-pointer transition-all"
           >
             <Download className="w-3.5 h-3.5" /> Backup (JSON)
           </button>
@@ -1482,65 +1499,79 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
       {/* Tier 2: Sub-Tabs based on selected Hub */}
       {adminHub === 'content' ? (
-        <div className="flex flex-wrap bg-slate-900/60 p-1.5 rounded-2xl border border-slate-800/80 text-xs gap-1.5">
+        <div className="flex flex-wrap bg-slate-900 p-1.5 rounded-2xl border border-slate-800 text-xs gap-1.5 shadow-sm">
           <button
             onClick={() => setActiveTab('modelltests')}
-            className={`px-4 py-2 rounded-xl font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-              activeTab === 'modelltests' ? 'bg-rose-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'
+            className={`px-4 py-2 rounded-xl font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'modelltests'
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'text-slate-300 hover:text-white hover:bg-slate-800'
             }`}
           >
             <FileText className="w-4 h-4" /> Modelltests & 12 Prüfungsteile ({modelltests.length})
           </button>
           <button
             onClick={() => setActiveTab('forumsbeitrag')}
-            className={`px-4 py-2 rounded-xl font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-              activeTab === 'forumsbeitrag' ? 'bg-rose-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'
+            className={`px-4 py-2 rounded-xl font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'forumsbeitrag'
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'text-slate-300 hover:text-white hover:bg-slate-800'
             }`}
           >
             <MessageSquare className="w-4 h-4" /> Schreiben (Q58 Forenbeiträge) ({forumsbeitragTopics.length})
           </button>
           <button
             onClick={() => setActiveTab('sprechen')}
-            className={`px-4 py-2 rounded-xl font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-              activeTab === 'sprechen' ? 'bg-rose-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'
+            className={`px-4 py-2 rounded-xl font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'sprechen'
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'text-slate-300 hover:text-white hover:bg-slate-800'
             }`}
           >
             <Mic className="w-4 h-4" /> Sprechen (Teil 2 & 3)
           </button>
           <button
             onClick={() => setActiveTab('wortschatz')}
-            className={`px-4 py-2 rounded-xl font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-              activeTab === 'wortschatz' ? 'bg-rose-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'
+            className={`px-4 py-2 rounded-xl font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'wortschatz'
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'text-slate-300 hover:text-white hover:bg-slate-800'
             }`}
           >
-            <Layers className="w-4 h-4" /> Wortschatz-Datenbank (In Vorbereitung)
+            <Layers className="w-4 h-4" /> Wortschatz & NVV Datenbank ({wortschatzList.length})
           </button>
         </div>
       ) : (
-        <div className="flex flex-wrap bg-slate-900/60 p-1.5 rounded-2xl border border-slate-800/80 text-xs gap-1.5">
+        <div className="flex flex-wrap bg-slate-900 p-1.5 rounded-2xl border border-slate-800 text-xs gap-1.5 shadow-sm">
           <button
             onClick={() => setActiveTab('users')}
-            className={`px-4 py-2 rounded-xl font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-              activeTab === 'users' ? 'bg-rose-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'
+            className={`px-4 py-2 rounded-xl font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'users'
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'text-slate-300 hover:text-white hover:bg-slate-800'
             }`}
           >
             <Users className="w-4 h-4" /> Benutzer-Verwaltung ({usersList.length})
           </button>
           <button
             onClick={() => setActiveTab('promocodes')}
-            className={`px-4 py-2 rounded-xl font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-              activeTab === 'promocodes' ? 'bg-rose-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'
+            className={`px-4 py-2 rounded-xl font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'promocodes'
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'text-slate-300 hover:text-white hover:bg-slate-800'
             }`}
           >
             <Key className="w-4 h-4" /> Gutscheincodes ({promoCodes.length})
           </button>
           <button
             onClick={() => setActiveTab('system')}
-            className={`px-4 py-2 rounded-xl font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-              activeTab === 'system' ? 'bg-rose-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'
+            className={`px-4 py-2 rounded-xl font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'system'
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'text-slate-300 hover:text-white hover:bg-slate-800'
             }`}
           >
-            <Shield className="w-4 h-4" /> System-Backup & Cloud-Sync
+            <Shield className="w-4 h-4" /> System & Supabase Status
           </button>
         </div>
       )}

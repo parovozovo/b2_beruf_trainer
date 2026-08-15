@@ -8,7 +8,6 @@ import {
   LogIn,
   Sun,
   Moon,
-  ShieldCheck,
   Menu,
   X,
   Settings,
@@ -57,40 +56,41 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* GERMAN PROFESSIONAL LOGO BADGE */}
           <div
             onClick={() => handleTabClick('dashboard')}
-            className="flex items-center gap-2 sm:gap-3 cursor-pointer group shrink-0 min-w-0"
+            className="flex items-center gap-2.5 sm:gap-3 cursor-pointer group shrink-0 min-w-0"
           >
-            {/* German Badge Icon */}
-            <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-900 border border-slate-700 shadow-md flex flex-col items-center justify-center overflow-hidden group-hover:scale-105 transition-transform shrink-0">
+            {/* Premium B2+ Emblem */}
+            <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-slate-900 border border-slate-700/80 shadow-md flex flex-col items-center justify-center overflow-hidden group-hover:scale-105 transition-transform shrink-0">
               {/* German Micro-Flag Top Accent Strip */}
-              <div className="w-full h-1 flex">
+              <div className="w-full h-1 flex shrink-0">
                 <div className="flex-1 bg-slate-950" />
                 <div className="flex-1 bg-red-600" />
                 <div className="flex-1 bg-amber-400" />
               </div>
-              <div className="flex items-center justify-center flex-1 w-full text-amber-400 font-extrabold text-xs sm:text-sm tracking-tighter">
-                <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 inline mr-0.5" /> B2
+              <div className="flex items-center justify-center flex-1 w-full text-white font-black text-xs sm:text-sm tracking-tight">
+                <span className="text-amber-400 font-extrabold mr-0.5">B2</span>
+                <span className="text-indigo-400 font-black">+</span>
               </div>
             </div>
 
             <div className="min-w-0">
-              <div className="flex items-center gap-1 sm:gap-1.5">
+              <div className="flex items-center gap-1.5">
                 <span
-                  className={`font-extrabold text-sm sm:text-base tracking-tight truncate transition-colors ${
+                  className={`font-black text-sm sm:text-base tracking-tight truncate transition-colors ${
                     isDark ? 'text-white group-hover:text-indigo-300' : 'text-slate-900 group-hover:text-indigo-600'
                   }`}
                 >
-                  Beruf B2 Trainer
+                  Beruf B2+
                 </span>
-                <span className="hidden sm:inline-block px-1.5 py-0.2 bg-amber-500/20 text-amber-600 dark:text-amber-300 border border-amber-500/30 rounded text-[9px] font-extrabold uppercase tracking-wider">
-                  DEUTSCH
+                <span className="hidden sm:inline-block px-1.5 py-0.2 bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 rounded text-[9px] font-black uppercase tracking-wider">
+                  Trainer
                 </span>
               </div>
               <span
-                className={`hidden sm:block text-[10px] font-bold tracking-wider uppercase truncate ${
+                className={`hidden sm:block text-[10px] font-bold tracking-wider truncate ${
                   isDark ? 'text-slate-400' : 'text-slate-500'
                 }`}
               >
-                Prüfungssimulator B2 Beruf
+                telc / BAMF Vorbereitung
               </span>
             </div>
           </div>
@@ -105,7 +105,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               onClick={() => handleTabClick('dashboard')}
               className={`px-3.5 py-1.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
                 currentTab === 'dashboard'
-                  ? 'bg-indigo-600 text-white shadow-md'
+                  ? 'bg-indigo-600 text-white shadow-md font-extrabold'
                   : isDark
                   ? 'text-slate-400 hover:text-white hover:bg-slate-800'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
@@ -118,7 +118,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               onClick={() => handleTabClick('tile_practice')}
               className={`px-3.5 py-1.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
                 currentTab === 'tile_practice'
-                  ? 'bg-indigo-600 text-white shadow-md'
+                  ? 'bg-indigo-600 text-white shadow-md font-extrabold'
                   : isDark
                   ? 'text-slate-400 hover:text-white hover:bg-slate-800'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
@@ -131,7 +131,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               onClick={() => handleTabClick('full_exam')}
               className={`px-3.5 py-1.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
                 currentTab === 'full_exam'
-                  ? 'bg-indigo-600 text-white shadow-md'
+                  ? 'bg-indigo-600 text-white shadow-md font-extrabold'
                   : isDark
                   ? 'text-slate-400 hover:text-white hover:bg-slate-800'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
@@ -144,7 +144,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               onClick={() => handleTabClick('schreiben')}
               className={`px-3.5 py-1.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
                 currentTab === 'schreiben'
-                  ? 'bg-indigo-600 text-white shadow-md'
+                  ? 'bg-indigo-600 text-white shadow-md font-extrabold'
                   : isDark
                   ? 'text-slate-400 hover:text-white hover:bg-slate-800'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
@@ -157,7 +157,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               onClick={() => handleTabClick('sprechen')}
               className={`px-3.5 py-1.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
                 currentTab === 'sprechen'
-                  ? 'bg-indigo-600 text-white shadow-md'
+                  ? 'bg-indigo-600 text-white shadow-md font-extrabold'
                   : isDark
                   ? 'text-slate-400 hover:text-white hover:bg-slate-800'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
@@ -168,18 +168,15 @@ export const Navbar: React.FC<NavbarProps> = ({
 
             <button
               onClick={() => handleTabClick('wortschatz')}
-              className={`px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
                 currentTab === 'wortschatz'
-                  ? 'bg-indigo-600 text-white shadow-md'
+                  ? 'bg-indigo-600 text-white shadow-md font-extrabold'
                   : isDark
                   ? 'text-slate-400 hover:text-white hover:bg-slate-800'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
               }`}
             >
-              <span>Wortschatz</span>
-              <span className="px-1.5 py-0.2 bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 rounded text-[9px] font-extrabold">
-                Neu
-              </span>
+              <BookOpen className="w-3.5 h-3.5" /> Wortschatz
             </button>
           </nav>
 
@@ -361,9 +358,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               <div>
                 <div className="font-extrabold text-sm flex items-center gap-2">
                   Wortschatz & NVV
-                  <span className="px-1.5 py-0.2 bg-amber-500/20 text-amber-700 dark:text-amber-300 rounded text-[9px] font-extrabold">
-                    Neu
-                  </span>
                 </div>
                 <div className="text-[11px] opacity-75 font-normal">Interaktive Karteikarten & Branchenvokabeln</div>
               </div>
