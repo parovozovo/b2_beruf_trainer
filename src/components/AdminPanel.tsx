@@ -46,6 +46,8 @@ import {
   Crown,
   Search,
   Gift,
+  BookOpen,
+  Layers,
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../utils/supabase';
 import {
@@ -122,7 +124,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   sprechenTopics,
   onSaveSprechenTopics,
 }) => {
-  const [activeTab, setActiveTab] = useState<'modelltests' | 'promocodes' | 'forumsbeitrag' | 'sprechen' | 'users'>('modelltests');
+  const [adminHub, setAdminHub] = useState<'content' | 'users_system'>('content');
+  const [activeTab, setActiveTab] = useState<'modelltests' | 'promocodes' | 'forumsbeitrag' | 'sprechen' | 'wortschatz' | 'users' | 'system'>('modelltests');
 
   // User Management State
   const [usersList, setUsersList] = useState<User[]>(() => getRegisteredUsersLocal());
@@ -1381,71 +1384,129 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             </p>
           </div>
         </div>
+      </div>
 
-        {/* Action Controls: Sync / Export / Import */}
-        <div className="flex items-center gap-2">
+      {/* Tier 1: Main Admin Hub Switcher */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-2 bg-slate-900/90 rounded-3xl border border-slate-800 shadow-xl">
+        <div className="flex items-center gap-1.5 p-1 bg-slate-950/80 rounded-2xl border border-slate-800 overflow-x-auto">
+          <button
+            onClick={() => {
+              setAdminHub('content');
+              if (activeTab === 'users' || activeTab === 'promocodes' || activeTab === 'system') {
+                setActiveTab('modelltests');
+              }
+            }}
+            className={`px-5 py-2.5 rounded-xl font-extrabold text-xs transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
+              adminHub === 'content'
+                ? 'bg-gradient-to-r from-rose-600 to-amber-600 text-white shadow-lg shadow-rose-900/30'
+                : 'text-slate-400 hover:text-white hover:bg-slate-900'
+            }`}
+          >
+            <BookOpen className="w-4 h-4" />
+            <span>📚 Inhalte & Prüfungen</span>
+            <span className="px-1.5 py-0.5 bg-black/30 rounded text-[10px]">Content</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setAdminHub('users_system');
+              if (activeTab === 'modelltests' || activeTab === 'forumsbeitrag' || activeTab === 'sprechen' || activeTab === 'wortschatz') {
+                setActiveTab('users');
+              }
+            }}
+            className={`px-5 py-2.5 rounded-xl font-extrabold text-xs transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
+              adminHub === 'users_system'
+                ? 'bg-gradient-to-r from-rose-600 to-amber-600 text-white shadow-lg shadow-rose-900/30'
+                : 'text-slate-400 hover:text-white hover:bg-slate-900'
+            }`}
+          >
+            <Users className="w-4 h-4" />
+            <span>⚙️ Benutzer & App-Verwaltung</span>
+            <span className="px-1.5 py-0.5 bg-black/30 rounded text-[10px]">System</span>
+          </button>
+        </div>
+
+        {/* Global Quick Actions */}
+        <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
           <button
             onClick={() => onSaveModelltests(modelltests)}
-            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md"
+            className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-md cursor-pointer transition-all"
           >
             <RefreshCw className="w-3.5 h-3.5" /> Mit Supabase синхронізація
           </button>
           <button
             onClick={handleExportDataJSON}
-            className="px-3 py-1.5 glass-card hover:bg-slate-800 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 flex items-center gap-1.5"
+            className="px-3 py-2 glass-card hover:bg-slate-800 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 flex items-center gap-1.5 cursor-pointer transition-all"
           >
             <Download className="w-3.5 h-3.5" /> Backup (JSON)
           </button>
-          <label className="px-3 py-1.5 glass-card hover:bg-slate-800 text-indigo-300 text-xs font-semibold rounded-xl border border-slate-700 flex items-center gap-1.5 cursor-pointer">
-            <Upload className="w-3.5 h-3.5" /> Import (JSON)
-            <input type="file" accept=".json" onChange={handleImportDataJSON} className="hidden" />
-          </label>
         </div>
       </div>
 
-      {/* Subnav Tabs */}
-      <div className="flex flex-wrap bg-slate-900/80 p-1.5 rounded-2xl border border-slate-800 text-xs gap-1">
-        <button
-          onClick={() => setActiveTab('modelltests')}
-          className={`px-4 py-2 rounded-xl font-bold transition-all ${
-            activeTab === 'modelltests' ? 'bg-rose-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          <FileText className="w-4 h-4 inline mr-1.5" /> Modelltests & 12 Prüfungsteile
-        </button>
-        <button
-          onClick={() => setActiveTab('promocodes')}
-          className={`px-4 py-2 rounded-xl font-bold transition-all ${
-            activeTab === 'promocodes' ? 'bg-rose-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          <Key className="w-4 h-4 inline mr-1.5" /> Gutscheincodes
-        </button>
-        <button
-          onClick={() => setActiveTab('forumsbeitrag')}
-          className={`px-4 py-2 rounded-xl font-bold transition-all ${
-            activeTab === 'forumsbeitrag' ? 'bg-rose-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          <MessageSquare className="w-4 h-4 inline mr-1.5" /> Schreiben (Q58 Forenbeiträge)
-        </button>
-        <button
-          onClick={() => setActiveTab('sprechen')}
-          className={`px-4 py-2 rounded-xl font-bold transition-all ${
-            activeTab === 'sprechen' ? 'bg-rose-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          <Mic className="w-4 h-4 inline mr-1.5" /> Sprechen (Teil 2 & 3)
-        </button>
-        <button
-          onClick={() => setActiveTab('users')}
-          className={`px-4 py-2 rounded-xl font-bold transition-all ${
-            activeTab === 'users' ? 'bg-rose-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          <Users className="w-4 h-4 inline mr-1.5" /> Benutzer-Verwaltung
-        </button>
-      </div>
+      {/* Tier 2: Sub-Tabs based on selected Hub */}
+      {adminHub === 'content' ? (
+        <div className="flex flex-wrap bg-slate-900/60 p-1.5 rounded-2xl border border-slate-800/80 text-xs gap-1.5">
+          <button
+            onClick={() => setActiveTab('modelltests')}
+            className={`px-4 py-2 rounded-xl font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'modelltests' ? 'bg-rose-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'
+            }`}
+          >
+            <FileText className="w-4 h-4" /> Modelltests & 12 Prüfungsteile ({modelltests.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('forumsbeitrag')}
+            className={`px-4 py-2 rounded-xl font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'forumsbeitrag' ? 'bg-rose-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'
+            }`}
+          >
+            <MessageSquare className="w-4 h-4" /> Schreiben (Q58 Forenbeiträge) ({forumsbeitragTopics.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('sprechen')}
+            className={`px-4 py-2 rounded-xl font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'sprechen' ? 'bg-rose-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'
+            }`}
+          >
+            <Mic className="w-4 h-4" /> Sprechen (Teil 2 & 3)
+          </button>
+          <button
+            onClick={() => setActiveTab('wortschatz')}
+            className={`px-4 py-2 rounded-xl font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'wortschatz' ? 'bg-rose-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'
+            }`}
+          >
+            <Layers className="w-4 h-4" /> Wortschatz-Datenbank (In Vorbereitung)
+          </button>
+        </div>
+      ) : (
+        <div className="flex flex-wrap bg-slate-900/60 p-1.5 rounded-2xl border border-slate-800/80 text-xs gap-1.5">
+          <button
+            onClick={() => setActiveTab('users')}
+            className={`px-4 py-2 rounded-xl font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'users' ? 'bg-rose-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'
+            }`}
+          >
+            <Users className="w-4 h-4" /> Benutzer-Verwaltung ({usersList.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('promocodes')}
+            className={`px-4 py-2 rounded-xl font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'promocodes' ? 'bg-rose-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'
+            }`}
+          >
+            <Key className="w-4 h-4" /> Gutscheincodes ({promoCodes.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('system')}
+            className={`px-4 py-2 rounded-xl font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'system' ? 'bg-rose-600 text-white shadow-md' : 'text-slate-400 hover:text-white hover:bg-slate-800'
+            }`}
+          >
+            <Shield className="w-4 h-4" /> System-Backup & Cloud-Sync
+          </button>
+        </div>
+      )}
 
       {/* MODELLTESTS & VARIANTS MANAGEMENT TAB */}
       {activeTab === 'modelltests' && (
@@ -3306,6 +3367,125 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* WORTSCHATZ DATABASE ADMIN TAB (IN VORBEREITUNG) */}
+      {activeTab === 'wortschatz' && (
+        <div className="space-y-6 animate-fadeIn">
+          <div className="glass-panel p-6 rounded-3xl border border-slate-800 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-indigo-500/20 text-indigo-300 rounded-2xl border border-indigo-500/40">
+                <Layers className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  Wortschatz- & NVV-Verwaltung
+                  <span className="px-2.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full text-[10px] font-bold">
+                    🚀 In Vorbereitung
+                  </span>
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Zentrale Verwaltung für Nomen-Verb-Verbindungen, berufsbezogene Fachbegriffe und digitale Karteikarten.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+              <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-1.5">
+                <div className="text-xs font-bold text-indigo-400">1. Nomen-Verb-Verbindungen</div>
+                <p className="text-[11px] text-slate-400">
+                  Strukturierte Tabelle mit Wendung, einfacher Entsprechung, Beispielsatz und Kontextkategorie.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-1.5">
+                <div className="text-xs font-bold text-emerald-400">2. Branchen-Fachpakete</div>
+                <p className="text-[11px] text-slate-400">
+                  Büro, Medizin/Pflege, Technik/Handwerk, Logistik/Handel mit Fachbegriffen & Definitionen.
+                </p>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-1.5">
+                <div className="text-xs font-bold text-amber-400">3. Spaced-Repetition Decks</div>
+                <p className="text-[11px] text-slate-400">
+                  Karteikarten-Algorithmus zur intelligenten Wiederholung nach Lernfortschritt des Nutzers.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 bg-indigo-950/30 border border-indigo-500/30 rounded-2xl text-xs text-indigo-300">
+              💡 <strong>Hinweis für Admin:</strong> Der Wortschatz-Editor wird in Kürze freigeschaltet. Die Benutzeroberfläche im Frontend zeigt den Nutzern bereits eine interaktive Vorschau und sammelt Vormerkungen.
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SYSTEM & CLOUD BACKUP TAB */}
+      {activeTab === 'system' && (
+        <div className="space-y-6 animate-fadeIn">
+          <div className="glass-panel p-6 rounded-3xl border border-slate-800 space-y-5">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-emerald-500/20 text-emerald-300 rounded-2xl border border-emerald-500/40">
+                <Shield className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-white">System-Status, Cloud-Sync & Backups</h3>
+                <p className="text-xs text-slate-400">
+                  Überwachen Sie die Supabase-Cloudverbindung und exportieren/importieren Sie vollständige Datenbank-Snapshots.
+                </p>
+              </div>
+            </div>
+
+            {/* Cloud Status Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+              <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-white flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4 text-emerald-400" /> Supabase Cloud-Datenbank
+                  </span>
+                  <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 rounded text-[10px] font-bold">
+                    Aktiv Verbunden
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-400 space-y-1">
+                  <div>• <strong>Modelltests:</strong> {modelltests.length} Prüfungen mit 12 Teilen</div>
+                  <div>• <strong>Q58 Forenbeiträge:</strong> {forumsbeitragTopics.length} Themen</div>
+                  <div>• <strong>Sprechen (Teil 2 & 3):</strong> {sprechenTopics.sprecher2Topics.length + sprechenTopics.sprecher3Situations.length} Themen</div>
+                  <div>• <strong>Gutscheincodes:</strong> {promoCodes.length} Codes</div>
+                  <div>• <strong>Registrierte Benutzer:</strong> {usersList.length} Konten</div>
+                </div>
+                <button
+                  onClick={() => onSaveModelltests(modelltests)}
+                  className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" /> Jetzt vollständige Synchronisation erzwingen
+                </button>
+              </div>
+
+              {/* Backup & Restore Card */}
+              <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3">
+                <span className="text-xs font-bold text-white flex items-center gap-2">
+                  <Download className="w-4 h-4 text-indigo-400" /> Vollständiges JSON-Backup
+                </span>
+                <p className="text-[11px] text-slate-400">
+                  Laden Sie eine vollständige Sicherungskopie aller Tests, Aufgaben, Audios, Benutzer und Gutscheine auf Ihren Computer herunter.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-2 pt-2">
+                  <button
+                    onClick={handleExportDataJSON}
+                    className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Download className="w-3.5 h-3.5" /> Backup herunterladen
+                  </button>
+                  <label className="flex-1 py-2.5 glass-card hover:bg-slate-800 text-indigo-300 text-xs font-bold rounded-xl border border-slate-700 flex items-center justify-center gap-1.5 cursor-pointer transition-all">
+                    <Upload className="w-3.5 h-3.5" /> Backup wiederherstellen
+                    <input type="file" accept=".json" onChange={handleImportDataJSON} className="hidden" />
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

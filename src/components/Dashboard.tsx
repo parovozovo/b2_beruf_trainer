@@ -223,9 +223,33 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
             <button
               onClick={() => onSelectMode('sprechen')}
-              className="w-full py-3.5 px-5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all"
+              className="w-full py-3.5 px-5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
             >
               Sprechen-Trainer öffnen <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Card 5: Wortschatz & Nomen-Verb-Verbindungen (In Vorbereitung) */}
+          <div className="md:col-span-2 glass-panel p-6 sm:p-8 rounded-3xl border-2 border-indigo-500/40 hover:border-indigo-500/80 transition-all space-y-4 shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 bg-gradient-to-r from-indigo-950/30 via-slate-900/60 to-slate-950">
+            <div className="space-y-2 max-w-2xl">
+              <div className="flex items-center gap-2">
+                <span className="px-3 py-1 bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-full text-xs font-bold flex items-center gap-1.5 animate-pulse">
+                  <Sparkles className="w-3.5 h-3.5" /> In Vorbereitung
+                </span>
+                <span className="text-xs text-slate-400 font-medium">B2 Beruf Spezial</span>
+              </div>
+              <h3 className="text-2xl font-black text-slate-900 dark:text-white">
+                Wortschatz & Nomen-Verb-Verbindungen 📚
+              </h3>
+              <p className="text-sm text-slate-700 dark:text-slate-300 font-medium leading-relaxed">
+                Interaktive Karteikarten, 600+ berufsbezogene Fachbegriffe nach Branchen und feste Wendungen für maximale Punkte im Schreib- und Sprechteil.
+              </p>
+            </div>
+            <button
+              onClick={() => onSelectMode('wortschatz')}
+              className="w-full sm:w-auto py-3.5 px-6 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg transition-all shrink-0 cursor-pointer"
+            >
+              Vorschau & Karteikarten ansehen <ArrowRight className="w-4 h-4" />
             </button>
           </div>
         </div>

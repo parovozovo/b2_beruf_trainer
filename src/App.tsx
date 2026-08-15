@@ -36,6 +36,8 @@ import { FullExamMode } from './components/FullExamMode';
 import { SchreibenModule } from './components/SchreibenModule';
 import { SprechenModule } from './components/SprechenModule';
 import { AdminPanel } from './components/AdminPanel';
+import { SettingsPage } from './components/SettingsPage';
+import { WortschatzModule } from './components/WortschatzModule';
 import { LoginModal } from './components/LoginModal';
 import { PromoModal } from './components/PromoModal';
 import { PremiumLockedModal } from './components/PremiumLockedModal';
@@ -519,9 +521,37 @@ export function App() {
           <SprechenModule sprechenTopics={sprechenTopics} />
         )}
 
+        {currentTab === 'wortschatz' && (
+          <WortschatzModule
+            currentUser={currentUser}
+            onOpenLoginModal={() => setIsLoginModalOpen(true)}
+            onOpenPremiumLockedModal={() => setIsPremiumLockedModalOpen(true)}
+            onSelectTab={setCurrentTab}
+          />
+        )}
+
+        {currentTab === 'settings' && (
+          <SettingsPage
+            currentUser={currentUser}
+            onLogout={handleLogout}
+            onOpenLoginModal={() => setIsLoginModalOpen(true)}
+            onNavigateToAdmin={() => {
+              setCurrentTab('admin');
+              window.location.hash = 'admin-beruf';
+            }}
+            onSelectTab={setCurrentTab}
+            promoCodes={promoCodes}
+            onRedeemPromoCode={handleRedeemPromoCode}
+            theme={theme}
+            onToggleTheme={handleToggleTheme}
+            tileResults={tileResults}
+            fullExamResults={fullExamResults}
+          />
+        )}
+
         {currentTab === 'admin' && (
           <div>
-            {currentUser?.role === 'admin' ? (
+            {currentUser && currentUser.role === 'admin' && isAdminEmail(currentUser.email) ? (
               <AdminPanel
                 modelltests={modelltests}
                 onSaveModelltests={handleSaveModelltests}
@@ -534,13 +564,13 @@ export function App() {
               />
             ) : (
               <div className="glass-panel p-10 rounded-3xl text-center max-w-md mx-auto my-12 border border-rose-500/30 space-y-4">
-                <h3 className="text-xl font-bold text-white">Zugriff verweigert</h3>
+                <h3 className="text-xl font-bold text-white">Zugriff verweigert 🔒</h3>
                 <p className="text-xs text-slate-400">
-                  Sie müssen als Administrator (luck34y@yahoo.com) angemeldet sein, um diesen Bereich zu öffnen.
+                  Sie müssen als autorisierter Administrator angemeldet sein, um diesen Verwaltungsbereich zu öffnen.
                 </p>
                 <button
                   onClick={() => setIsLoginModalOpen(true)}
-                  className="px-6 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs shadow-lg"
+                  className="px-6 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs shadow-lg cursor-pointer transition-all"
                 >
                   Als Admin anmelden
                 </button>
