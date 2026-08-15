@@ -62,7 +62,6 @@ import {
   isFreeTrialEnabled,
   setFreeTrialEnabled,
 } from '../utils/storage';
-import { DEFAULT_WORTSCHATZ_ITEMS } from '../data/defaultWortschatz';
 
 interface AdminPanelProps {
   modelltests: Modelltest[];
@@ -3577,14 +3576,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           }
         };
 
-        const handleResetToDefaultWortschatz = async () => {
-          if (confirm(`Möchten Sie den Standard-Wortschatz (${DEFAULT_WORTSCHATZ_ITEMS.length} telc B2 Beruf Einträge) wiederherstellen?`)) {
-            setWortschatzList(DEFAULT_WORTSCHATZ_ITEMS);
-            if (onSaveWortschatz) await onSaveWortschatz(DEFAULT_WORTSCHATZ_ITEMS);
-            alert('Standard-Wortschatz erfolgreich wiederhergestellt!');
-          }
-        };
-
         const handleImportWortschatzJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
           const file = e.target.files?.[0];
           if (!file) return;
@@ -3679,14 +3670,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     title="Als JSON-Datei exportieren"
                   >
                     <Download className="w-3.5 h-3.5" /> JSON Export
-                  </button>
-
-                  <button
-                    onClick={handleResetToDefaultWortschatz}
-                    className="px-3 py-2 glass-card hover:bg-slate-800 text-amber-300 text-xs font-bold rounded-xl border border-amber-500/40 hover:border-amber-500 transition-all flex items-center gap-1.5 cursor-pointer"
-                    title="Standard-Wortschatz mit 70 B2-Beruf Einträgen wiederherstellen"
-                  >
-                    <RotateCcw className="w-3.5 h-3.5 text-amber-400" /> Standard laden
                   </button>
 
                   <button

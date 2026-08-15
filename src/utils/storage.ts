@@ -1,6 +1,5 @@
 import type { User, UserRole, PromoCode, Modelltest, ForumsbeitragTopic, WrittenEssayRecord, FullExamResult, TileResult, WortschatzItem } from '../types';
 import { INITIAL_PROMO_CODES, INITIAL_FORUMSBEITRAG_TOPICS, INITIAL_MODELLTESTS, INITIAL_SPRECHEN_TOPICS } from '../data/initialData';
-import { DEFAULT_WORTSCHATZ_ITEMS } from '../data/defaultWortschatz';
 import { supabase, isSupabaseConfigured } from './supabase';
 
 const KEYS = {
@@ -910,23 +909,6 @@ export async function seedInitialDataToSupabase(): Promise<void> {
         is_premium: fb.isPremium,
       });
     }
-
-    for (const wi of DEFAULT_WORTSCHATZ_ITEMS) {
-      await supabase.from('wortschatz_items').upsert({
-        id: wi.id,
-        term: wi.term,
-        category: wi.category,
-        grammar: wi.grammar,
-        simple_meaning: wi.simpleMeaning,
-        synonyms: wi.synonyms,
-        example_sentence: wi.exampleSentence,
-        gap_example: wi.gapExample,
-        gap_answer: wi.gapAnswer,
-        gap_options: wi.gapOptions,
-        translations: wi.translations,
-        order_index: wi.orderIndex,
-      });
-    }
   } catch (e) {
     console.error('Seed error:', e);
   }
@@ -938,16 +920,15 @@ export function getWortschatzItemsLocal(): WortschatzItem[] {
   try {
     const raw = localStorage.getItem(KEYS.WORTSCHATZ_ITEMS);
     if (raw === null) {
-      localStorage.setItem(KEYS.WORTSCHATZ_ITEMS, JSON.stringify(DEFAULT_WORTSCHATZ_ITEMS));
-      return DEFAULT_WORTSCHATZ_ITEMS;
+      return [];
     }
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) {
       return parsed;
     }
-    return DEFAULT_WORTSCHATZ_ITEMS;
+    return [];
   } catch {
-    return DEFAULT_WORTSCHATZ_ITEMS;
+    return [];
   }
 }
 
@@ -1007,6 +988,16 @@ export async function saveWortschatzAsync(items: WortschatzItem[]): Promise<{ su
   if (!isSupabaseConfigured) return { success: true };
 
   try {
+    if (items.length === 0) {
+      const { data: dbRows } = await supabase.from('wortschatz_items').select('id');
+      if (dbRows && dbRows.length > 0) {
+        for (const row of dbRows) {
+          await supabase.from('wortschatz_items').delete().eq('id', String(row.id));
+        }
+      }
+      return { success: true };
+    }
+
     const activeIds = new Set(items.map((wi) => String(wi.id)));
     const { data: dbRows, error: fetchErr } = await supabase.from('wortschatz_items').select('id');
     if (!fetchErr && dbRows && dbRows.length > 0) {
