@@ -14,6 +14,7 @@ import {
   Shield,
 } from 'lucide-react';
 import type { User } from '../types';
+import { AppLogo } from './AppLogo';
 
 interface NavbarProps {
   currentTab: string;
@@ -53,46 +54,19 @@ export const Navbar: React.FC<NavbarProps> = ({
         }`}
       >
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-4 overflow-hidden">
-          {/* GERMAN PROFESSIONAL LOGO BADGE */}
+          {/* BRAND LOGO & TITLE */}
           <div
             onClick={() => handleTabClick('dashboard')}
-            className="flex items-center gap-2.5 sm:gap-3 cursor-pointer group shrink-0 min-w-0"
+            className="flex items-center gap-3 cursor-pointer group shrink-0 min-w-0"
           >
-            {/* Premium B2+ Emblem */}
-            <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-slate-900 border border-slate-700/80 shadow-md flex flex-col items-center justify-center overflow-hidden group-hover:scale-105 transition-transform shrink-0">
-              {/* German Micro-Flag Top Accent Strip */}
-              <div className="w-full h-1 flex shrink-0">
-                <div className="flex-1 bg-slate-950" />
-                <div className="flex-1 bg-red-600" />
-                <div className="flex-1 bg-amber-400" />
-              </div>
-              <div className="flex items-center justify-center flex-1 w-full text-white font-black text-xs sm:text-sm tracking-tight">
-                <span className="text-amber-400 font-extrabold mr-0.5">B2</span>
-                <span className="text-indigo-400 font-black">+</span>
-              </div>
-            </div>
-
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span
-                  className={`font-black text-sm sm:text-base tracking-tight truncate transition-colors ${
-                    isDark ? 'text-white group-hover:text-indigo-300' : 'text-slate-900 group-hover:text-indigo-600'
-                  }`}
-                >
-                  Beruf B2+
-                </span>
-                <span className="hidden sm:inline-block px-1.5 py-0.2 bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 rounded text-[9px] font-black uppercase tracking-wider">
-                  Trainer
-                </span>
-              </div>
-              <span
-                className={`hidden sm:block text-[10px] font-bold tracking-wider truncate ${
-                  isDark ? 'text-slate-400' : 'text-slate-500'
-                }`}
-              >
-                telc / BAMF Vorbereitung
-              </span>
-            </div>
+            <AppLogo size={38} />
+            <span
+              className={`font-black text-base sm:text-lg tracking-tight truncate transition-colors ${
+                isDark ? 'text-white group-hover:text-indigo-300' : 'text-slate-900 group-hover:text-indigo-600'
+              }`}
+            >
+              Beruf B2+ Trainer
+            </span>
           </div>
 
           {/* Center Navigation Tabs (Desktop) */}
