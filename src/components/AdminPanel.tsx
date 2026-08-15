@@ -1424,8 +1424,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       </div>
 
       {/* Tier 1: Main Admin Hub Switcher */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-2.5 bg-slate-900 rounded-3xl border border-slate-800 shadow-xl">
-        <div className="flex items-center gap-1.5 p-1 bg-slate-950 rounded-2xl border border-slate-800 overflow-x-auto">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-2 bg-slate-100 dark:bg-slate-900 rounded-2xl border border-slate-300 dark:border-slate-800 shadow-sm">
+        <div className="flex items-center gap-1.5 p-1 bg-white dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 overflow-x-auto">
           <button
             onClick={() => {
               setAdminHub('content');
@@ -1433,17 +1433,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 setActiveTab('modelltests');
               }
             }}
-            className={`px-5 py-2.5 rounded-xl font-black text-xs transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
+            className={`px-4 py-2 rounded-lg font-extrabold text-xs transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
               adminHub === 'content'
-                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
-                : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
-            <BookOpen className="w-4 h-4 text-indigo-200" />
+            <BookOpen className="w-4 h-4" />
             <span>📚 Inhalte & Prüfungen</span>
             <span
-              className={`px-1.5 py-0.5 rounded text-[10px] font-extrabold ${
-                adminHub === 'content' ? 'bg-indigo-700 text-white' : 'bg-slate-800 text-slate-300'
+              className={`px-1.5 py-0.5 rounded text-[10px] font-black ${
+                adminHub === 'content' ? 'bg-indigo-700 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
               }`}
             >
               Content
@@ -1462,17 +1462,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 setActiveTab('users');
               }
             }}
-            className={`px-5 py-2.5 rounded-xl font-black text-xs transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
+            className={`px-4 py-2 rounded-lg font-extrabold text-xs transition-all flex items-center gap-2 cursor-pointer shrink-0 ${
               adminHub === 'users_system'
-                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
-                : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
-            <Users className="w-4 h-4 text-indigo-200" />
+            <Users className="w-4 h-4" />
             <span>⚙️ Benutzer & App-Verwaltung</span>
             <span
-              className={`px-1.5 py-0.5 rounded text-[10px] font-extrabold ${
-                adminHub === 'users_system' ? 'bg-indigo-700 text-white' : 'bg-slate-800 text-slate-300'
+              className={`px-1.5 py-0.5 rounded text-[10px] font-black ${
+                adminHub === 'users_system' ? 'bg-indigo-700 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
               }`}
             >
               System
@@ -1484,13 +1484,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
           <button
             onClick={() => onSaveModelltests(modelltests)}
-            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-xl flex items-center gap-1.5 shadow-md cursor-pointer transition-all"
+            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-lg flex items-center gap-1.5 shadow-sm cursor-pointer transition-colors"
           >
             <RefreshCw className="w-3.5 h-3.5" /> Mit Supabase synchronisieren
           </button>
           <button
             onClick={handleExportDataJSON}
-            className="px-3.5 py-2 glass-card hover:bg-slate-800 text-slate-200 text-xs font-bold rounded-xl border border-slate-700 flex items-center gap-1.5 cursor-pointer transition-all"
+            className="px-3.5 py-2 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold rounded-lg border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 cursor-pointer transition-colors"
           >
             <Download className="w-3.5 h-3.5" /> Backup (JSON)
           </button>
@@ -1499,76 +1499,76 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
       {/* Tier 2: Sub-Tabs based on selected Hub */}
       {adminHub === 'content' ? (
-        <div className="flex flex-wrap bg-slate-900 p-1.5 rounded-2xl border border-slate-800 text-xs gap-1.5 shadow-sm">
+        <div className="flex flex-wrap bg-slate-100 dark:bg-slate-900 p-1.5 rounded-xl border border-slate-300 dark:border-slate-800 text-xs gap-1.5 shadow-sm">
           <button
             onClick={() => setActiveTab('modelltests')}
-            className={`px-4 py-2 rounded-xl font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'modelltests'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
             }`}
           >
             <FileText className="w-4 h-4" /> Modelltests & 12 Prüfungsteile ({modelltests.length})
           </button>
           <button
             onClick={() => setActiveTab('forumsbeitrag')}
-            className={`px-4 py-2 rounded-xl font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'forumsbeitrag'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
             }`}
           >
             <MessageSquare className="w-4 h-4" /> Schreiben (Q58 Forenbeiträge) ({forumsbeitragTopics.length})
           </button>
           <button
             onClick={() => setActiveTab('sprechen')}
-            className={`px-4 py-2 rounded-xl font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'sprechen'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
             }`}
           >
             <Mic className="w-4 h-4" /> Sprechen (Teil 2 & 3)
           </button>
           <button
             onClick={() => setActiveTab('wortschatz')}
-            className={`px-4 py-2 rounded-xl font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'wortschatz'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
             }`}
           >
             <Layers className="w-4 h-4" /> Wortschatz & NVV Datenbank ({wortschatzList.length})
           </button>
         </div>
       ) : (
-        <div className="flex flex-wrap bg-slate-900 p-1.5 rounded-2xl border border-slate-800 text-xs gap-1.5 shadow-sm">
+        <div className="flex flex-wrap bg-slate-100 dark:bg-slate-900 p-1.5 rounded-xl border border-slate-300 dark:border-slate-800 text-xs gap-1.5 shadow-sm">
           <button
             onClick={() => setActiveTab('users')}
-            className={`px-4 py-2 rounded-xl font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'users'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
             }`}
           >
             <Users className="w-4 h-4" /> Benutzer-Verwaltung ({usersList.length})
           </button>
           <button
             onClick={() => setActiveTab('promocodes')}
-            className={`px-4 py-2 rounded-xl font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'promocodes'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
             }`}
           >
             <Key className="w-4 h-4" /> Gutscheincodes ({promoCodes.length})
           </button>
           <button
             onClick={() => setActiveTab('system')}
-            className={`px-4 py-2 rounded-xl font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+            className={`px-3.5 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               activeTab === 'system'
-                ? 'bg-indigo-600 text-white shadow-md'
-                : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
             }`}
           >
             <Shield className="w-4 h-4" /> System & Supabase Status
@@ -2445,38 +2445,38 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           </div>
 
           {/* LIST OF EXISTING MODELLTESTS & QUICK PROPERTIES EDIT */}
-          <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
-            <h3 className="text-base font-bold text-white">Vorhandene Modelltests ({modelltests.length})</h3>
+          <div className="glass-panel p-6 rounded-xl border border-slate-200 dark:border-slate-800 space-y-4">
+            <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Vorhandene Modelltests ({modelltests.length})</h3>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               {modelltests.map((mt) => (
-                <div key={mt.id} className="p-4 bg-slate-900/60 rounded-xl border border-slate-800 space-y-3">
+                <div key={mt.id} className="p-4 bg-slate-50 dark:bg-slate-900/90 rounded-xl border border-slate-200 dark:border-slate-800 space-y-3">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-extrabold text-base text-white">{mt.title}</span>
+                        <span className="font-black text-base text-slate-900 dark:text-white">{mt.title}</span>
                         {mt.isPremium ? (
-                          <span className="px-2 py-0.5 bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded text-[10px] font-bold">
+                          <span className="px-2 py-0.5 bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/40 rounded text-[10px] font-black">
                             PREMIUM
                           </span>
                         ) : (
-                          <span className="px-2 py-0.5 bg-slate-800 text-slate-400 rounded text-[10px] font-bold">
+                          <span className="px-2 py-0.5 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded text-[10px] font-bold">
                             KOSTENLOS
                           </span>
                         )}
                         {mt.isHidden && (
-                          <span className="px-2 py-0.5 bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded text-[10px] font-bold">
+                          <span className="px-2 py-0.5 bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/40 rounded text-[10px] font-bold">
                             VERSTECKT
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-slate-400 mt-1">{mt.description}</p>
+                      <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">{mt.description}</p>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
                       <button
                         onClick={() => setEditingModelltest(mt)}
-                        className="px-3 py-1.5 bg-indigo-600/30 text-indigo-300 hover:bg-indigo-600/50 rounded-lg text-xs font-semibold flex items-center gap-1 border border-indigo-500/40"
+                        className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-sm transition-colors cursor-pointer"
                       >
                         <Edit3 className="w-3.5 h-3.5" /> Bearbeiten
                       </button>
@@ -2484,7 +2484,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       <button
                         type="button"
                         onClick={() => handleExportSingleModelltestJSON(mt)}
-                        className="px-3 py-1.5 glass-card hover:bg-slate-800 text-emerald-300 text-xs font-semibold rounded-lg border border-emerald-500/40 flex items-center gap-1"
+                        className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold rounded-lg border border-slate-300 dark:border-slate-700 flex items-center gap-1 transition-colors cursor-pointer"
                         title="Diesen Modelltest als JSON exportieren"
                       >
                         <Download className="w-3.5 h-3.5" /> Export (JSON)
@@ -2492,8 +2492,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
                       <button
                         onClick={() => handleToggleModelltestPremium(mt.id)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
-                          mt.isPremium ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'glass-card text-slate-400'
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                          mt.isPremium ? 'bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/40' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700'
                         }`}
                       >
                         {mt.isPremium ? '✓ Premium' : 'Zu Premium'}
@@ -2501,8 +2501,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
                       <button
                         onClick={() => handleToggleModelltestHidden(mt.id)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold ${
-                          mt.isHidden ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40' : 'glass-card text-slate-400'
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                          mt.isHidden ? 'bg-rose-500/20 text-rose-800 dark:text-rose-300 border border-rose-500/40' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700'
                         }`}
                       >
                         {mt.isHidden ? <EyeOff className="w-3.5 h-3.5 inline mr-1" /> : <Eye className="w-3.5 h-3.5 inline mr-1" />}
@@ -2511,7 +2511,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
                       <button
                         onClick={() => handleDeleteModelltest(mt.id)}
-                        className="p-1.5 text-rose-400 hover:text-rose-300"
+                        className="p-1.5 text-rose-500 hover:text-rose-700 transition-colors cursor-pointer"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -2519,8 +2519,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   </div>
 
                   {/* QUICK JUMP LINKS FOR TILES OF THIS MODELLTEST */}
-                  <div className="pt-2 border-t border-slate-800/80 flex flex-wrap gap-1.5 text-[11px]">
-                    <span className="text-slate-500 font-bold self-center mr-1">Teile bearbeiten:</span>
+                  <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex flex-wrap gap-1.5 text-[11px]">
+                    <span className="text-slate-500 dark:text-slate-400 font-bold self-center mr-1">Teile bearbeiten:</span>
                     {[
                       'lesen_1',
                       'lesen_2',
@@ -2541,7 +2541,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         <button
                           key={t}
                           onClick={() => handleJumpToEditTile(mt.id, t as TileType)}
-                          className="px-2 py-0.5 bg-slate-950/80 hover:bg-indigo-600/30 text-slate-300 rounded border border-slate-800 font-mono"
+                          className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 hover:bg-indigo-600 hover:text-white text-slate-700 dark:text-slate-300 rounded border border-slate-300 dark:border-slate-700 font-mono transition-colors cursor-pointer"
                         >
                           {t} ({vCount})
                         </button>

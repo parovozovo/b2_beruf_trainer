@@ -102,6 +102,25 @@
   color: #0f172a !important;
 }
 
+/* Light Theme Button Hovers & Neutral Elements (Prevent dark hover on light background) */
+.light-theme .hover\:bg-slate-800:hover,
+.light-theme .hover\:bg-slate-900:hover,
+.light-theme .hover\:bg-slate-950:hover {
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+.light-theme .hover\:text-white:hover {
+  color: #0f172a !important;
+}
+
+.light-theme button.bg-indigo-600:hover,
+.light-theme button.bg-emerald-600:hover,
+.light-theme button.bg-rose-600:hover,
+.light-theme button.bg-indigo-700:hover {
+  color: #ffffff !important;
+}
+
 /* =========================================================================
    DARK THEME: Restrained Charcoal, Slate & Electric Indigo Accents
    ========================================================================= */

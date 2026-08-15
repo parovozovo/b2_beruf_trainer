@@ -328,15 +328,19 @@ export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
       </div>
 
       {/* Main Editor Interface */}
-      {activeTopic && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Left Column: Context, E-Mails & Task Prompt (5 cols) */}
-          <div className="lg:col-span-5 space-y-4">
-            {/* Premium Lock Banner if topic is locked */}
-            {!isPremiumUser &&
-              taskType === 'forumsbeitrag' &&
-              allForumsTopics.findIndex((t) => t.id === activeTopic.id) >= FREE_FORUM_TOPICS_COUNT && (
-                <div className="p-4 bg-amber-500/15 border-2 border-amber-500/40 rounded-2xl space-y-2.5 text-xs text-amber-900 dark:text-amber-200 animate-fadeIn">
+      {activeTopic && (() => {
+        const isCurrentTopicLocked =
+          !isPremiumUser &&
+          taskType === 'forumsbeitrag' &&
+          allForumsTopics.findIndex((t) => t.id === activeTopic.id) >= FREE_FORUM_TOPICS_COUNT;
+
+        return (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            {/* Left Column: Context, E-Mails & Task Prompt (5 cols) */}
+            <div className="lg:col-span-5 space-y-4">
+              {/* Premium Lock Banner if topic is locked */}
+              {isCurrentTopicLocked && (
+                <div className="p-4 bg-amber-500/15 border-2 border-amber-500/40 rounded-xl space-y-2.5 text-xs text-amber-900 dark:text-amber-200 animate-fadeIn">
                   <div className="flex items-center gap-2 font-black text-sm">
                     <Lock className="w-4 h-4 text-amber-500 shrink-0" />
                     <span>Premium-Thema (Freischalten)</span>
@@ -346,175 +350,211 @@ export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
                   </p>
                   <button
                     onClick={onOpenPremiumLockedModal}
-                    className="w-full py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black rounded-xl shadow-md flex items-center justify-center gap-1.5 cursor-pointer text-xs"
+                    className="w-full py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black rounded-lg shadow-md flex items-center justify-center gap-1.5 cursor-pointer text-xs transition-all"
                   >
                     <Crown className="w-4 h-4" /> Alle Themen mit Premium freischalten
                   </button>
                 </div>
               )}
 
-            <div className="glass-panel p-5 rounded-2xl border border-slate-300 dark:border-slate-800 space-y-4 shadow-sm">
-              <div className="flex items-center justify-between gap-2 flex-wrap pb-2 border-b border-slate-200 dark:border-slate-800">
-                <span className="px-3 py-1 bg-pink-500/10 text-pink-600 dark:text-pink-400 rounded-lg text-xs font-extrabold border border-pink-500/20">
-                  {taskType === 'beschwerde' ? 'Frage 21: Beschwerdebrief' : 'Frage 58: Forenbeitrag'}
-                </span>
-                <span className="text-xs font-extrabold text-slate-800 dark:text-slate-200">
-                  {activeTopic.title}
-                </span>
-              </div>
-
-              {/* ORIGINAL E-MAILS (FOR BESCHWERDEBRIEF) */}
-              {taskType === 'beschwerde' && activeTopic.emailsText ? (
-                <div className="space-y-1.5">
-                  <h4 className="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <FileText className="w-4 h-4" /> E-Mail-Korrespondenz (Ausgangstext):
-                  </h4>
-                  <div className="p-4 bg-slate-100 dark:bg-slate-900/90 rounded-2xl text-xs sm:text-sm text-slate-900 dark:text-slate-100 font-sans leading-relaxed max-h-72 overflow-y-auto border border-slate-300 dark:border-slate-800 shadow-inner">
-                    <FormattedText text={activeTopic.emailsText} />
-                  </div>
+              <div className="glass-panel p-5 rounded-xl border border-slate-200 dark:border-slate-800 space-y-4 shadow-sm">
+                <div className="flex items-center justify-between gap-2 flex-wrap pb-2 border-b border-slate-200 dark:border-slate-800">
+                  <span className="px-3 py-1 bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 rounded-lg text-xs font-black border border-indigo-500/20">
+                    {taskType === 'beschwerde' ? 'Frage 21: Beschwerdebrief' : 'Frage 58: Forenbeitrag'}
+                  </span>
+                  <span className="text-xs font-black text-slate-900 dark:text-slate-100">
+                    {activeTopic.title}
+                  </span>
                 </div>
-              ) : null}
 
-              {/* AUFGABENSTELLUNG: HELD UNDER SPOILER FOR BESCHWERDEBRIEF (Q21), ALWAYS VISIBLE FOR FORENBEITRAG (Q58) */}
-              {taskType === 'beschwerde' ? (
-                <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
-                  <button
-                    type="button"
-                    onClick={() => setShowBeschwerdePrompt(!showBeschwerdePrompt)}
-                    className="w-full text-xs font-black text-pink-600 dark:text-pink-400 hover:underline flex items-center justify-between p-3 rounded-xl bg-pink-500/10 border border-pink-500/20 transition-all"
-                  >
-                    <span className="flex items-center gap-2">
-                      <BookOpen className="w-4 h-4" /> Aufgabenstellung & Leitpunkte (Frage 21)
-                    </span>
-                    <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showBeschwerdePrompt ? 'rotate-180' : ''}`} />
-                  </button>
+                {/* ORIGINAL E-MAILS (FOR BESCHWERDEBRIEF) */}
+                {taskType === 'beschwerde' && activeTopic.emailsText ? (
+                  <div className="space-y-1.5">
+                    <h4 className="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <FileText className="w-4 h-4" /> E-Mail-Korrespondenz (Ausgangstext):
+                    </h4>
+                    <div className="p-4 bg-slate-100 dark:bg-slate-900/90 rounded-xl text-xs sm:text-sm text-slate-900 dark:text-slate-100 font-serif leading-relaxed max-h-72 overflow-y-auto border border-slate-300 dark:border-slate-800 shadow-inner">
+                      <FormattedText text={activeTopic.emailsText} />
+                    </div>
+                  </div>
+                ) : null}
 
-                  {showBeschwerdePrompt && (
-                    <div className="mt-2.5 p-4 bg-pink-500/10 dark:bg-pink-950/30 rounded-2xl border-2 border-pink-500/30 text-xs sm:text-sm text-slate-900 dark:text-slate-100 font-semibold leading-relaxed whitespace-pre-wrap shadow-sm">
+                {/* AUFGABENSTELLUNG */}
+                {isCurrentTopicLocked ? (
+                  <div className="p-5 bg-amber-500/10 rounded-xl border border-amber-500/30 text-center space-y-2.5">
+                    <div className="w-9 h-9 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto border border-amber-500/30">
+                      <Lock className="w-4 h-4" />
+                    </div>
+                    <h4 className="font-black text-xs text-slate-900 dark:text-white">Aufgabenstellung gesperrt</h4>
+                    <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed max-w-sm mx-auto">
+                      Die Aufgabenstellung und Leitpunkte für dieses Thema stehen exklusiv im Premium-Paket zur Verfügung.
+                    </p>
+                  </div>
+                ) : taskType === 'beschwerde' ? (
+                  <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
+                    <button
+                      type="button"
+                      onClick={() => setShowBeschwerdePrompt(!showBeschwerdePrompt)}
+                      className="w-full text-xs font-black text-indigo-600 dark:text-indigo-400 hover:underline flex items-center justify-between p-3 rounded-lg bg-indigo-500/10 border border-indigo-500/20 transition-all cursor-pointer"
+                    >
+                      <span className="flex items-center gap-2">
+                        <BookOpen className="w-4 h-4" /> Aufgabenstellung & Leitpunkte (Frage 21)
+                      </span>
+                      <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${showBeschwerdePrompt ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {showBeschwerdePrompt && (
+                      <div className="mt-2.5 p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-xs sm:text-sm text-slate-900 dark:text-slate-100 font-serif leading-relaxed whitespace-pre-wrap shadow-sm">
+                        {activeTopic.promptText}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  /* FORENBEITRAG Q58 PROMPT IS VISIBLE ONLY IF UNLOCKED */
+                  <div className="space-y-2 pt-1">
+                    <h4 className="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+                      📝 Aufgabenstellung & Themenbeschreibung (Frage 58):
+                    </h4>
+                    <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-xs sm:text-sm text-slate-900 dark:text-slate-100 font-serif leading-relaxed whitespace-pre-wrap shadow-sm">
                       {activeTopic.promptText}
                     </div>
-                  )}
+                  </div>
+                )}
+
+                {/* LIVE TIMER BAR */}
+                <div className="pt-2 flex items-center justify-between text-xs font-mono text-amber-600 dark:text-amber-400 bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">
+                  <span className="flex items-center gap-1.5 font-black text-slate-900 dark:text-slate-200">
+                    <Timer className="w-4.5 h-4.5 text-amber-500" /> Verbleibende Prüfungszeit:
+                  </span>
+                  <span className="text-base font-extrabold bg-slate-900 text-amber-400 px-3.5 py-1 rounded-lg border border-slate-800 shadow-sm">
+                    {formatTimer(secondsRemaining)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Live Text Metrics Panel */}
+              <div className="glass-panel p-4 rounded-xl border border-slate-200 dark:border-slate-800 grid grid-cols-3 gap-2 text-center text-xs">
+                <div>
+                  <div className="text-slate-500 dark:text-slate-400 font-extrabold text-[11px]">Wörter</div>
+                  <div className="text-lg font-black text-indigo-600 dark:text-indigo-400 font-mono">{wordCount}</div>
+                </div>
+                <div className="border-x border-slate-200 dark:border-slate-800">
+                  <div className="text-slate-500 dark:text-slate-400 font-extrabold text-[11px]">Zeichen</div>
+                  <div className="text-lg font-black text-slate-900 dark:text-white font-mono">{charCount}</div>
+                </div>
+                <div>
+                  <div className="text-slate-500 dark:text-slate-400 font-extrabold text-[11px]">Zeilen</div>
+                  <div className="text-lg font-black text-indigo-600 dark:text-indigo-400 font-mono">{lineCount}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Writing Area + Progress Bar + Redemittel (7 cols) */}
+            <div className="lg:col-span-7 space-y-4">
+              {isCurrentTopicLocked ? (
+                <div className="glass-panel p-10 rounded-xl border-2 border-dashed border-amber-500/40 text-center space-y-4 flex flex-col items-center justify-center min-h-[400px]">
+                  <div className="w-16 h-16 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-500/30 shadow-md">
+                    <Crown className="w-8 h-8" />
+                  </div>
+                  <div className="space-y-1.5 max-w-md">
+                    <h3 className="text-lg font-black text-slate-900 dark:text-white">
+                      Thema {allForumsTopics.findIndex((t) => t.id === activeTopic.id) + 1} ist ein Premium-Inhalt
+                    </h3>
+                    <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                      Der Schreibeditor und die automatische Korrektur für dieses Thema sind für Premium-Mitglieder reserviert.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={onOpenPremiumLockedModal}
+                    className="px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black rounded-xl text-xs shadow-lg inline-flex items-center gap-2 cursor-pointer transition-all"
+                  >
+                    <Crown className="w-4 h-4" /> Jetzt Premium aktivieren
+                  </button>
                 </div>
               ) : (
-                /* FORENBEITRAG Q58 PROMPT IS ALWAYS VISIBLE */
-                <div className="space-y-2 pt-1">
-                  <h4 className="text-xs font-black text-pink-600 dark:text-pink-400 uppercase tracking-wider flex items-center gap-1.5">
-                    📝 Aufgabenstellung & Themenbeschreibung (Frage 58):
-                  </h4>
-                  <div className="p-4 bg-pink-500/10 dark:bg-pink-950/30 rounded-2xl border-2 border-pink-500/30 text-xs sm:text-sm text-slate-900 dark:text-slate-100 font-semibold leading-relaxed whitespace-pre-wrap shadow-sm">
-                    {activeTopic.promptText}
+                <div className="glass-panel p-5 rounded-xl border border-slate-200 dark:border-slate-800 space-y-4 shadow-sm flex flex-col justify-between">
+                  {/* VISUAL WORD COUNT PROGRESS BAR */}
+                  <div className="space-y-1.5 p-3 bg-slate-100 dark:bg-slate-900/80 rounded-xl border border-slate-200 dark:border-slate-800 shadow-inner">
+                    <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                      <span className="font-black text-slate-800 dark:text-slate-200">
+                        📊 Wortanzahl-Fortschritt (Ziel: 150–200 Wörter):
+                      </span>
+                      <span className={`px-2.5 py-0.5 rounded-lg font-black text-[11px] border ${progressBadge.color}`}>
+                        {progressBadge.text} ({wordCount} / {targetMinWords})
+                      </span>
+                    </div>
+                    <div className="w-full bg-slate-200 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden p-0.5 border border-slate-300 dark:border-slate-700">
+                      <div
+                        className={`h-full rounded-full transition-all duration-300 ${
+                          wordCount >= 150
+                            ? 'bg-gradient-to-r from-emerald-500 to-teal-400'
+                            : wordCount >= 100
+                            ? 'bg-gradient-to-r from-sky-500 to-blue-500'
+                            : 'bg-gradient-to-r from-amber-500 to-orange-400'
+                        }`}
+                        style={{ width: `${wordProgressPercent}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Textarea */}
+                  <div className="space-y-2">
+                    <textarea
+                      value={userText}
+                      onChange={(e) => setUserText(e.target.value)}
+                      rows={15}
+                      placeholder={
+                        taskType === 'beschwerde'
+                          ? 'Sehr geehrte Frau Schneider / Sehr geehrte Damen und Herren,\n\nich beziehe mich auf Ihre E-Mail bezüglich...'
+                          : 'Sehr geehrte Foren-Mitglieder / Liebe Kolleginnen und Kollegen,\n\nich habe Ihren Beitrag zum Thema gelesen und möchte mich dazu äußern...'
+                      }
+                      className="w-full p-4 glass-input rounded-xl text-sm font-sans leading-relaxed focus:ring-2 focus:ring-indigo-500 border border-slate-300 dark:border-slate-700 min-h-[350px]"
+                    />
+                  </div>
+
+                  {/* Actions Bar */}
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleSaveEssay}
+                        className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-lg text-xs sm:text-sm flex items-center gap-2 shadow-sm transition-colors cursor-pointer"
+                      >
+                        <CheckCircle2 className="w-4 h-4" /> Arbeit speichern
+                      </button>
+
+                      <button
+                        onClick={handleCopyText}
+                        className="px-4 py-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-extrabold rounded-lg text-xs sm:text-sm flex items-center gap-2 border border-slate-300 dark:border-slate-700 transition-colors cursor-pointer"
+                      >
+                        {copied ? (
+                          <>
+                            <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Kopiert!
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-4 h-4" /> Text kopieren
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    <button
+                      onClick={() => setUserText('')}
+                      className="text-xs font-extrabold text-slate-500 hover:text-rose-500 transition-colors flex items-center gap-1 cursor-pointer"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" /> Text leeren
+                    </button>
                   </div>
                 </div>
               )}
-
-              {/* LIVE TIMER BAR */}
-              <div className="pt-2 flex items-center justify-between text-xs font-mono text-amber-600 dark:text-amber-400 bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">
-                <span className="flex items-center gap-1.5 font-black text-slate-900 dark:text-slate-200">
-                  <Timer className="w-4.5 h-4.5 text-amber-500" /> Verbleibende Prüfungszeit:
-                </span>
-                <span className="text-base font-extrabold bg-slate-900 text-amber-400 px-3.5 py-1 rounded-lg border border-slate-800 shadow-sm">
-                  {formatTimer(secondsRemaining)}
-                </span>
-              </div>
-            </div>
-
-            {/* Live Text Metrics Panel */}
-            <div className="glass-panel p-4 rounded-2xl border border-slate-300 dark:border-slate-800 grid grid-cols-3 gap-2 text-center text-xs">
-              <div>
-                <div className="text-slate-500 dark:text-slate-400 font-extrabold text-[11px]">Wörter</div>
-                <div className="text-lg font-black text-pink-600 dark:text-pink-400 font-mono">{wordCount}</div>
-              </div>
-              <div className="border-x border-slate-200 dark:border-slate-800">
-                <div className="text-slate-500 dark:text-slate-400 font-extrabold text-[11px]">Zeichen</div>
-                <div className="text-lg font-black text-slate-900 dark:text-white font-mono">{charCount}</div>
-              </div>
-              <div>
-                <div className="text-slate-500 dark:text-slate-400 font-extrabold text-[11px]">Zeilen</div>
-                <div className="text-lg font-black text-indigo-600 dark:text-indigo-400 font-mono">{lineCount}</div>
-              </div>
             </div>
           </div>
-
-          {/* Right Column: Writing Area + Progress Bar + Redemittel (7 cols) */}
-          <div className="lg:col-span-7 space-y-4">
-            <div className="glass-panel p-5 rounded-2xl border border-slate-300 dark:border-slate-800 space-y-4 shadow-sm flex flex-col justify-between">
-              
-              {/* IDEA 2: VISUAL WORD COUNT PROGRESS BAR */}
-              <div className="space-y-1.5 p-3.5 bg-slate-100 dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-inner">
-                <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-                  <span className="font-black text-slate-800 dark:text-slate-200">
-                    📊 Wortanzahl-Fortschritt (Ziel: 150–200 Wörter):
-                  </span>
-                  <span className={`px-2.5 py-0.5 rounded-lg font-black text-[11px] border ${progressBadge.color}`}>
-                    {progressBadge.text} ({wordCount} / {targetMinWords})
-                  </span>
-                </div>
-                <div className="w-full bg-slate-200 dark:bg-slate-800 h-3 rounded-full overflow-hidden p-0.5 border border-slate-300 dark:border-slate-700">
-                  <div
-                    className={`h-full rounded-full transition-all duration-300 ${
-                      wordCount >= 150 ? 'bg-gradient-to-r from-emerald-500 to-teal-400' : wordCount >= 100 ? 'bg-gradient-to-r from-sky-500 to-blue-500' : 'bg-gradient-to-r from-amber-500 to-orange-400'
-                    }`}
-                    style={{ width: `${wordProgressPercent}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Textarea */}
-              <div className="space-y-2">
-                <textarea
-                  value={userText}
-                  onChange={(e) => setUserText(e.target.value)}
-                  rows={15}
-                  placeholder={
-                    taskType === 'beschwerde'
-                      ? 'Sehr geehrte Frau Schneider / Sehr geehrte Damen und Herren,\n\nich beziehe mich auf Ihre E-Mail bezüglich...'
-                      : 'Sehr geehrte Foren-Mitglieder / Liebe Kolleginnen und Kollegen,\n\nich habe Ihren Beitrag zum Thema gelesen und möchte mich dazu äußern...'
-                  }
-                  className="w-full p-4 glass-input rounded-2xl text-sm font-sans leading-relaxed focus:ring-2 focus:ring-pink-500 border border-slate-300 dark:border-slate-700 min-h-[350px]"
-                />
-              </div>
-
-              {/* Actions Bar */}
-              <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-200 dark:border-slate-800">
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleSaveEssay}
-                    className="px-5 py-2.5 bg-pink-600 hover:bg-pink-700 text-white font-black rounded-xl text-xs sm:text-sm flex items-center gap-2 shadow-md transition-colors"
-                  >
-                    <CheckCircle2 className="w-4 h-4" /> Arbeit speichern
-                  </button>
-
-                  <button
-                    onClick={handleCopyText}
-                    className="px-4 py-2.5 glass-card hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 font-extrabold rounded-xl text-xs sm:text-sm flex items-center gap-2 border border-slate-300 dark:border-slate-700 transition-colors"
-                  >
-                    {copied ? (
-                      <>
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400" /> Kopiert!
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="w-4 h-4" /> Text kopieren
-                      </>
-                    )}
-                  </button>
-                </div>
-
-                <button
-                  onClick={() => setUserText('')}
-                  className="text-xs font-extrabold text-slate-500 hover:text-rose-500 transition-colors flex items-center gap-1"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" /> Text leeren
-                </button>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* History of Saved Essays */}
-      <div className="glass-panel p-6 rounded-2xl border border-slate-300 dark:border-slate-800 space-y-4 shadow-sm">
+      <div className="glass-panel p-6 rounded-xl border border-slate-200 dark:border-slate-800 space-y-4 shadow-sm">
         <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
           <History className="w-5 h-5 text-indigo-500" /> Gespeicherte Arbeiten ({history.length})
         </h3>
