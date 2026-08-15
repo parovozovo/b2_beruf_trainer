@@ -62,6 +62,7 @@ import {
   isFreeTrialEnabled,
   setFreeTrialEnabled,
 } from '../utils/storage';
+import { DEFAULT_WORTSCHATZ_ITEMS } from '../data/defaultWortschatz';
 
 interface AdminPanelProps {
   modelltests: Modelltest[];
@@ -3534,6 +3535,24 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           dlAnchor.click();
         };
 
+        const handleClearAllWortschatz = () => {
+          if (confirm('⚠️ ACHTUNG: Möchten Sie wirklich ALLE Einträge aus der Wortschatz-Datenbank löschen?\n\nTipp: Klicken Sie vorher auf "JSON Export", um ein Backup zu sichern.')) {
+            if (confirm('Letzte Bestätigung: Soll die Wortschatz-Datenbank jetzt komplett geleert werden?')) {
+              setWortschatzList([]);
+              if (onSaveWortschatz) onSaveWortschatz([]);
+              alert('Wortschatz-Datenbank wurde vollständig geleert.');
+            }
+          }
+        };
+
+        const handleResetToDefaultWortschatz = () => {
+          if (confirm(`Möchten Sie den Standard-Wortschatz (${DEFAULT_WORTSCHATZ_ITEMS.length} telc B2 Beruf Einträge) wiederherstellen?`)) {
+            setWortschatzList(DEFAULT_WORTSCHATZ_ITEMS);
+            if (onSaveWortschatz) onSaveWortschatz(DEFAULT_WORTSCHATZ_ITEMS);
+            alert('Standard-Wortschatz erfolgreich wiederhergestellt!');
+          }
+        };
+
         const handleImportWortschatzJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
           const file = e.target.files?.[0];
           if (!file) return;
@@ -3542,11 +3561,22 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             try {
               const parsed = JSON.parse(event.target?.result as string);
               if (Array.isArray(parsed)) {
-                if (confirm(`${parsed.length} Wortschatz-Einträge importieren?`)) {
-                  setWortschatzList(parsed);
-                  if (onSaveWortschatz) onSaveWortschatz(parsed);
-                  alert('Wortschatz-Datenbank erfolgreich aktualisiert!');
+                const replace = confirm(
+                  `${parsed.length} Wortschatz-Einträge gefunden.\n\n` +
+                  `• OK = Bisherige Datenbank VOLLSTÄNDIG ERSETZEN (${parsed.length} Einträge)\n` +
+                  `• Abbrechen = Neue Einträge HINZUFÜGEN (Zusammenführen mit bestehenden ${wortschatzList.length})`
+                );
+                let nextList: WortschatzItem[];
+                if (replace) {
+                  nextList = parsed;
+                } else {
+                  const existingIds = new Set(wortschatzList.map((i) => i.id));
+                  const newItems = parsed.filter((i) => !existingIds.has(i.id));
+                  nextList = [...wortschatzList, ...newItems];
                 }
+                setWortschatzList(nextList);
+                if (onSaveWortschatz) onSaveWortschatz(nextList);
+                alert(`Erfolgreich! Die Wortschatz-Datenbank enthält jetzt ${nextList.length} Einträge.`);
               } else {
                 alert('Ungültiges Format. Erwartet wird ein JSON-Array von WortschatzItem-Objekten.');
               }
@@ -3555,6 +3585,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             }
           };
           reader.readAsText(file);
+          // reset input value so re-importing the same file triggers onChange
+          e.target.value = '';
         };
 
         const filteredWortschatz = wortschatzList.filter((item) => {
@@ -3612,6 +3644,22 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     title="Als JSON-Datei exportieren"
                   >
                     <Download className="w-3.5 h-3.5" /> JSON Export
+                  </button>
+
+                  <button
+                    onClick={handleResetToDefaultWortschatz}
+                    className="px-3 py-2 glass-card hover:bg-slate-800 text-amber-300 text-xs font-bold rounded-xl border border-amber-500/40 hover:border-amber-500 transition-all flex items-center gap-1.5 cursor-pointer"
+                    title="Standard-Wortschatz mit 70 B2-Beruf Einträgen wiederherstellen"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5 text-amber-400" /> Standard laden
+                  </button>
+
+                  <button
+                    onClick={handleClearAllWortschatz}
+                    className="px-3 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 text-xs font-bold rounded-xl border border-rose-500/30 transition-all flex items-center gap-1.5 cursor-pointer"
+                    title="Alle Wortschatz-Einträge aus der Datenbank löschen"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 text-rose-500" /> Alle löschen
                   </button>
                 </div>
               </div>
