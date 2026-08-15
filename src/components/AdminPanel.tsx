@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import type {
   Modelltest,
   TileType,
@@ -4636,9 +4637,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         </div>
       )}
 
-      {/* Floating Non-Blocking Live Progress Bar */}
-      {syncProgress && (
-        <div className="fixed bottom-6 right-6 z-50 w-80 sm:w-96 p-4 rounded-2xl glass-panel bg-slate-900/95 border border-indigo-500/50 shadow-2xl backdrop-blur-xl animate-slideUp space-y-2.5">
+      {/* Floating Non-Blocking Live Progress Bar via Portal */}
+      {typeof document !== 'undefined' && syncProgress && createPortal(
+        <div className="fixed bottom-6 right-6 z-[99999] w-80 sm:w-96 p-4 rounded-2xl glass-panel bg-slate-900/95 border border-indigo-500/50 shadow-2xl backdrop-blur-xl animate-slideUp space-y-2.5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               {syncProgress.isComplete ? (
@@ -4665,13 +4666,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <span className="truncate max-w-[220px]">{syncProgress.message}</span>
             <span className="font-mono text-emerald-400 font-bold shrink-0">{syncProgress.current}/{syncProgress.total}</span>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
-      {/* Floating In-App Toast Notification */}
-      {adminToast && !syncProgress && (
+      {/* Floating In-App Toast Notification via Portal */}
+      {typeof document !== 'undefined' && adminToast && !syncProgress && createPortal(
         <div
-          className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl backdrop-blur-md border animate-fadeIn text-xs font-extrabold ${
+          className={`fixed bottom-6 right-6 z-[99999] flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl backdrop-blur-md border animate-fadeIn text-xs font-extrabold ${
             adminToast.type === 'error'
               ? 'bg-rose-950/90 text-rose-200 border-rose-500/40'
               : adminToast.type === 'info'
@@ -4685,7 +4687,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
           )}
           <span>{adminToast.message}</span>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
