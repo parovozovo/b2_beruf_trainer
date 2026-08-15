@@ -211,3 +211,25 @@
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(99, 102, 241, 0.8);
 }
+
+/* Mobile Touch & Scroll UX Optimizations */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Safe area padding for bottom bar on iOS/Android */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .pb-safe {
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+  }
+}
