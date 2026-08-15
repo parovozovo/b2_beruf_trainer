@@ -41,7 +41,6 @@ import {
   CheckCircle,
   AlertTriangle,
   RefreshCw,
-  ChevronRight,
   X,
   Users,
   UserCheck,
@@ -143,7 +142,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [wortschatzCatFilter, setWortschatzCatFilter] = useState<string>('all');
   const [showWortschatzModal, setShowWortschatzModal] = useState(false);
   const [editingWortschatzItem, setEditingWortschatzItem] = useState<WortschatzItem | null>(null);
-  const [importPendingItems, setImportPendingItems] = useState<WortschatzItem[] | null>(null);
+
+  // Wortschatz Admin Pagination
+  const [adminWsPage, setAdminWsPage] = useState<number>(1);
+  const [adminWsPerPage, setAdminWsPerPage] = useState<number>(25);
+
+  useEffect(() => {
+    setAdminWsPage(1);
+  }, [wortschatzSearch, wortschatzCatFilter]);
 
   // Global Sync & Toast States for Admin
   const [syncProgress, setSyncProgress] = useState<{
@@ -3641,7 +3647,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
           const nextList = [...wortschatzList, ...processedNewItems];
           setWortschatzList(nextList);
-          setImportPendingItems(null);
 
           setSyncProgress({
             isActive: true,
@@ -3685,62 +3690,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           }
         };
 
-        const handleExecuteReplaceImport = async (parsed: WortschatzItem[]) => {
-          const seenIds = new Set<string>();
-          const sanitizedList: WortschatzItem[] = parsed.map((item, idx) => {
-            let id = item.id;
-            if (!id || seenIds.has(id)) {
-              id = `ws-${item.category || 'item'}-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 6)}`;
-            }
-            seenIds.add(id);
-            return { ...item, id };
-          });
-
-          setWortschatzList(sanitizedList);
-          setImportPendingItems(null);
-
-          setSyncProgress({
-            isActive: true,
-            title: 'Wortschatz-Datenbank wird ersetzt',
-            current: 0,
-            total: sanitizedList.length,
-            percent: 0,
-            message: 'Bereite neue Datenbank vor...',
-            isComplete: false,
-          });
-
-          if (onSaveWortschatz) {
-            try {
-              const res = await onSaveWortschatz(sanitizedList, (cur, tot, msg) => {
-                const pct = tot > 0 ? Math.round((cur / tot) * 100) : 100;
-                setSyncProgress({
-                  isActive: true,
-                  title: 'Wortschatz-Datenbank wird ersetzt',
-                  current: cur,
-                  total: tot,
-                  percent: pct,
-                  message: msg,
-                  isComplete: cur >= tot,
-                });
-              });
-
-              if (res && res.error) {
-                showAdminToast(`⚠️ Lokal gespeichert, aber Supabase Cloud Sync meldet: ${res.error}`, 'error');
-              } else {
-                showAdminToast(`✅ Erfolgreich! Datenbank komplett durch ${sanitizedList.length} Einträge ersetzt.`, 'success');
-              }
-            } catch (e: unknown) {
-              const errMsg = e instanceof Error ? e.message : String(e);
-              showAdminToast(`Fehler beim Ersetzen: ${errMsg}`, 'error');
-            } finally {
-              setSyncProgress((prev) => (prev ? { ...prev, isComplete: true, percent: 100, message: 'Fertig!' } : null));
-              setTimeout(() => {
-                setSyncProgress(null);
-              }, 700);
-            }
-          }
-        };
-
         const handleImportWortschatzJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
           const file = e.target.files?.[0];
           if (!file) return;
@@ -3749,16 +3698,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             try {
               const parsed = JSON.parse(event.target?.result as string);
               if (Array.isArray(parsed) && parsed.length > 0) {
-                if (wortschatzList.length === 0) {
-                  await handleExecuteReplaceImport(parsed);
-                } else {
-                  setImportPendingItems(parsed);
-                }
+                await handleExecuteMergeImport(parsed);
               } else {
-                alert('Ungültiges Format. Erwartet wird ein nicht-leeres JSON-Array von WortschatzItem-Objekten.');
+                showAdminToast('Ungültiges Format. Erwartet wird ein nicht-leeres JSON-Array von WortschatzItem-Objekten.', 'error');
               }
             } catch (err) {
-              alert('Fehler beim Parsen der JSON-Datei: ' + err);
+              showAdminToast('Fehler beim Parsen der JSON-Datei: ' + err, 'error');
             }
           };
           reader.readAsText(file);
@@ -3782,6 +3727,13 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             item.translations?.ru?.toLowerCase().includes(q)
           );
         });
+
+        const totalWsPages = Math.ceil(filteredWortschatz.length / adminWsPerPage) || 1;
+        const currentWsPage = Math.min(adminWsPage, totalWsPages);
+        const paginatedWortschatz = filteredWortschatz.slice(
+          (currentWsPage - 1) * adminWsPerPage,
+          currentWsPage * adminWsPerPage
+        );
 
         return (
           <div className="space-y-6 animate-fadeIn">
@@ -3939,14 +3891,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800/80">
-                    {filteredWortschatz.length === 0 ? (
+                    {paginatedWortschatz.length === 0 ? (
                       <tr>
                         <td colSpan={5} className="py-8 text-center text-slate-500 font-medium">
                           Keine Einträge gefunden.
                         </td>
                       </tr>
                     ) : (
-                      filteredWortschatz.map((item) => (
+                      paginatedWortschatz.map((item) => (
                         <tr key={item.id} className="hover:bg-slate-800/40 transition-colors">
                           <td className="py-3 px-4 font-bold text-white max-w-[200px]">
                             <div>{item.term}</div>
@@ -4006,6 +3958,59 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 </table>
               </div>
             </div>
+
+            {/* Pagination Controls */}
+            {filteredWortschatz.length > 0 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 glass-panel rounded-2xl border border-slate-800 text-xs">
+                <div className="text-slate-400 font-medium">
+                  Zeige{' '}
+                  <strong className="text-white">
+                    {(currentWsPage - 1) * adminWsPerPage + 1}–{Math.min(currentWsPage * adminWsPerPage, filteredWortschatz.length)}
+                  </strong>{' '}
+                  von <strong className="text-emerald-400">{filteredWortschatz.length}</strong> Begriffen
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={currentWsPage <= 1}
+                    onClick={() => setAdminWsPage((p) => Math.max(p - 1, 1))}
+                    className="px-3 py-1.5 rounded-xl glass-card border border-slate-700 text-slate-300 hover:text-white disabled:opacity-40 disabled:pointer-events-none transition-all cursor-pointer font-bold"
+                  >
+                    ← Vorherige
+                  </button>
+
+                  <span className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 font-bold">
+                    Seite {currentWsPage} von {totalWsPages}
+                  </span>
+
+                  <button
+                    type="button"
+                    disabled={currentWsPage >= totalWsPages}
+                    onClick={() => setAdminWsPage((p) => Math.min(p + 1, totalWsPages))}
+                    className="px-3 py-1.5 rounded-xl glass-card border border-slate-700 text-slate-300 hover:text-white disabled:opacity-40 disabled:pointer-events-none transition-all cursor-pointer font-bold"
+                  >
+                    Nächste →
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-1.5 text-slate-400">
+                  <span>Pro Seite:</span>
+                  <select
+                    value={adminWsPerPage}
+                    onChange={(e) => {
+                      setAdminWsPerPage(Number(e.target.value));
+                      setAdminWsPage(1);
+                    }}
+                    className="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-bold text-xs cursor-pointer"
+                  >
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                  </select>
+                </div>
+              </div>
+            )}
 
             {/* Modal: Create or Edit Wortschatz Item */}
             {showWortschatzModal && (
@@ -4245,77 +4250,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       </button>
                     </div>
                   </form>
-                </div>
-              </div>
-            )}
-
-            {/* Modal: Import Mode Choice (Merge vs Replace) */}
-            {importPendingItems && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
-                <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-700 w-full max-w-md space-y-5 shadow-2xl">
-                  <div className="flex items-center gap-3">
-                    <div className="p-3 bg-indigo-500/20 text-indigo-400 rounded-2xl border border-indigo-500/30">
-                      <Layers className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-bold text-white">Wortschatz-Import ({importPendingItems.length} Einträge)</h3>
-                      <p className="text-xs text-slate-400">
-                        Aktuell in der Datenbank: <span className="text-emerald-400 font-bold">{wortschatzList.length} Begriffe</span>
-                      </p>
-                    </div>
-                  </div>
-
-                  <p className="text-xs text-slate-300">
-                    Wie möchten Sie die neuen <strong>{importPendingItems.length} Einträge</strong> importieren?
-                  </p>
-
-                  <div className="space-y-2.5">
-                    <button
-                      type="button"
-                      onClick={() => handleExecuteMergeImport(importPendingItems)}
-                      className="w-full p-3.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-extrabold rounded-2xl flex items-center justify-between transition-all cursor-pointer shadow-sm hover:scale-[1.01]"
-                    >
-                      <div className="flex items-center gap-2 text-left">
-                        <Plus className="w-4 h-4 shrink-0" />
-                        <div>
-                          <div>Hinzufügen & Zusammenführen (Merge)</div>
-                          <div className="text-[10px] font-normal text-emerald-200">
-                            Behält bestehende {wortschatzList.length} und fügt neue hinzu (Total: ~{wortschatzList.length + importPendingItems.length})
-                          </div>
-                        </div>
-                      </div>
-                      <ChevronRight className="w-4 h-4 shrink-0" />
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (confirm(`Sind Sie sicher? Die bisherigen ${wortschatzList.length} Einträge werden komplett gelöscht und durch die neuen ${importPendingItems.length} ersetzt!`)) {
-                          handleExecuteReplaceImport(importPendingItems);
-                        }
-                      }}
-                      className="w-full p-3.5 bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/40 text-rose-300 text-xs font-extrabold rounded-2xl flex items-center justify-between transition-all cursor-pointer hover:scale-[1.01]"
-                    >
-                      <div className="flex items-center gap-2 text-left">
-                        <RefreshCw className="w-4 h-4 shrink-0" />
-                        <div>
-                          <div>Bisherige Datenbank ersetzen</div>
-                          <div className="text-[10px] font-normal text-rose-300/80">
-                            Löscht alte {wortschatzList.length} und speichert nur die neuen {importPendingItems.length}
-                          </div>
-                        </div>
-                      </div>
-                      <ChevronRight className="w-4 h-4 shrink-0" />
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setImportPendingItems(null)}
-                      className="w-full py-2.5 text-center text-xs font-bold text-slate-400 hover:text-white transition-colors cursor-pointer"
-                    >
-                      Abbrechen
-                    </button>
-                  </div>
                 </div>
               </div>
             )}
@@ -4702,56 +4636,40 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         </div>
       )}
 
-      {/* Global Sync Progress Modal with Live Bar & Warning */}
+      {/* Floating Non-Blocking Live Progress Bar */}
       {syncProgress && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fadeIn">
-          <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-indigo-500/40 w-full max-w-md space-y-5 shadow-2xl text-center">
-            {/* Animated Icon */}
-            <div className="mx-auto w-16 h-16 rounded-2xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center">
+        <div className="fixed bottom-6 right-6 z-50 w-80 sm:w-96 p-4 rounded-2xl glass-panel bg-slate-900/95 border border-indigo-500/50 shadow-2xl backdrop-blur-xl animate-slideUp space-y-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
               {syncProgress.isComplete ? (
-                <CheckCircle className="w-8 h-8 text-emerald-400" />
+                <CheckCircle className="w-4 h-4 text-emerald-400" />
               ) : (
-                <RefreshCw className="w-8 h-8 animate-spin text-indigo-400" />
+                <RefreshCw className="w-4 h-4 animate-spin text-indigo-400" />
               )}
-            </div>
-
-            <div className="space-y-1">
-              <h3 className="text-base sm:text-lg font-black text-white">
+              <span className="text-xs font-bold text-white truncate max-w-[200px]">
                 {syncProgress.title}
-              </h3>
-              <p className="text-xs text-slate-400 truncate max-w-xs mx-auto">
-                {syncProgress.message}
-              </p>
+              </span>
             </div>
+            <span className="text-xs font-black text-emerald-400">{syncProgress.percent}%</span>
+          </div>
 
-            {/* Progress Bar & Percentage */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs font-bold text-slate-400">
-                <span>{syncProgress.current} von {syncProgress.total}</span>
-                <span className="text-emerald-400 font-extrabold">{syncProgress.percent}%</span>
-              </div>
+          {/* Progress Bar */}
+          <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden border border-slate-700">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-indigo-500 to-emerald-400 transition-all duration-200"
+              style={{ width: `${Math.max(syncProgress.percent, 3)}%` }}
+            />
+          </div>
 
-              <div className="w-full bg-slate-900 rounded-full h-3.5 p-0.5 border border-slate-800 overflow-hidden shadow-inner">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-indigo-500 via-indigo-400 to-emerald-400 transition-all duration-200"
-                  style={{ width: `${Math.max(syncProgress.percent, 3)}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Critical Warning: DO NOT LEAVE PAGE */}
-            <div className="p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center gap-2.5 text-left text-xs text-amber-300">
-              <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
-              <div className="font-semibold text-[11px] leading-tight">
-                Bitte schließen oder verlassen Sie diese Seite während des Speichervorgangs nicht.
-              </div>
-            </div>
+          <div className="flex items-center justify-between text-[11px] text-slate-400">
+            <span className="truncate max-w-[220px]">{syncProgress.message}</span>
+            <span className="font-mono text-emerald-400 font-bold shrink-0">{syncProgress.current}/{syncProgress.total}</span>
           </div>
         </div>
       )}
 
       {/* Floating In-App Toast Notification */}
-      {adminToast && (
+      {adminToast && !syncProgress && (
         <div
           className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl backdrop-blur-md border animate-fadeIn text-xs font-extrabold ${
             adminToast.type === 'error'
