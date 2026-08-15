@@ -53,40 +53,40 @@ export const Navbar: React.FC<NavbarProps> = ({
             : 'bg-white/90 border-slate-200 text-slate-900 shadow-sm'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-4 overflow-hidden">
           {/* GERMAN PROFESSIONAL LOGO BADGE */}
           <div
             onClick={() => handleTabClick('dashboard')}
-            className="flex items-center gap-3 cursor-pointer group shrink-0"
+            className="flex items-center gap-2 sm:gap-3 cursor-pointer group shrink-0 min-w-0"
           >
             {/* German Badge Icon */}
-            <div className="relative w-10 h-10 rounded-xl bg-slate-900 border border-slate-700 shadow-md flex flex-col items-center justify-center overflow-hidden group-hover:scale-105 transition-transform">
+            <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-900 border border-slate-700 shadow-md flex flex-col items-center justify-center overflow-hidden group-hover:scale-105 transition-transform shrink-0">
               {/* German Micro-Flag Top Accent Strip */}
               <div className="w-full h-1 flex">
                 <div className="flex-1 bg-slate-950" />
                 <div className="flex-1 bg-red-600" />
                 <div className="flex-1 bg-amber-400" />
               </div>
-              <div className="flex items-center justify-center flex-1 w-full text-amber-400 font-extrabold text-sm tracking-tighter">
-                <ShieldCheck className="w-4 h-4 text-amber-400 inline mr-0.5" /> B2
+              <div className="flex items-center justify-center flex-1 w-full text-amber-400 font-extrabold text-xs sm:text-sm tracking-tighter">
+                <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 inline mr-0.5" /> B2
               </div>
             </div>
 
-            <div>
-              <div className="flex items-center gap-1.5">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1 sm:gap-1.5">
                 <span
-                  className={`font-extrabold text-base tracking-tight transition-colors ${
+                  className={`font-extrabold text-sm sm:text-base tracking-tight truncate transition-colors ${
                     isDark ? 'text-white group-hover:text-indigo-300' : 'text-slate-900 group-hover:text-indigo-600'
                   }`}
                 >
                   Beruf B2 Trainer
                 </span>
-                <span className="px-1.5 py-0.2 bg-amber-500/20 text-amber-600 dark:text-amber-300 border border-amber-500/30 rounded text-[9px] font-extrabold uppercase tracking-wider">
+                <span className="hidden sm:inline-block px-1.5 py-0.2 bg-amber-500/20 text-amber-600 dark:text-amber-300 border border-amber-500/30 rounded text-[9px] font-extrabold uppercase tracking-wider">
                   DEUTSCH
                 </span>
               </div>
               <span
-                className={`block text-[10px] font-bold tracking-wider uppercase ${
+                className={`hidden sm:block text-[10px] font-bold tracking-wider uppercase truncate ${
                   isDark ? 'text-slate-400' : 'text-slate-500'
                 }`}
               >
@@ -124,7 +124,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
               }`}
             >
-              <Layers className="w-3.5 h-3.5" /> Training (Teile)
+              <Layers className="w-3.5 h-3.5" /> Training
             </button>
 
             <button
@@ -137,7 +137,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
               }`}
             >
-              <Award className="w-3.5 h-3.5 text-amber-500" /> Prüfung (1-57)
+              <Award className="w-3.5 h-3.5 text-amber-500" /> Prüfung
             </button>
 
             <button
@@ -184,12 +184,12 @@ export const Navbar: React.FC<NavbarProps> = ({
           </nav>
 
           {/* Right Actions: Theme Switcher, User Account, Hamburger (Mobile) */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {/* LIGHT / DARK MODE TOGGLE SWITCH */}
             <button
               onClick={onToggleTheme}
               title={isDark ? 'Zum hellen Modus wechseln' : 'Zum dunklen Modus wechseln'}
-              className={`p-2 rounded-xl border text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+              className={`w-9 h-9 sm:w-auto sm:px-3 sm:py-1.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                 isDark
                   ? 'bg-slate-900 border-slate-700 text-amber-300 hover:bg-slate-800'
                   : 'bg-slate-100 border-slate-300 text-indigo-700 hover:bg-slate-200'
@@ -212,7 +212,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 onClick={() => handleTabClick('settings')}
                 title="Mein Profil & Einstellungen"
-                className={`px-3.5 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-2 transition-all shadow-sm cursor-pointer ${
+                className={`h-9 px-2.5 sm:px-3.5 sm:py-1.5 rounded-xl border text-xs font-bold flex items-center gap-1.5 sm:gap-2 transition-all shadow-sm cursor-pointer ${
                   currentTab === 'settings'
                     ? 'bg-indigo-600 text-white border-indigo-500 shadow-md'
                     : isDark
@@ -220,12 +220,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                     : 'bg-white border-slate-300 text-slate-900 hover:bg-slate-100'
                 }`}
               >
-                <div className="w-6 h-6 rounded-lg bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 font-bold flex items-center justify-center text-[10px]">
+                <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 font-bold flex items-center justify-center text-[10px] shrink-0">
                   {currentUser.name.slice(0, 2).toUpperCase()}
                 </div>
-                <span className="hidden sm:inline max-w-[100px] truncate">{currentUser.name}</span>
+                <span className="hidden sm:inline max-w-[90px] truncate">{currentUser.name}</span>
                 {currentUser.role === 'admin' ? (
-                  <span className="px-1.5 py-0.5 bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30 rounded text-[9px] font-bold">
+                  <span className="hidden sm:inline px-1.5 py-0.5 bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30 rounded text-[9px] font-bold">
                     Admin
                   </span>
                 ) : currentUser.isPremium ? (
@@ -235,9 +235,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             ) : (
               <button
                 onClick={onOpenLoginModal}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+                className="h-9 px-3 sm:px-4 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
               >
-                <LogIn className="w-3.5 h-3.5" /> Anmelden
+                <LogIn className="w-3.5 h-3.5" />
+                <span className="hidden xs:inline">Anmelden</span>
               </button>
             )}
 
@@ -245,7 +246,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               title="Menü öffnen"
-              className={`md:hidden p-2 rounded-xl border text-xs font-bold flex items-center justify-center transition-all cursor-pointer ${
+              className={`md:hidden w-9 h-9 rounded-xl border text-xs font-bold flex items-center justify-center transition-all cursor-pointer shrink-0 ${
                 mobileMenuOpen
                   ? 'bg-indigo-600 text-white border-indigo-500 shadow-md'
                   : isDark
@@ -406,62 +407,60 @@ export const Navbar: React.FC<NavbarProps> = ({
         )}
       </header>
 
-      {/* Fixed Mobile Bottom Bar Navigation (Touch Optimized 48px Target) */}
+      {/* Fixed Mobile Bottom Bar Navigation: Start | Training | Schreiben | Sprechen | Wortschatz */}
       <div
-        className={`md:hidden fixed bottom-0 left-0 right-0 z-40 px-2 py-1.5 flex items-center justify-around text-[10px] border-t backdrop-blur-xl transition-colors duration-200 ${
+        className={`md:hidden fixed bottom-0 left-0 right-0 z-40 px-1 py-1.5 flex items-center justify-around text-[10px] border-t backdrop-blur-xl transition-colors duration-200 ${
           isDark ? 'bg-slate-950/95 border-slate-800 text-slate-300' : 'bg-white/95 border-slate-200 text-slate-700 shadow-xl'
         }`}
       >
         <button
           onClick={() => handleTabClick('dashboard')}
-          className={`flex flex-col items-center justify-center gap-1 py-1.5 px-3 rounded-xl font-bold min-h-[48px] transition-all cursor-pointer ${
+          className={`flex-1 flex flex-col items-center justify-center gap-1 py-1 px-1 rounded-xl font-bold min-h-[48px] transition-all cursor-pointer ${
             currentTab === 'dashboard' ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-500/10' : 'opacity-70'
           }`}
         >
           <BookOpen className="w-4 h-4" />
-          <span>Start</span>
+          <span className="text-[10px]">Start</span>
         </button>
 
         <button
           onClick={() => handleTabClick('tile_practice')}
-          className={`flex flex-col items-center justify-center gap-1 py-1.5 px-3 rounded-xl font-bold min-h-[48px] transition-all cursor-pointer ${
+          className={`flex-1 flex flex-col items-center justify-center gap-1 py-1 px-1 rounded-xl font-bold min-h-[48px] transition-all cursor-pointer ${
             currentTab === 'tile_practice' ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-500/10' : 'opacity-70'
           }`}
         >
           <Layers className="w-4 h-4" />
-          <span>Training</span>
+          <span className="text-[10px]">Training</span>
         </button>
 
         <button
-          onClick={() => handleTabClick('full_exam')}
-          className={`flex flex-col items-center justify-center gap-1 py-1.5 px-3 rounded-xl font-bold min-h-[48px] transition-all cursor-pointer ${
-            currentTab === 'full_exam' ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-500/10' : 'opacity-70'
+          onClick={() => handleTabClick('schreiben')}
+          className={`flex-1 flex flex-col items-center justify-center gap-1 py-1 px-1 rounded-xl font-bold min-h-[48px] transition-all cursor-pointer ${
+            currentTab === 'schreiben' ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-500/10' : 'opacity-70'
           }`}
         >
-          <Award className="w-4 h-4 text-amber-500" />
-          <span>Prüfung</span>
+          <Edit3 className="w-4 h-4" />
+          <span className="text-[10px]">Schreiben</span>
+        </button>
+
+        <button
+          onClick={() => handleTabClick('sprechen')}
+          className={`flex-1 flex flex-col items-center justify-center gap-1 py-1 px-1 rounded-xl font-bold min-h-[48px] transition-all cursor-pointer ${
+            currentTab === 'sprechen' ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-500/10' : 'opacity-70'
+          }`}
+        >
+          <Mic className="w-4 h-4" />
+          <span className="text-[10px]">Sprechen</span>
         </button>
 
         <button
           onClick={() => handleTabClick('wortschatz')}
-          className={`flex flex-col items-center justify-center gap-1 py-1.5 px-3 rounded-xl font-bold min-h-[48px] transition-all cursor-pointer ${
+          className={`flex-1 flex flex-col items-center justify-center gap-1 py-1 px-1 rounded-xl font-bold min-h-[48px] transition-all cursor-pointer ${
             currentTab === 'wortschatz' ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-500/10' : 'opacity-70'
           }`}
         >
-          <BookOpen className="w-4 h-4 text-amber-400" />
-          <span>Wörter</span>
-        </button>
-
-        <button
-          onClick={() => handleTabClick('settings')}
-          className={`flex flex-col items-center justify-center gap-1 py-1.5 px-3 rounded-xl font-bold min-h-[48px] transition-all cursor-pointer ${
-            currentTab === 'settings' ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-500/10' : 'opacity-70'
-          }`}
-        >
-          <div className="w-4 h-4 rounded-full bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-[9px] font-extrabold">
-            {currentUser ? currentUser.name.slice(0, 1).toUpperCase() : '👤'}
-          </div>
-          <span>Profil</span>
+          <BookOpen className="w-4 h-4 text-amber-500" />
+          <span className="text-[10px]">Wörter</span>
         </button>
       </div>
     </>

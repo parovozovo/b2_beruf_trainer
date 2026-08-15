@@ -58,29 +58,29 @@ export const Dashboard: React.FC<DashboardProps> = ({
   return (
     <div className="space-y-10 animate-fadeIn pb-12">
       {/* ================= SECTION 1: HERO BANNER (ПОЧАТОК) ================= */}
-      <div className="relative overflow-hidden rounded-3xl glass-panel p-8 sm:p-10 border border-indigo-500/30 shadow-lg">
-        <div className="absolute -right-10 -bottom-10 w-80 h-80 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="relative overflow-hidden rounded-3xl glass-panel p-5 sm:p-10 border border-indigo-500/30 shadow-lg">
+        <div className="absolute right-0 bottom-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="relative z-10 space-y-4 max-w-3xl">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-indigo-500/20 text-indigo-900 dark:text-indigo-300 rounded-full text-xs sm:text-sm font-extrabold border border-indigo-500/30">
-            <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" /> Willkommen beim Deutsch B2 Beruf Trainer
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-500/20 text-indigo-900 dark:text-indigo-300 rounded-full text-xs font-extrabold border border-indigo-500/30">
+            <Sparkles className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" /> Willkommen beim Deutsch B2 Beruf Trainer
           </div>
-          <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-slate-900 dark:text-white">
+          <h1 className="text-2xl sm:text-5xl font-black tracking-tight text-slate-900 dark:text-white">
             Guten Tag, {userName}! 👋
           </h1>
-          <p className="text-base sm:text-lg text-slate-800 dark:text-slate-200 leading-relaxed font-semibold">
+          <p className="text-sm sm:text-lg text-slate-800 dark:text-slate-200 leading-relaxed font-semibold">
             Bereiten Sie sich gezielt auf die Prüfung Deutsch B2 Beruf vor. Wählen Sie Einzelteile zum Üben oder starten Sie eine vollständige Simulation mit Zeitmessung.
           </p>
 
-          <div className="flex flex-wrap items-center gap-3 pt-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
             <button
               onClick={() => onSelectMode('full_exam')}
-              className="px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-2xl shadow-lg hover:shadow-indigo-600/30 transition-all text-xs sm:text-sm flex items-center gap-2"
+              className="px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-2xl shadow-lg hover:shadow-indigo-600/30 transition-all text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer"
             >
               <Timer className="w-4 h-4" /> Prüfungssimulation starten
             </button>
             <button
               onClick={() => onSelectMode('tile_practice')}
-              className="px-6 py-3.5 glass-card hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-900 dark:text-slate-200 font-extrabold rounded-2xl border border-slate-300 dark:border-slate-700/60 transition-all text-xs sm:text-sm flex items-center gap-2"
+              className="px-6 py-3.5 glass-card hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-900 dark:text-slate-200 font-extrabold rounded-2xl border border-slate-300 dark:border-slate-700/60 transition-all text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer"
             >
               <Dumbbell className="w-4 h-4 text-indigo-600 dark:text-indigo-400" /> Einzelteile trainieren
             </button>
