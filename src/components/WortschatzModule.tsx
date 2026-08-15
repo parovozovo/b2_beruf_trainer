@@ -185,8 +185,6 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
   const [cardIndex, setCardIndex] = useState<number>(0);
   const [isFlipped, setIsFlipped] = useState<boolean>(false);
   const [showFlashcardHint, setShowFlashcardHint] = useState<boolean>(false);
-  const isShuffled = true;
-  const [shuffleCounter, setShuffleCounter] = useState<number>(1);
 
   const [learnedIds, setLearnedIds] = useState<string[]>(() => {
     try {
@@ -197,38 +195,54 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
     }
   });
 
-  const flashcardDeck = useMemo(() => {
-    let list: WortschatzItem[];
-    if (flashcardCategory === 'all') list = [...items];
-    else if (flashcardCategory === 'favorites') list = items.filter((i) => favorites.includes(i.id));
-    else list = items.filter((i) => i.category === flashcardCategory);
-
-    if (isShuffled && list.length > 1) {
-      const shuffled = [...list];
+  // Persistent, stable flashcard deck (reshuffled only on category change or explicit 'Neu mischen')
+  const [flashcardDeck, setFlashcardDeck] = useState<WortschatzItem[]>(() => {
+    if (items.length > 1) {
+      const shuffled = [...items];
       for (let i = shuffled.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
       }
       return shuffled;
     }
-    return list;
-  }, [items, flashcardCategory, favorites, isShuffled, shuffleCounter]);
+    return [...items];
+  });
+
+  const rebuildDeck = (cat: string, allItems: WortschatzItem[], favs: string[]) => {
+    let list: WortschatzItem[];
+    if (cat === 'all') list = [...allItems];
+    else if (cat === 'favorites') list = allItems.filter((i) => favs.includes(i.id));
+    else list = allItems.filter((i) => i.category === cat);
+
+    if (list.length > 1) {
+      const shuffled = [...list];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      setFlashcardDeck(shuffled);
+    } else {
+      setFlashcardDeck(list);
+    }
+    setCardIndex(0);
+    setIsFlipped(false);
+    setShowFlashcardHint(false);
+  };
+
+  // Sync deck when items prop changes
+  useEffect(() => {
+    rebuildDeck(flashcardCategory, items, favorites);
+  }, [items]);
 
   const currentFlashcard = flashcardDeck[cardIndex] || flashcardDeck[0];
 
   const handleSelectFlashcardCategory = (cat: string) => {
     setFlashcardCategory(cat);
-    setCardIndex(0);
-    setIsFlipped(false);
-    setShowFlashcardHint(false);
-    setShuffleCounter((c) => c + 1);
+    rebuildDeck(cat, items, favorites);
   };
 
   const handleReshuffleDeck = () => {
-    setShuffleCounter((c) => c + 1);
-    setCardIndex(0);
-    setIsFlipped(false);
-    setShowFlashcardHint(false);
+    rebuildDeck(flashcardCategory, items, favorites);
   };
 
   const handleNextCard = () => {
@@ -260,12 +274,6 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
     });
     handleNextCard();
   };
-
-  useEffect(() => {
-    setCardIndex(0);
-    setIsFlipped(false);
-    setShowFlashcardHint(false);
-  }, [flashcardCategory]);
 
   // ================= 3. COLLOCATIONS QUIZ STATE =================
   const [quizCategory, setQuizCategory] = useState<string>('all');
