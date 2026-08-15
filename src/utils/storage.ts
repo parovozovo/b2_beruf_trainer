@@ -1,5 +1,6 @@
-import type { User, UserRole, PromoCode, Modelltest, ForumsbeitragTopic, WrittenEssayRecord, FullExamResult, TileResult } from '../types';
+import type { User, UserRole, PromoCode, Modelltest, ForumsbeitragTopic, WrittenEssayRecord, FullExamResult, TileResult, WortschatzItem } from '../types';
 import { INITIAL_PROMO_CODES, INITIAL_FORUMSBEITRAG_TOPICS, INITIAL_MODELLTESTS, INITIAL_SPRECHEN_TOPICS } from '../data/initialData';
+import { DEFAULT_WORTSCHATZ_ITEMS } from '../data/defaultWortschatz';
 import { supabase, isSupabaseConfigured } from './supabase';
 
 const KEYS = {
@@ -12,6 +13,7 @@ const KEYS = {
   WRITTEN_ESSAYS: 'b2_written_essays',
   FULL_EXAM_RESULTS: 'b2_full_exam_results',
   TILE_RESULTS: 'b2_tile_results',
+  WORTSCHATZ_ITEMS: 'b2_wortschatz_items',
 };
 
 export const ADMIN_EMAILS = ['luck34y@yahoo.com'];
@@ -866,7 +868,135 @@ export async function seedInitialDataToSupabase(): Promise<void> {
         is_premium: fb.isPremium,
       });
     }
+
+    for (const wi of DEFAULT_WORTSCHATZ_ITEMS) {
+      await supabase.from('wortschatz_items').upsert({
+        id: wi.id,
+        term: wi.term,
+        category: wi.category,
+        grammar: wi.grammar,
+        simple_meaning: wi.simpleMeaning,
+        synonyms: wi.synonyms,
+        example_sentence: wi.exampleSentence,
+        gap_example: wi.gapExample,
+        gap_answer: wi.gapAnswer,
+        gap_options: wi.gapOptions,
+        translations: wi.translations,
+        order_index: wi.orderIndex,
+      });
+    }
   } catch (e) {
     console.error('Seed error:', e);
   }
 }
+
+// ================= WORTSCHATZ & NVV STORAGE & CLOUD SYNC =================
+
+export function getWortschatzItemsLocal(): WortschatzItem[] {
+  try {
+    const raw = localStorage.getItem(KEYS.WORTSCHATZ_ITEMS);
+    if (!raw) {
+      localStorage.setItem(KEYS.WORTSCHATZ_ITEMS, JSON.stringify(DEFAULT_WORTSCHATZ_ITEMS));
+      return DEFAULT_WORTSCHATZ_ITEMS;
+    }
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed;
+    }
+    return DEFAULT_WORTSCHATZ_ITEMS;
+  } catch {
+    return DEFAULT_WORTSCHATZ_ITEMS;
+  }
+}
+
+export function saveWortschatzItemsLocal(items: WortschatzItem[]): void {
+  try {
+    localStorage.setItem(KEYS.WORTSCHATZ_ITEMS, JSON.stringify(items));
+  } catch (e) {
+    console.error('Failed to save wortschatz to localStorage:', e);
+  }
+}
+
+export async function fetchWortschatzAsync(): Promise<WortschatzItem[]> {
+  const local = getWortschatzItemsLocal();
+  if (!isSupabaseConfigured) return local;
+
+  try {
+    const { data, error } = await supabase
+      .from('wortschatz_items')
+      .select('*')
+      .order('order_index', { ascending: true });
+
+    if (error) {
+      console.warn('Supabase wortschatz_items fetch warning:', error.message);
+      return local;
+    }
+
+    if (data && Array.isArray(data) && data.length > 0) {
+      const mapped: WortschatzItem[] = data.map((d: Record<string, unknown>) => ({
+        id: String(d.id),
+        term: String(d.term || ''),
+        category: (d.category as WortschatzItem['category']) || 'nvv',
+        grammar: d.grammar ? String(d.grammar) : undefined,
+        simpleMeaning: String(d.simple_meaning || d.simpleMeaning || ''),
+        synonyms: d.synonyms ? String(d.synonyms) : undefined,
+        exampleSentence: String(d.example_sentence || d.exampleSentence || ''),
+        gapExample: d.gap_example ? String(d.gap_example) : d.gapExample ? String(d.gapExample) : undefined,
+        gapAnswer: d.gap_answer ? String(d.gap_answer) : d.gapAnswer ? String(d.gapAnswer) : undefined,
+        gapOptions: Array.isArray(d.gap_options) ? d.gap_options.map(String) : Array.isArray(d.gapOptions) ? d.gapOptions.map(String) : undefined,
+        translations: (d.translations as Record<string, string>) || {},
+        orderIndex: typeof d.order_index === 'number' ? d.order_index : typeof d.orderIndex === 'number' ? d.orderIndex : 0,
+        createdAt: d.created_at ? String(d.created_at) : undefined,
+      }));
+
+      saveWortschatzItemsLocal(mapped);
+      return mapped;
+    }
+
+    return local;
+  } catch (e) {
+    console.error('Error fetching wortschatz from Supabase:', e);
+    return local;
+  }
+}
+
+export async function saveWortschatzAsync(items: WortschatzItem[]): Promise<void> {
+  saveWortschatzItemsLocal(items);
+  if (!isSupabaseConfigured) return;
+
+  try {
+    for (const wi of items) {
+      await supabase.from('wortschatz_items').upsert({
+        id: wi.id,
+        term: wi.term,
+        category: wi.category,
+        grammar: wi.grammar,
+        simple_meaning: wi.simpleMeaning,
+        synonyms: wi.synonyms,
+        example_sentence: wi.exampleSentence,
+        gap_example: wi.gapExample,
+        gap_answer: wi.gapAnswer,
+        gap_options: wi.gapOptions,
+        translations: wi.translations,
+        order_index: wi.orderIndex,
+      });
+    }
+  } catch (e) {
+    console.error('Error syncing wortschatz to Supabase:', e);
+  }
+}
+
+export async function deleteWortschatzItemAsync(id: string): Promise<void> {
+  const current = getWortschatzItemsLocal();
+  const updated = current.filter((x) => x.id !== id);
+  saveWortschatzItemsLocal(updated);
+
+  if (isSupabaseConfigured) {
+    try {
+      await supabase.from('wortschatz_items').delete().eq('id', id);
+    } catch (e) {
+      console.error('Error deleting wortschatz item from Supabase:', e);
+    }
+  }
+}
+

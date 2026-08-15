@@ -19,6 +19,8 @@ import type {
   HoerenSchreibenVariant,
   Sprachbausteine1Variant,
   Sprachbausteine2Variant,
+  WortschatzItem,
+  WortschatzCategory,
 } from '../types';
 import { AudioPlayerBlock } from './TilePractice';
 import {
@@ -78,6 +80,8 @@ interface AdminPanelProps {
     sprecher2Topics: Array<{ id: string; title: string; promptText: string }>;
     sprecher3Situations: Array<{ id: string; title: string; promptText: string }>;
   }) => Promise<{ success: boolean; error?: string }> | void;
+  wortschatzItems?: WortschatzItem[];
+  onSaveWortschatz?: (items: WortschatzItem[]) => Promise<{ success: boolean; error?: string }> | void;
 }
 
 const FormattingToolbar: React.FC<{
@@ -123,9 +127,38 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   onSaveForumsbeitragTopics,
   sprechenTopics,
   onSaveSprechenTopics,
+  wortschatzItems = [],
+  onSaveWortschatz,
 }) => {
   const [adminHub, setAdminHub] = useState<'content' | 'users_system'>('content');
   const [activeTab, setActiveTab] = useState<'modelltests' | 'promocodes' | 'forumsbeitrag' | 'sprechen' | 'wortschatz' | 'users' | 'system'>('modelltests');
+
+  // Wortschatz Admin State
+  const [wortschatzList, setWortschatzList] = useState<WortschatzItem[]>(wortschatzItems);
+  const [wortschatzSearch, setWortschatzSearch] = useState('');
+  const [wortschatzCatFilter, setWortschatzCatFilter] = useState<string>('all');
+  const [showWortschatzModal, setShowWortschatzModal] = useState(false);
+  const [editingWortschatzItem, setEditingWortschatzItem] = useState<WortschatzItem | null>(null);
+
+  // Wortschatz Form Fields
+  const [wsFormTerm, setWsFormTerm] = useState('');
+  const [wsFormCategory, setWsFormCategory] = useState<WortschatzCategory>('nvv');
+  const [wsFormGrammar, setWsFormGrammar] = useState('');
+  const [wsFormMeaning, setWsFormMeaning] = useState('');
+  const [wsFormSynonyms, setWsFormSynonyms] = useState('');
+  const [wsFormExample, setWsFormExample] = useState('');
+  const [wsFormGapExample, setWsFormGapExample] = useState('');
+  const [wsFormGapAnswer, setWsFormGapAnswer] = useState('');
+  const [wsFormGapOptions, setWsFormGapOptions] = useState('');
+  const [wsFormTransUA, setWsFormTransUA] = useState('');
+  const [wsFormTransEN, setWsFormTransEN] = useState('');
+
+  // Keep local list in sync with parent props
+  useEffect(() => {
+    if (wortschatzItems && wortschatzItems.length > 0) {
+      setWortschatzList(wortschatzItems);
+    }
+  }, [wortschatzItems]);
 
   // User Management State
   const [usersList, setUsersList] = useState<User[]>(() => getRegisteredUsersLocal());
@@ -3370,56 +3403,557 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         </div>
       )}
 
-      {/* WORTSCHATZ DATABASE ADMIN TAB (IN VORBEREITUNG) */}
-      {activeTab === 'wortschatz' && (
-        <div className="space-y-6 animate-fadeIn">
-          <div className="glass-panel p-6 rounded-3xl border border-slate-800 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-indigo-500/20 text-indigo-300 rounded-2xl border border-indigo-500/40">
-                <Layers className="w-6 h-6" />
+      {/* WORTSCHATZ DATABASE ADMIN TAB (VOLLSTÄNDIGER CRUD-EDITOR) */}
+      {activeTab === 'wortschatz' && (() => {
+        const handleOpenAddModal = () => {
+          setEditingWortschatzItem(null);
+          setWsFormTerm('');
+          setWsFormCategory('nvv');
+          setWsFormGrammar('');
+          setWsFormMeaning('');
+          setWsFormSynonyms('');
+          setWsFormExample('');
+          setWsFormGapExample('');
+          setWsFormGapAnswer('');
+          setWsFormGapOptions('');
+          setWsFormTransUA('');
+          setWsFormTransEN('');
+          setShowWortschatzModal(true);
+        };
+
+        const handleOpenEditModal = (item: WortschatzItem) => {
+          setEditingWortschatzItem(item);
+          setWsFormTerm(item.term);
+          setWsFormCategory(item.category);
+          setWsFormGrammar(item.grammar || '');
+          setWsFormMeaning(item.simpleMeaning);
+          setWsFormSynonyms(item.synonyms || '');
+          setWsFormExample(item.exampleSentence);
+          setWsFormGapExample(item.gapExample || '');
+          setWsFormGapAnswer(item.gapAnswer || '');
+          setWsFormGapOptions(item.gapOptions?.join(', ') || '');
+          setWsFormTransUA(item.translations.ua || '');
+          setWsFormTransEN(item.translations.en || '');
+          setShowWortschatzModal(true);
+        };
+
+        const handleSaveWortschatzItem = (e: React.FormEvent) => {
+          e.preventDefault();
+          if (!wsFormTerm.trim() || !wsFormMeaning.trim() || !wsFormExample.trim()) {
+            alert('Bitte füllen Sie mindestens Begriff, Bedeutung und Beispielsatz aus.');
+            return;
+          }
+
+          const parsedOptions = wsFormGapOptions
+            ? wsFormGapOptions.split(',').map((s) => s.trim()).filter(Boolean)
+            : undefined;
+
+          let updatedList: WortschatzItem[];
+
+          if (editingWortschatzItem) {
+            updatedList = wortschatzList.map((item) =>
+              item.id === editingWortschatzItem.id
+                ? {
+                    ...item,
+                    term: wsFormTerm.trim(),
+                    category: wsFormCategory,
+                    grammar: wsFormGrammar.trim() || undefined,
+                    simpleMeaning: wsFormMeaning.trim(),
+                    synonyms: wsFormSynonyms.trim() || undefined,
+                    exampleSentence: wsFormExample.trim(),
+                    gapExample: wsFormGapExample.trim() || undefined,
+                    gapAnswer: wsFormGapAnswer.trim() || undefined,
+                    gapOptions: parsedOptions && parsedOptions.length > 0 ? parsedOptions : undefined,
+                    translations: {
+                      ...item.translations,
+                      ua: wsFormTransUA.trim() || undefined,
+                      en: wsFormTransEN.trim() || undefined,
+                    },
+                  }
+                : item
+            );
+          } else {
+            const newItem: WortschatzItem = {
+              id: `ws-${Date.now()}`,
+              term: wsFormTerm.trim(),
+              category: wsFormCategory,
+              grammar: wsFormGrammar.trim() || undefined,
+              simpleMeaning: wsFormMeaning.trim(),
+              synonyms: wsFormSynonyms.trim() || undefined,
+              exampleSentence: wsFormExample.trim(),
+              gapExample: wsFormGapExample.trim() || undefined,
+              gapAnswer: wsFormGapAnswer.trim() || undefined,
+              gapOptions: parsedOptions && parsedOptions.length > 0 ? parsedOptions : undefined,
+              translations: {
+                ua: wsFormTransUA.trim() || undefined,
+                en: wsFormTransEN.trim() || undefined,
+              },
+              orderIndex: wortschatzList.length + 1,
+              createdAt: new Date().toISOString(),
+            };
+            updatedList = [...wortschatzList, newItem];
+          }
+
+          setWortschatzList(updatedList);
+          if (onSaveWortschatz) {
+            onSaveWortschatz(updatedList);
+          }
+          setShowWortschatzModal(false);
+        };
+
+        const handleDeleteWortschatzItem = (id: string, term: string) => {
+          if (confirm(`Möchten Sie den Eintrag "${term}" wirklich löschen?`)) {
+            const updated = wortschatzList.filter((x) => x.id !== id);
+            setWortschatzList(updated);
+            if (onSaveWortschatz) {
+              onSaveWortschatz(updated);
+            }
+          }
+        };
+
+        const handleExportWortschatzJSON = () => {
+          const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(wortschatzList, null, 2));
+          const dlAnchor = document.createElement('a');
+          dlAnchor.setAttribute('href', dataStr);
+          dlAnchor.setAttribute('download', `wortschatz_b2_export_${Date.now()}.json`);
+          dlAnchor.click();
+        };
+
+        const handleImportWortschatzJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            try {
+              const parsed = JSON.parse(event.target?.result as string);
+              if (Array.isArray(parsed)) {
+                if (confirm(`${parsed.length} Wortschatz-Einträge importieren?`)) {
+                  setWortschatzList(parsed);
+                  if (onSaveWortschatz) onSaveWortschatz(parsed);
+                  alert('Wortschatz-Datenbank erfolgreich aktualisiert!');
+                }
+              } else {
+                alert('Ungültiges Format. Erwartet wird ein JSON-Array von WortschatzItem-Objekten.');
+              }
+            } catch (err) {
+              alert('Fehler beim Parsen der JSON-Datei: ' + err);
+            }
+          };
+          reader.readAsText(file);
+        };
+
+        const filteredWortschatz = wortschatzList.filter((item) => {
+          if (wortschatzCatFilter !== 'all' && item.category !== wortschatzCatFilter) return false;
+          if (!wortschatzSearch.trim()) return true;
+          const q = wortschatzSearch.toLowerCase();
+          return (
+            item.term.toLowerCase().includes(q) ||
+            item.simpleMeaning.toLowerCase().includes(q) ||
+            item.grammar?.toLowerCase().includes(q) ||
+            item.exampleSentence.toLowerCase().includes(q) ||
+            item.translations.ua?.toLowerCase().includes(q)
+          );
+        });
+
+        return (
+          <div className="space-y-6 animate-fadeIn">
+            {/* Header & Controls */}
+            <div className="glass-panel p-6 rounded-3xl border border-slate-800 space-y-4 shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-indigo-500/20 text-indigo-300 rounded-2xl border border-indigo-500/40">
+                    <Layers className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-white flex items-center gap-2">
+                      Wortschatz- & NVV-Verwaltung (Datenbank)
+                      <span className="px-2.5 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-full text-[10px] font-bold">
+                        {wortschatzList.length} Einträge
+                      </span>
+                    </h3>
+                    <p className="text-xs text-slate-400">
+                      Erstellen, bearbeiten und synchronisieren Sie Wendungen, Redemittel und Grammatikbeispiele.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Top Action Buttons */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    onClick={handleOpenAddModal}
+                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" /> Neuer Eintrag
+                  </button>
+
+                  <label className="px-3 py-2 glass-card hover:bg-slate-800 text-slate-300 text-xs font-bold rounded-xl border border-slate-700 transition-all flex items-center gap-1.5 cursor-pointer">
+                    <Upload className="w-3.5 h-3.5" /> JSON Import
+                    <input type="file" accept=".json" onChange={handleImportWortschatzJSON} className="hidden" />
+                  </label>
+
+                  <button
+                    onClick={handleExportWortschatzJSON}
+                    className="px-3 py-2 glass-card hover:bg-slate-800 text-slate-300 text-xs font-bold rounded-xl border border-slate-700 transition-all flex items-center gap-1.5 cursor-pointer"
+                    title="Als JSON-Datei exportieren"
+                  >
+                    <Download className="w-3.5 h-3.5" /> JSON Export
+                  </button>
+                </div>
               </div>
-              <div>
-                <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  Wortschatz- & NVV-Verwaltung
-                  <span className="px-2.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full text-[10px] font-bold">
-                    🚀 In Vorbereitung
-                  </span>
-                </h3>
-                <p className="text-xs text-slate-400">
-                  Zentrale Verwaltung für Nomen-Verb-Verbindungen, berufsbezogene Fachbegriffe und digitale Karteikarten.
-                </p>
+
+              {/* Filters & Search */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2 border-t border-slate-800/80">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <button
+                    onClick={() => setWortschatzCatFilter('all')}
+                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      wortschatzCatFilter === 'all'
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-slate-900/80 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    Alle ({wortschatzList.length})
+                  </button>
+                  <button
+                    onClick={() => setWortschatzCatFilter('nvv')}
+                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      wortschatzCatFilter === 'nvv'
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-slate-900/80 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    🔗 NVV ({wortschatzList.filter((x) => x.category === 'nvv').length})
+                  </button>
+                  <button
+                    onClick={() => setWortschatzCatFilter('redemittel')}
+                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      wortschatzCatFilter === 'redemittel'
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-slate-900/80 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    💬 Redemittel ({wortschatzList.filter((x) => x.category === 'redemittel').length})
+                  </button>
+                  <button
+                    onClick={() => setWortschatzCatFilter('praepositionen')}
+                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      wortschatzCatFilter === 'praepositionen'
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-slate-900/80 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    📌 Präpositionen ({wortschatzList.filter((x) => x.category === 'praepositionen').length})
+                  </button>
+                  <button
+                    onClick={() => setWortschatzCatFilter('geschaeft')}
+                    className={`px-3 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      wortschatzCatFilter === 'geschaeft'
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-slate-900/80 text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    💼 Geschäft ({wortschatzList.filter((x) => x.category === 'geschaeft').length})
+                  </button>
+                </div>
+
+                <div className="relative w-full sm:w-64">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Wortschatz durchsuchen..."
+                    value={wortschatzSearch}
+                    onChange={(e) => setWortschatzSearch(e.target.value)}
+                    className="w-full pl-8 pr-3 py-1.5 rounded-xl glass-input text-xs text-white placeholder:text-slate-500"
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-              <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-1.5">
-                <div className="text-xs font-bold text-indigo-400">1. Nomen-Verb-Verbindungen</div>
-                <p className="text-[11px] text-slate-400">
-                  Strukturierte Tabelle mit Wendung, einfacher Entsprechung, Beispielsatz und Kontextkategorie.
-                </p>
-              </div>
+            {/* Table of Wortschatz Items */}
+            <div className="glass-panel rounded-2xl border border-slate-800 overflow-hidden shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-900/90 text-slate-400 font-bold border-b border-slate-800">
+                    <tr>
+                      <th className="py-3 px-4">Ausdruck / Term</th>
+                      <th className="py-3 px-4">Kategorie & Grammatik</th>
+                      <th className="py-3 px-4">Bedeutung & Übersetzung (UA)</th>
+                      <th className="py-3 px-4">Beispielsatz</th>
+                      <th className="py-3 px-4 text-right">Aktionen</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/80">
+                    {filteredWortschatz.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="py-8 text-center text-slate-500 font-medium">
+                          Keine Einträge gefunden.
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredWortschatz.map((item) => (
+                        <tr key={item.id} className="hover:bg-slate-800/40 transition-colors">
+                          <td className="py-3 px-4 font-bold text-white max-w-[200px]">
+                            <div>{item.term}</div>
+                            {item.gapAnswer && (
+                              <div className="text-[10px] text-indigo-400 font-mono mt-0.5">
+                                Quiz-Lösung: [{item.gapAnswer}]
+                              </div>
+                            )}
+                          </td>
 
-              <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-1.5">
-                <div className="text-xs font-bold text-emerald-400">2. Branchen-Fachpakete</div>
-                <p className="text-[11px] text-slate-400">
-                  Büro, Medizin/Pflege, Technik/Handwerk, Logistik/Handel mit Fachbegriffen & Definitionen.
-                </p>
-              </div>
+                          <td className="py-3 px-4">
+                            <span className="px-2 py-0.5 rounded-lg bg-indigo-500/20 text-indigo-300 text-[10px] font-bold uppercase block w-max">
+                              {item.category}
+                            </span>
+                            {item.grammar && (
+                              <span className="text-[11px] text-slate-400 mt-0.5 block truncate max-w-[150px]">
+                                {item.grammar}
+                              </span>
+                            )}
+                          </td>
 
-              <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-1.5">
-                <div className="text-xs font-bold text-amber-400">3. Spaced-Repetition Decks</div>
-                <p className="text-[11px] text-slate-400">
-                  Karteikarten-Algorithmus zur intelligenten Wiederholung nach Lernfortschritt des Nutzers.
-                </p>
+                          <td className="py-3 px-4 max-w-[220px]">
+                            <div className="text-slate-200 font-medium truncate">{item.simpleMeaning}</div>
+                            {item.translations.ua && (
+                              <div className="text-[11px] text-amber-300 font-medium truncate mt-0.5">
+                                🇺🇦 {item.translations.ua}
+                              </div>
+                            )}
+                          </td>
+
+                          <td className="py-3 px-4 text-slate-400 italic max-w-[260px] truncate">
+                            "{item.exampleSentence}"
+                          </td>
+
+                          <td className="py-3 px-4 text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <button
+                                onClick={() => handleOpenEditModal(item)}
+                                className="p-1.5 text-slate-400 hover:text-indigo-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                                title="Bearbeiten"
+                              >
+                                <Edit3 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteWortschatzItem(item.id, item.term)}
+                                className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
+                                title="Löschen"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
 
-            <div className="p-4 bg-indigo-950/30 border border-indigo-500/30 rounded-2xl text-xs text-indigo-300">
-              💡 <strong>Hinweis für Admin:</strong> Der Wortschatz-Editor wird in Kürze freigeschaltet. Die Benutzeroberfläche im Frontend zeigt den Nutzern bereits eine interaktive Vorschau und sammelt Vormerkungen.
-            </div>
+            {/* Modal: Create or Edit Wortschatz Item */}
+            {showWortschatzModal && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
+                <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-700 w-full max-w-xl max-h-[90vh] overflow-y-auto space-y-4 shadow-2xl">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <h3 className="text-base font-bold text-white flex items-center gap-2">
+                      <Layers className="w-5 h-5 text-indigo-400" />
+                      {editingWortschatzItem ? 'Wortschatz-Eintrag bearbeiten' : 'Neuen Wortschatz-Eintrag anlegen'}
+                    </h3>
+                    <button
+                      onClick={() => setShowWortschatzModal(false)}
+                      className="p-1.5 text-slate-400 hover:text-white rounded-lg cursor-pointer"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <form onSubmit={handleSaveWortschatzItem} className="space-y-4 text-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-400 font-bold mb-1">
+                          Ausdruck / Wendung (Term)*:
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="z. B. eine Entscheidung treffen"
+                          value={wsFormTerm}
+                          onChange={(e) => setWsFormTerm(e.target.value)}
+                          className="w-full p-2.5 rounded-xl glass-input text-white font-bold"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-400 font-bold mb-1">Kategorie*:</label>
+                        <select
+                          value={wsFormCategory}
+                          onChange={(e) => setWsFormCategory(e.target.value as WortschatzCategory)}
+                          className="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white font-bold"
+                        >
+                          <option value="nvv">🔗 Nomen-Verb-Verbindung (NVV)</option>
+                          <option value="redemittel">💬 Redemittel (Schreiben/Sprechen)</option>
+                          <option value="praepositionen">📌 Verben mit Präpositionen</option>
+                          <option value="geschaeft">💼 Geschäftswortschatz</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-400 font-bold mb-1">
+                          Grammatik / Rektion:
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="z. B. + Dativ, Verb: treffen"
+                          value={wsFormGrammar}
+                          onChange={(e) => setWsFormGrammar(e.target.value)}
+                          className="w-full p-2.5 rounded-xl glass-input text-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-400 font-bold mb-1">
+                          Synonyme (Deutsch):
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="z. B. sich entscheiden, beschließen"
+                          value={wsFormSynonyms}
+                          onChange={(e) => setWsFormSynonyms(e.target.value)}
+                          className="w-full p-2.5 rounded-xl glass-input text-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-400 font-bold mb-1">
+                        Einfache deutsche Bedeutung*:
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="z. B. sich entscheiden"
+                        value={wsFormMeaning}
+                        onChange={(e) => setWsFormMeaning(e.target.value)}
+                        className="w-full p-2.5 rounded-xl glass-input text-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-400 font-bold mb-1">
+                        Beispielsatz im Berufskontext*:
+                      </label>
+                      <textarea
+                        required
+                        rows={2}
+                        placeholder="z. B. Die Geschäftsleitung muss bis morgen eine wichtige Entscheidung treffen."
+                        value={wsFormExample}
+                        onChange={(e) => setWsFormExample(e.target.value)}
+                        className="w-full p-2.5 rounded-xl glass-input text-white"
+                      />
+                    </div>
+
+                    {/* Quiz & Cloze Fields */}
+                    <div className="p-3.5 bg-slate-900/80 rounded-2xl border border-slate-800 space-y-3">
+                      <div className="text-[11px] font-black text-indigo-400 uppercase tracking-wider">
+                        🎯 Quiz- & Lückenübung (Für Quiz & Flashcards)
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-400 font-bold mb-1">
+                          Satz mit Lücke [ _______ ]:
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="z. B. Die Geschäftsleitung muss eine Entscheidung [ _______ ]."
+                          value={wsFormGapExample}
+                          onChange={(e) => setWsFormGapExample(e.target.value)}
+                          className="w-full p-2 rounded-xl glass-input text-white"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-slate-400 font-bold mb-1">
+                            Lösungs-Wort (Gap Answer):
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="z. B. treffen"
+                            value={wsFormGapAnswer}
+                            onChange={(e) => setWsFormGapAnswer(e.target.value)}
+                            className="w-full p-2 rounded-xl glass-input text-white"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-slate-400 font-bold mb-1">
+                            4 Auswahl-Optionen (kommagetrennt):
+                          </label>
+                          <input
+                            type="text"
+                            placeholder="z. B. treffen, machen, schließen, legen"
+                            value={wsFormGapOptions}
+                            onChange={(e) => setWsFormGapOptions(e.target.value)}
+                            className="w-full p-2 rounded-xl glass-input text-white"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Translations */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-400 font-bold mb-1">
+                          🇺🇦 Ukrainische Übersetzung:
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="z. B. прийняти рішення"
+                          value={wsFormTransUA}
+                          onChange={(e) => setWsFormTransUA(e.target.value)}
+                          className="w-full p-2.5 rounded-xl glass-input text-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-400 font-bold mb-1">
+                          🇬🇧 Englische Übersetzung:
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="z. B. to make a decision"
+                          value={wsFormTransEN}
+                          onChange={(e) => setWsFormTransEN(e.target.value)}
+                          className="w-full p-2.5 rounded-xl glass-input text-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-3 flex gap-2 border-t border-slate-800">
+                      <button
+                        type="button"
+                        onClick={() => setShowWortschatzModal(false)}
+                        className="flex-1 py-2.5 glass-card text-slate-300 font-bold rounded-xl cursor-pointer"
+                      >
+                        Abbrechen
+                      </button>
+                      <button
+                        type="submit"
+                        className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-xl shadow-lg flex items-center justify-center gap-1.5 cursor-pointer"
+                      >
+                        <Save className="w-4 h-4" /> Eintrag Speichern
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* SYSTEM & CLOUD BACKUP TAB */}
       {activeTab === 'system' && (

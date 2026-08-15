@@ -109,6 +109,23 @@ CREATE TABLE IF NOT EXISTS public.registered_users (
   last_login_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 10. WORTSCHATZ & NVV ITEMS TABLE
+CREATE TABLE IF NOT EXISTS public.wortschatz_items (
+  id TEXT PRIMARY KEY,
+  term TEXT NOT NULL,
+  category TEXT NOT NULL DEFAULT 'nvv',
+  grammar TEXT,
+  simple_meaning TEXT NOT NULL,
+  synonyms TEXT,
+  example_sentence TEXT NOT NULL,
+  gap_example TEXT,
+  gap_answer TEXT,
+  gap_options TEXT[] DEFAULT '{}',
+  translations JSONB NOT NULL DEFAULT '{}'::jsonb,
+  order_index INT DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- ==========================================
 -- DISABLE RLS & GRANT ALL PERMISSIONS TO FIX 42501 PERMISSION DENIED
 -- ==========================================
@@ -121,6 +138,7 @@ ALTER TABLE public.sprechen_topics DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.written_essays DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.tile_results DISABLE ROW LEVEL SECURITY;
 ALTER TABLE public.full_exam_results DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.wortschatz_items DISABLE ROW LEVEL SECURITY;
 
 GRANT ALL ON TABLE public.profiles TO anon, authenticated, service_role;
 GRANT ALL ON TABLE public.registered_users TO anon, authenticated, service_role;
@@ -131,3 +149,5 @@ GRANT ALL ON TABLE public.sprechen_topics TO anon, authenticated, service_role;
 GRANT ALL ON TABLE public.written_essays TO anon, authenticated, service_role;
 GRANT ALL ON TABLE public.tile_results TO anon, authenticated, service_role;
 GRANT ALL ON TABLE public.full_exam_results TO anon, authenticated, service_role;
+GRANT ALL ON TABLE public.wortschatz_items TO anon, authenticated, service_role;
+

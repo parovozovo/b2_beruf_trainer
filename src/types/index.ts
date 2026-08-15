@@ -251,3 +251,30 @@ export interface TrainingStatsSummary {
   premiumAttemptsCount: number;
   freeAttemptsCount: number;
 }
+
+export type WortschatzCategory = 'nvv' | 'redemittel' | 'praepositionen' | 'geschaeft';
+
+export interface WortschatzItem {
+  id: string;
+  term: string;
+  category: WortschatzCategory;
+  grammar?: string;
+  simpleMeaning: string;
+  synonyms?: string;
+  exampleSentence: string;
+  gapExample?: string;
+  gapAnswer?: string;
+  gapOptions?: string[];
+  translations: {
+    ua?: string;
+    en?: string;
+    ru?: string;
+    tr?: string;
+    ar?: string;
+    es?: string;
+    [key: string]: string | undefined;
+  };
+  orderIndex?: number;
+  createdAt?: string;
+}
+

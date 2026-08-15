@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import { CheckCircle2, AlertCircle, Info } from 'lucide-react';
-import type { User, UserRole, Modelltest, PromoCode, ForumsbeitragTopic, TileType, TileResult, FullExamResult } from './types';
+import type { User, UserRole, Modelltest, PromoCode, ForumsbeitragTopic, TileType, TileResult, FullExamResult, WortschatzItem } from './types';
 import {
   getCurrentUser,
   setCurrentUser,
@@ -27,6 +27,9 @@ import {
   syncUserToRegisteredList,
   isAdminEmail,
   isFreeTrialEnabled,
+  getWortschatzItemsLocal,
+  saveWortschatzAsync,
+  fetchWortschatzAsync,
 } from './utils/storage';
 import { supabase, isSupabaseConfigured } from './utils/supabase';
 import { Navbar } from './components/Navbar';
@@ -53,6 +56,7 @@ export function App() {
   const [promoCodes, setPromoCodes] = useState<PromoCode[]>(getPromoCodesLocal());
   const [forumsbeitragTopics, setForumsbeitragTopics] = useState<ForumsbeitragTopic[]>(getForumsbeitragTopicsLocal());
   const [sprechenTopics, setSprechenTopics] = useState(getSprechenTopicsLocal());
+  const [wortschatzItems, setWortschatzItems] = useState<WortschatzItem[]>(getWortschatzItemsLocal());
   const [tileResults, setTileResultsState] = useState<TileResult[]>(getTileResults());
   const [fullExamResults, setFullExamResultsState] = useState<FullExamResult[]>(getFullExamResults());
 
@@ -202,6 +206,9 @@ export function App() {
 
       const cloudSP = await fetchSprechenTopicsAsync();
       setSprechenTopics(cloudSP);
+
+      const cloudWS = await fetchWortschatzAsync();
+      setWortschatzItems(cloudWS);
     }
     loadCloudData();
 
@@ -296,9 +303,18 @@ export function App() {
   }, []);
 
   // Handlers for Data Updates with Supabase Cloud Sync
-  const handleSaveModelltests = async (tests: Modelltest[]) => {
+  const handleSaveWortschatz = async (items: WortschatzItem[]): Promise<{ success: boolean; error?: string }> => {
+    setWortschatzItems(items);
+    await saveWortschatzAsync(items);
+    showToast('✅ Wortschatz-Datenbank erfolgreich gespeichert!', 'success');
+    return { success: true };
+  };
+
+  const handleSaveModelltests = async (tests: Modelltest[]): Promise<{ success: boolean; error?: string }> => {
     setModelltests(tests);
-    return await saveModelltestsAsync(tests);
+    await saveModelltestsAsync(tests);
+    showToast('✅ Modelltests erfolgreich gespeichert!', 'success');
+    return { success: true };
   };
 
   const handleSavePromoCodes = async (codes: PromoCode[]) => {
@@ -523,6 +539,7 @@ export function App() {
 
         {currentTab === 'wortschatz' && (
           <WortschatzModule
+            items={wortschatzItems}
             currentUser={currentUser}
             onOpenLoginModal={() => setIsLoginModalOpen(true)}
             onOpenPremiumLockedModal={() => setIsPremiumLockedModalOpen(true)}
@@ -561,6 +578,8 @@ export function App() {
                 onSaveForumsbeitragTopics={handleSaveForumsbeitragTopics}
                 sprechenTopics={sprechenTopics}
                 onSaveSprechenTopics={handleSaveSprechenTopics}
+                wortschatzItems={wortschatzItems}
+                onSaveWortschatz={handleSaveWortschatz}
               />
             ) : (
               <div className="glass-panel p-10 rounded-3xl text-center max-w-md mx-auto my-12 border border-rose-500/30 space-y-4">
