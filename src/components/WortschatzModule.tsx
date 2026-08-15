@@ -24,6 +24,7 @@ import {
   Flame,
   Check,
   RotateCcw,
+  Shuffle,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import type { WortschatzItem, WortschatzCategory, User } from '../types';
@@ -179,6 +180,11 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
   // ================= 1. LEXIKON / SEARCH STATE =================
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all');
+  const [visibleCount, setVisibleCount] = useState<number>(24);
+
+  useEffect(() => {
+    setVisibleCount(24);
+  }, [searchQuery, selectedCategoryFilter]);
 
   const filteredItems = useMemo(() => {
     return items.filter((item) => {
@@ -190,10 +196,10 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
 
       if (!searchQuery.trim()) return true;
       const q = searchQuery.toLowerCase();
-      const inTerm = item.term.toLowerCase().includes(q);
-      const inMeaning = item.simpleMeaning.toLowerCase().includes(q);
+      const inTerm = (item.term || '').toLowerCase().includes(q);
+      const inMeaning = (item.simpleMeaning || '').toLowerCase().includes(q);
       const inSynonyms = item.synonyms?.toLowerCase().includes(q);
-      const inExample = item.exampleSentence.toLowerCase().includes(q);
+      const inExample = (item.exampleSentence || '').toLowerCase().includes(q);
       const inGrammar = item.grammar?.toLowerCase().includes(q);
       const inTranslations = Object.values(item.translations || {}).some((t) =>
         t?.toLowerCase().includes(q)
@@ -202,6 +208,10 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
       return inTerm || inMeaning || inSynonyms || inExample || inGrammar || inTranslations;
     });
   }, [items, selectedCategoryFilter, searchQuery, favorites]);
+
+  const displayedItems = useMemo(() => {
+    return filteredItems.slice(0, visibleCount);
+  }, [filteredItems, visibleCount]);
 
   // Category counts
   const nvvCount = useMemo(() => items.filter((i) => i.category === 'nvv').length, [items]);
@@ -216,6 +226,8 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
   const [cardIndex, setCardIndex] = useState<number>(0);
   const [isFlipped, setIsFlipped] = useState<boolean>(false);
   const [showFlashcardHint, setShowFlashcardHint] = useState<boolean>(false);
+  const isShuffled = true;
+  const [shuffleCounter, setShuffleCounter] = useState<number>(1);
 
   const [learnedIds, setLearnedIds] = useState<string[]>(() => {
     try {
@@ -227,12 +239,38 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
   });
 
   const flashcardDeck = useMemo(() => {
-    if (flashcardCategory === 'all') return items;
-    if (flashcardCategory === 'favorites') return items.filter((i) => favorites.includes(i.id));
-    return items.filter((i) => i.category === flashcardCategory);
-  }, [items, flashcardCategory, favorites]);
+    let list: WortschatzItem[];
+    if (flashcardCategory === 'all') list = [...items];
+    else if (flashcardCategory === 'favorites') list = items.filter((i) => favorites.includes(i.id));
+    else list = items.filter((i) => i.category === flashcardCategory);
+
+    if (isShuffled && list.length > 1) {
+      const shuffled = [...list];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    }
+    return list;
+  }, [items, flashcardCategory, favorites, isShuffled, shuffleCounter]);
 
   const currentFlashcard = flashcardDeck[cardIndex] || flashcardDeck[0];
+
+  const handleSelectFlashcardCategory = (cat: string) => {
+    setFlashcardCategory(cat);
+    setCardIndex(0);
+    setIsFlipped(false);
+    setShowFlashcardHint(false);
+    setShuffleCounter((c) => c + 1);
+  };
+
+  const handleReshuffleDeck = () => {
+    setShuffleCounter((c) => c + 1);
+    setCardIndex(0);
+    setIsFlipped(false);
+    setShowFlashcardHint(false);
+  };
 
   const handleNextCard = () => {
     setIsFlipped(false);
@@ -852,8 +890,9 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {filteredItems.map((item) => {
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {displayedItems.map((item) => {
                 const catDef = CATEGORY_LABELS[item.category] || CATEGORY_LABELS.nvv;
                 const isFav = favorites.includes(item.id);
                 const cacheKey = `${item.id}_${targetLang}`;
@@ -955,9 +994,38 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
                 );
               })}
             </div>
-          )}
-        </div>
-      )}
+
+            {/* Pagination & Load More Controls */}
+            {filteredItems.length > 0 && (
+              <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
+                <span className="font-bold">
+                  Zeige {Math.min(visibleCount, filteredItems.length)} von {filteredItems.length} Begriffen
+                </span>
+
+                {visibleCount < filteredItems.length && (
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setVisibleCount((prev) => prev + 24)}
+                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold rounded-xl text-xs transition-colors cursor-pointer shadow-sm"
+                    >
+                      +24 weitere anzeigen
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setVisibleCount(filteredItems.length)}
+                      className="px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold rounded-xl text-xs transition-colors border border-slate-300 dark:border-slate-700 cursor-pointer"
+                    >
+                      Alle anzeigen ({filteredItems.length})
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    )}
 
       {/* ================= TAB 2: KARTEIKARTEN (FLASHCARDS SRS) ================= */}
       {activeTab === 'flashcards' && (
@@ -970,7 +1038,7 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
                   <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Deck:</span>
                   <select
                     value={flashcardCategory}
-                    onChange={(e) => setFlashcardCategory(e.target.value)}
+                    onChange={(e) => handleSelectFlashcardCategory(e.target.value)}
                     className="px-3 py-1.5 rounded-xl text-xs font-black bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
                   >
                     <option value="all">🌟 Alle ({items.length})</option>
@@ -983,6 +1051,17 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
                     <option value="favorites">⭐ Favoriten ({favorites.length})</option>
                   </select>
                 </div>
+
+                {/* Reshuffle Button */}
+                <button
+                  type="button"
+                  onClick={handleReshuffleDeck}
+                  className="px-2.5 py-1.5 rounded-xl text-xs font-extrabold bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 flex items-center gap-1.5 transition-colors cursor-pointer"
+                  title="Karten dieser Kategorie in zufälliger Reihenfolge neu mischen"
+                >
+                  <Shuffle className="w-3.5 h-3.5" />
+                  <span>Neu mischen</span>
+                </button>
 
                 {/* Flashcard Language Selector */}
                 <div className="flex items-center gap-1.5">
