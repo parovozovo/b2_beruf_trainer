@@ -18,6 +18,10 @@ import {
   Zap,
   AlertCircle,
   SlidersHorizontal,
+  Puzzle,
+  Trash2,
+  Flame,
+  Check,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import type { WortschatzItem, WortschatzCategory, User } from '../types';
@@ -30,7 +34,7 @@ interface WortschatzModuleProps {
   onSelectTab: (tab: string) => void;
 }
 
-type WortschatzTab = 'lexikon' | 'flashcards' | 'quiz';
+type WortschatzTab = 'lexikon' | 'flashcards' | 'quiz' | 'match';
 
 const CATEGORY_LABELS: Record<WortschatzCategory, { label: string; icon: string; color: string; desc: string }> = {
   nvv: {
@@ -333,6 +337,125 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
     }
   };
 
+  // ================= 4. ZUORDNUNGSSPIEL (MATCH GAME) STATE =================
+  const [matchPairCount, setMatchPairCount] = useState<number>(6);
+  const [matchCategory, setMatchCategory] = useState<string>('nvv');
+  const [matchSelectedLeft, setMatchSelectedLeft] = useState<string | null>(null);
+  const [matchSelectedRight, setMatchSelectedRight] = useState<string | null>(null);
+  const [matchedItemIds, setMatchedItemIds] = useState<string[]>([]);
+  const [matchWrongPair, setMatchWrongPair] = useState<{ leftId: string; rightId: string } | null>(null);
+  const [matchAttempts, setMatchAttempts] = useState<number>(0);
+  const [matchFinished, setMatchFinished] = useState<boolean>(false);
+
+  // Pool for matching pairs
+  const eligibleMatchPool = useMemo(() => {
+    const pool = items.filter((i) => i.gapAnswer && i.gapAnswer.trim().length > 0);
+    if (matchCategory === 'all') return pool;
+    return pool.filter((i) => i.category === matchCategory);
+  }, [items, matchCategory]);
+
+  const [activeMatchItems, setActiveMatchItems] = useState<WortschatzItem[]>([]);
+  const [shuffledLeftCards, setShuffledLeftCards] = useState<Array<{ id: string; text: string; meaning: string }>>([]);
+  const [shuffledRightCards, setShuffledRightCards] = useState<Array<{ id: string; text: string }>>([]);
+
+  const startNewMatchGame = () => {
+    const selected = [...eligibleMatchPool].sort(() => 0.5 - Math.random()).slice(0, matchPairCount);
+    setActiveMatchItems(selected);
+
+    // Left cards: Noun part / prompt with gap
+    const lefts = selected.map((item) => {
+      // Create clean left phrase (e.g. "eine Entscheidung [ ___ ]" or noun phrase)
+      let promptText = item.term;
+      if (item.gapAnswer) {
+        promptText = item.term.replace(new RegExp(`\\b${item.gapAnswer}\\b`, 'i'), '[ ___ ]');
+      }
+      return {
+        id: item.id,
+        text: promptText,
+        meaning: item.simpleMeaning,
+      };
+    });
+
+    // Right cards: Verbs / collocations
+    const rights = selected.map((item) => ({
+      id: item.id,
+      text: item.gapAnswer || item.term.split(' ').pop() || '',
+    }));
+
+    setShuffledLeftCards([...lefts].sort(() => 0.5 - Math.random()));
+    setShuffledRightCards([...rights].sort(() => 0.5 - Math.random()));
+    setMatchedItemIds([]);
+    setMatchSelectedLeft(null);
+    setMatchSelectedRight(null);
+    setMatchWrongPair(null);
+    setMatchAttempts(0);
+    setMatchFinished(false);
+  };
+
+  useEffect(() => {
+    if (activeTab === 'match') {
+      startNewMatchGame();
+    }
+  }, [activeTab, matchCategory, matchPairCount]);
+
+  const handleSelectLeftCard = (id: string) => {
+    if (matchedItemIds.includes(id)) return;
+    setMatchSelectedLeft(id);
+
+    // If a right card was already selected, check match immediately
+    if (matchSelectedRight) {
+      checkMatch(id, matchSelectedRight);
+    }
+  };
+
+  const handleSelectRightCard = (id: string) => {
+    if (matchedItemIds.includes(id)) return;
+    setMatchSelectedRight(id);
+
+    // If a left card was already selected, check match immediately
+    if (matchSelectedLeft) {
+      checkMatch(matchSelectedLeft, id);
+    }
+  };
+
+  const checkMatch = (leftId: string, rightId: string) => {
+    setMatchAttempts((prev) => prev + 1);
+
+    if (leftId === rightId) {
+      // MATCH!
+      const nextMatched = [...matchedItemIds, leftId];
+      setMatchedItemIds(nextMatched);
+      setMatchSelectedLeft(null);
+      setMatchSelectedRight(null);
+      setMatchWrongPair(null);
+
+      if (nextMatched.length === activeMatchItems.length && activeMatchItems.length > 0) {
+        setMatchFinished(true);
+        confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+      }
+    } else {
+      // WRONG MATCH
+      setMatchWrongPair({ leftId, rightId });
+      setTimeout(() => {
+        setMatchSelectedLeft(null);
+        setMatchSelectedRight(null);
+        setMatchWrongPair(null);
+      }, 650);
+    }
+  };
+
+  // ================= 5. GLOBAL STATS RESET =================
+  const handleResetAllStats = () => {
+    if (confirm('Möchten Sie Ihren gesamten Lernfortschritt für den Wortschatz zurücksetzen (Gelernt-Status, Quiz-Statistiken)?')) {
+      localStorage.removeItem('b2_flashcards_learned');
+      setLearnedIds([]);
+      setQuizScore(0);
+      setQuizMistakes(0);
+      setQuizMistakesList([]);
+      alert('✅ Lernfortschritt wurde erfolgreich zurückgesetzt!');
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fadeIn pb-16">
       {/* ================= HERO HEADER ================= */}
@@ -340,9 +463,27 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
         <div className="absolute right-0 top-0 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative z-10 space-y-3 max-w-3xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-500/20 text-amber-900 dark:text-amber-300 rounded-full text-xs font-extrabold border border-amber-500/30">
-            <Sparkles className="w-3.5 h-3.5 text-amber-500" /> B2 Beruf Vokabel- & Grammatik-Hub
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-500/20 text-amber-900 dark:text-amber-300 rounded-full text-xs font-extrabold border border-amber-500/30">
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" /> B2 Beruf Vokabel- & Grammatik-Hub
+            </div>
+
+            {/* Global Stats Counter & Reset Button */}
+            <div className="flex items-center gap-2">
+              <span className="px-3 py-1 rounded-xl bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-black flex items-center gap-1">
+                <Flame className="w-3.5 h-3.5 text-amber-500" /> {learnedIds.length} / {items.length} gelernt
+              </span>
+              <button
+                onClick={handleResetAllStats}
+                title="Lernfortschritt und Statistiken zurücksetzen"
+                className="px-2.5 py-1 rounded-xl glass-card hover:bg-rose-500/20 text-slate-500 hover:text-rose-400 border border-slate-300 dark:border-slate-700 text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Stats reset</span>
+              </button>
+            </div>
           </div>
+
           <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-slate-900 dark:text-white">
             Wortschatz & Nomen-Verb-Verbindungen 📚
           </h1>
@@ -351,7 +492,7 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
             Deutsch-Test für den Beruf (DTB) B2 Prüfung.
           </p>
 
-          {/* 3 Interactive Mode Tabs Switcher */}
+          {/* 4 Interactive Mode Tabs Switcher */}
           <div className="flex flex-wrap gap-2 pt-3">
             <button
               onClick={() => setActiveTab('lexikon')}
@@ -384,6 +525,17 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
               }`}
             >
               <Zap className="w-4 h-4 text-amber-500" /> 🎯 Kollokations-Quiz (Trainer)
+            </button>
+
+            <button
+              onClick={() => setActiveTab('match')}
+              className={`px-4 py-2.5 rounded-2xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+                activeTab === 'match'
+                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
+                  : 'glass-card text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border-slate-300 dark:border-slate-700'
+              }`}
+            >
+              <Puzzle className="w-4 h-4 text-emerald-400" /> 🧩 Zuordnungsspiel (NVV Match)
             </button>
           </div>
         </div>
@@ -711,13 +863,6 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
 
                   <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                     <button
-                      onClick={() => speakGerman(currentFlashcard.term)}
-                      className="p-2 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20 transition-colors"
-                      title="Anhören"
-                    >
-                      <Volume2 className="w-4 h-4" />
-                    </button>
-                    <button
                       onClick={() => toggleFavorite(currentFlashcard.id)}
                       className={`p-2 rounded-xl transition-colors ${
                         favorites.includes(currentFlashcard.id)
@@ -737,37 +882,59 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
 
                 {/* Center Content */}
                 {!isFlipped ? (
-                  /* FRONT: TERM & GAP EXERCISE */
-                  <div className="space-y-4 text-center my-auto py-4">
-                    <div className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-                      {currentFlashcard.term}
+                  /* FRONT: MEANING / PROMPT & GAP EXERCISE (NO SPOILER!) */
+                  <div className="space-y-4 text-center my-auto py-4 animate-fadeIn">
+                    <div className="inline-block px-3.5 py-1 bg-indigo-500/15 border border-indigo-500/30 rounded-full text-xs font-extrabold text-indigo-700 dark:text-indigo-300">
+                      💡 Gesuchte Bedeutung / Wendung:
                     </div>
 
-                    {currentFlashcard.gapExample && (
-                      <div className="p-4 bg-slate-100 dark:bg-slate-900/90 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs sm:text-sm text-slate-800 dark:text-slate-200 font-medium italic">
-                        "{currentFlashcard.gapExample}"
-                      </div>
-                    )}
+                    <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                      "{currentFlashcard.simpleMeaning}"
+                      {currentFlashcard.translations[targetLang] && (
+                        <div className="text-sm font-bold text-indigo-600 dark:text-indigo-400 mt-1 opacity-90">
+                          ({currentFlashcard.translations[targetLang]})
+                        </div>
+                      )}
+                    </div>
 
-                    {showFlashcardHint && (
+                    {/* Sentence with Gap */}
+                    <div className="p-4 bg-slate-100 dark:bg-slate-900/90 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs sm:text-sm text-slate-800 dark:text-slate-200 font-medium italic">
+                      "{currentFlashcard.gapExample || currentFlashcard.exampleSentence}"
+                    </div>
+
+                    {showFlashcardHint && currentFlashcard.grammar && (
                       <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs text-amber-900 dark:text-amber-300 font-semibold animate-fadeIn">
-                        💡 Bedeutung: {currentFlashcard.simpleMeaning}
+                        📌 Grammatik-Hinweis: {currentFlashcard.grammar}
                       </div>
                     )}
                   </div>
                 ) : (
-                  /* BACK: MEANING, FULL SENTENCE, GRAMMAR, SYNONYMS & TRANSLATIONS */
+                  /* BACK: FULL TERM REVEAL, FULL SENTENCE, GRAMMAR, SYNONYMS & TRANSLATIONS */
                   <div className="space-y-3.5 text-left my-auto py-2 animate-fadeIn">
-                    <div>
-                      <span className="text-[11px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">
-                        Vollständiger Ausdruck & Bedeutung:
-                      </span>
-                      <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5">
-                        {currentFlashcard.term}
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <span className="text-[11px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1">
+                          <Check className="w-3.5 h-3.5" /> Richtiger Ausdruck:
+                        </span>
+                        <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5">
+                          {currentFlashcard.term}
+                        </div>
+                        <div className="text-sm font-extrabold text-slate-800 dark:text-slate-200 mt-1">
+                          👉 {currentFlashcard.simpleMeaning}
+                        </div>
                       </div>
-                      <div className="text-sm font-extrabold text-slate-800 dark:text-slate-200 mt-1">
-                        👉 {currentFlashcard.simpleMeaning}
-                      </div>
+
+                      {/* Audio Button on Back */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          speakGerman(currentFlashcard.term);
+                        }}
+                        className="p-2.5 rounded-2xl bg-indigo-600 text-white hover:bg-indigo-500 shadow-md transition-colors shrink-0 cursor-pointer"
+                        title="Ausdruck anhören"
+                      >
+                        <Volume2 className="w-5 h-5" />
+                      </button>
                     </div>
 
                     {/* Example with highlighted answer */}
@@ -830,7 +997,7 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
                   </button>
 
                   <span className="font-bold flex items-center gap-1 text-indigo-600 dark:text-indigo-400">
-                    <RotateCw className="w-3.5 h-3.5" /> {isFlipped ? 'Zurückdrehen' : 'Klicken zum Umdrehen'}
+                    <RotateCw className="w-3.5 h-3.5" /> {isFlipped ? 'Zurückdrehen' : 'Klicken zum Aufdecken'}
                   </span>
                 </div>
               </div>
@@ -1110,6 +1277,190 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
               )}
             </div>
           ) : null}
+        </div>
+      )}
+
+      {/* ================= TAB 4: ZUORDNUNGSSPIEL (NVV & KOLLOKATIONEN MATCH) ================= */}
+      {activeTab === 'match' && (
+        <div className="max-w-3xl mx-auto space-y-6 animate-fadeIn">
+          {/* Game Controls Bar */}
+          <div className="glass-panel p-4 sm:p-5 rounded-2xl border border-slate-300 dark:border-slate-800 space-y-3 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-3">
+                {/* Category selector */}
+                <div className="flex items-center gap-1.5">
+                  <SlidersHorizontal className="w-3.5 h-3.5 text-indigo-500" />
+                  <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Kategorie:</span>
+                  <select
+                    value={matchCategory}
+                    onChange={(e) => setMatchCategory(e.target.value)}
+                    className="px-2.5 py-1.5 rounded-xl text-xs font-black bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                  >
+                    <option value="nvv">🔗 NVV (Nomen ↔ Verben)</option>
+                    <option value="praepositionen">📌 Präpositionen</option>
+                    <option value="all">🌟 Alle Ausdrücke</option>
+                  </select>
+                </div>
+
+                {/* Pairs count selector */}
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs font-black text-slate-500 uppercase tracking-wider">Paare:</span>
+                  <select
+                    value={matchPairCount}
+                    onChange={(e) => setMatchPairCount(Number(e.target.value))}
+                    className="px-2.5 py-1.5 rounded-xl text-xs font-black bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                  >
+                    <option value={4}>4 Paare (Schnell)</option>
+                    <option value={6}>6 Paare (Standard)</option>
+                    <option value={8}>8 Paare (Profi)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Counters & Restart */}
+              <div className="flex items-center gap-2 self-end sm:self-auto">
+                <span className="px-3 py-1 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs font-bold">
+                  Versuche: {matchAttempts}
+                </span>
+                <button
+                  onClick={startNewMatchGame}
+                  className="px-3 py-1.5 rounded-xl bg-indigo-600/15 hover:bg-indigo-600/25 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 text-xs font-black flex items-center gap-1.5 transition-all cursor-pointer"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" /> Neu mischen
+                </button>
+              </div>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
+              <div
+                className="bg-emerald-500 h-2 transition-all duration-300 rounded-full"
+                style={{
+                  width: `${
+                    activeMatchItems.length > 0
+                      ? Math.round((matchedItemIds.length / activeMatchItems.length) * 100)
+                      : 0
+                  }%`,
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Game Body */}
+          {matchFinished ? (
+            /* Victory Screen */
+            <div className="glass-panel p-8 sm:p-12 rounded-3xl border border-emerald-500/40 text-center space-y-6 shadow-2xl animate-fadeIn">
+              <div className="w-20 h-20 bg-emerald-500/20 text-emerald-400 rounded-3xl flex items-center justify-center mx-auto border border-emerald-500/40 animate-bounce">
+                <Award className="w-10 h-10" />
+              </div>
+
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white mb-2">
+                  Hervorragend gelöst! 🏆
+                </h2>
+                <p className="text-sm text-slate-600 dark:text-slate-300">
+                  Sie haben alle {activeMatchItems.length} Paare in {matchAttempts} Versuchen richtig zugeordnet.
+                </p>
+              </div>
+
+              <div className="flex justify-center gap-3">
+                <button
+                  onClick={startNewMatchGame}
+                  className="px-8 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-2xl shadow-lg transition-all flex items-center gap-2 cursor-pointer text-sm"
+                >
+                  <RefreshCw className="w-4 h-4" /> Nächste Runde spielen
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* Interactive Matching Columns */
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Left Column: Nomen-Teil / Ausdrücke */}
+              <div className="space-y-3">
+                <div className="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider px-1">
+                  1. Nomen / Ausdruck wählen:
+                </div>
+                <div className="space-y-2.5">
+                  {shuffledLeftCards.map((card) => {
+                    const isMatched = matchedItemIds.includes(card.id);
+                    const isSelected = matchSelectedLeft === card.id;
+                    const isWrong = matchWrongPair?.leftId === card.id;
+
+                    let cardClass =
+                      'glass-card text-slate-900 dark:text-white border-slate-300 dark:border-slate-700 hover:border-indigo-500';
+
+                    if (isMatched) {
+                      cardClass =
+                        'bg-emerald-500/20 border-emerald-500/60 text-emerald-800 dark:text-emerald-300 opacity-60 cursor-default line-through';
+                    } else if (isWrong) {
+                      cardClass =
+                        'bg-rose-500/30 border-rose-500 text-rose-900 dark:text-rose-200 animate-pulse';
+                    } else if (isSelected) {
+                      cardClass =
+                        'bg-indigo-600 text-white border-indigo-500 shadow-lg shadow-indigo-600/30 ring-2 ring-indigo-400 scale-[1.02]';
+                    }
+
+                    return (
+                      <button
+                        key={card.id}
+                        onClick={() => handleSelectLeftCard(card.id)}
+                        disabled={isMatched}
+                        className={`w-full p-4 rounded-2xl border text-left transition-all font-extrabold text-xs sm:text-sm flex items-center justify-between gap-2 cursor-pointer ${cardClass}`}
+                      >
+                        <div>
+                          <div className="text-sm font-black">{card.text}</div>
+                          <div className="text-[11px] font-medium opacity-75 mt-0.5">
+                            👉 {card.meaning}
+                          </div>
+                        </div>
+                        {isMatched && <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Right Column: Passende Verben / Kollokationen */}
+              <div className="space-y-3">
+                <div className="text-xs font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-wider px-1">
+                  2. Passendes Verb / Element wählen:
+                </div>
+                <div className="space-y-2.5">
+                  {shuffledRightCards.map((card) => {
+                    const isMatched = matchedItemIds.includes(card.id);
+                    const isSelected = matchSelectedRight === card.id;
+                    const isWrong = matchWrongPair?.rightId === card.id;
+
+                    let cardClass =
+                      'glass-card text-slate-900 dark:text-white border-slate-300 dark:border-slate-700 hover:border-emerald-500';
+
+                    if (isMatched) {
+                      cardClass =
+                        'bg-emerald-500/20 border-emerald-500/60 text-emerald-800 dark:text-emerald-300 opacity-60 cursor-default line-through';
+                    } else if (isWrong) {
+                      cardClass =
+                        'bg-rose-500/30 border-rose-500 text-rose-900 dark:text-rose-200 animate-pulse';
+                    } else if (isSelected) {
+                      cardClass =
+                        'bg-emerald-600 text-white border-emerald-500 shadow-lg shadow-emerald-600/30 ring-2 ring-emerald-400 scale-[1.02]';
+                    }
+
+                    return (
+                      <button
+                        key={card.id}
+                        onClick={() => handleSelectRightCard(card.id)}
+                        disabled={isMatched}
+                        className={`w-full p-4 rounded-2xl border text-left transition-all font-extrabold text-sm sm:text-base flex items-center justify-between gap-2 cursor-pointer ${cardClass}`}
+                      >
+                        <span className="font-black tracking-wide">{card.text}</span>
+                        {isMatched && <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
