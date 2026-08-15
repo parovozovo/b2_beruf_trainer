@@ -83,8 +83,6 @@ const SUPPORTED_TRANSLATION_LANGUAGES = [
   { code: 'ua', label: '🇺🇦 Українська' },
   { code: 'en', label: '🇬🇧 English' },
   { code: 'tr', label: '🇹🇷 Türkçe' },
-  { code: 'ar', label: '🇸🇦 العربية' },
-  { code: 'pl', label: '🇵🇱 Polski' },
   { code: 'es', label: '🇪🇸 Español' },
   { code: 'ru', label: '🇷🇺 Русский' },
 ];
@@ -128,7 +126,7 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
     }
   };
 
-  // Translation state (code -> on-demand cache)
+  // Translation state
   const [targetLang, setTargetLang] = useState<string>(() => {
     return localStorage.getItem('b2_target_lang') || 'ua';
   });
@@ -136,45 +134,6 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
   const handleSetTargetLang = (code: string) => {
     setTargetLang(code);
     localStorage.setItem('b2_target_lang', code);
-  };
-
-  const [translationCache, setTranslationCache] = useState<Record<string, string>>(() => {
-    try {
-      const raw = localStorage.getItem('b2_translations_cache');
-      return raw ? JSON.parse(raw) : {};
-    } catch {
-      return {};
-    }
-  });
-  const [translatingId, setTranslatingId] = useState<string | null>(null);
-
-  const handleTranslateOnDemand = async (item: WortschatzItem) => {
-    const cacheKey = `${item.id}_${targetLang}`;
-    if (translationCache[cacheKey]) return;
-
-    if (item.translations && item.translations[targetLang]) {
-      return;
-    }
-
-    setTranslatingId(item.id);
-    try {
-      const res = await fetch(
-        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(item.term)}&langpair=de|${targetLang}`
-      );
-      const data = await res.json();
-      if (data && data.responseData && data.responseData.translatedText) {
-        const text = data.responseData.translatedText;
-        setTranslationCache((prev) => {
-          const next = { ...prev, [cacheKey]: text };
-          localStorage.setItem('b2_translations_cache', JSON.stringify(next));
-          return next;
-        });
-      }
-    } catch (e) {
-      console.warn('Translation fetch failed:', e);
-    } finally {
-      setTranslatingId(null);
-    }
   };
 
   // ================= 1. LEXIKON / SEARCH STATE =================
@@ -895,9 +854,7 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
                 {displayedItems.map((item) => {
                 const catDef = CATEGORY_LABELS[item.category] || CATEGORY_LABELS.nvv;
                 const isFav = favorites.includes(item.id);
-                const cacheKey = `${item.id}_${targetLang}`;
-                const translationText =
-                  item.translations[targetLang] || translationCache[cacheKey] || null;
+                const translationText = item.translations?.[targetLang] || null;
 
                 return (
                   <div
@@ -978,16 +935,9 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
                           <span>{translationText}</span>
                         </div>
                       ) : (
-                        <button
-                          onClick={() => handleTranslateOnDemand(item)}
-                          disabled={translatingId === item.id}
-                          className="text-xs font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer"
-                        >
-                          <Globe className="w-3.5 h-3.5" />
-                          <span>
-                            {translatingId === item.id ? 'Übersetze...' : 'Übersetzung laden'}
-                          </span>
-                        </button>
+                        <span className="text-slate-400 dark:text-slate-600 text-xs italic">
+                          Keine Übersetzung ({targetLang.toUpperCase()})
+                        </span>
                       )}
                     </div>
                   </div>
@@ -1229,22 +1179,14 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
                         <span className="text-slate-500 font-bold block text-[10px] uppercase">
                           {SUPPORTED_TRANSLATION_LANGUAGES.find((l) => l.code === targetLang)?.label || 'Übersetzung'}
                         </span>
-                        {currentFlashcard.translations[targetLang] || translationCache[`${currentFlashcard.id}_${targetLang}`] ? (
+                        {currentFlashcard.translations?.[targetLang] ? (
                           <span className="font-bold text-indigo-700 dark:text-indigo-300">
-                            {currentFlashcard.translations[targetLang] || translationCache[`${currentFlashcard.id}_${targetLang}`]}
+                            {currentFlashcard.translations[targetLang]}
                           </span>
                         ) : (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleTranslateOnDemand(currentFlashcard);
-                            }}
-                            className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 mt-0.5 cursor-pointer"
-                          >
-                            <Globe className="w-3 h-3" />
-                            <span>{translatingId === currentFlashcard.id ? 'Lädt...' : 'Übersetzung laden'}</span>
-                          </button>
+                          <span className="text-slate-400 dark:text-slate-600 text-xs italic">
+                            —
+                          </span>
                         )}
                       </div>
                     </div>

@@ -152,9 +152,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [wsFormGapOptions, setWsFormGapOptions] = useState('');
   const [wsFormTransUA, setWsFormTransUA] = useState('');
   const [wsFormTransEN, setWsFormTransEN] = useState('');
-  const [wsFormTransRU, setWsFormTransRU] = useState('');
   const [wsFormTransTR, setWsFormTransTR] = useState('');
-  const [wsFormTransPL, setWsFormTransPL] = useState('');
+  const [wsFormTransES, setWsFormTransES] = useState('');
+  const [wsFormTransRU, setWsFormTransRU] = useState('');
 
   // Keep local list in sync with parent props
   useEffect(() => {
@@ -3453,9 +3453,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           setWsFormGapOptions('');
           setWsFormTransUA('');
           setWsFormTransEN('');
-          setWsFormTransRU('');
           setWsFormTransTR('');
-          setWsFormTransPL('');
+          setWsFormTransES('');
+          setWsFormTransRU('');
           setShowWortschatzModal(true);
         };
 
@@ -3472,9 +3472,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           setWsFormGapOptions(item.gapOptions?.join(', ') || '');
           setWsFormTransUA(item.translations?.ua || '');
           setWsFormTransEN(item.translations?.en || '');
-          setWsFormTransRU(item.translations?.ru || '');
           setWsFormTransTR(item.translations?.tr || '');
-          setWsFormTransPL(item.translations?.pl || '');
+          setWsFormTransES(item.translations?.es || '');
+          setWsFormTransRU(item.translations?.ru || '');
           setShowWortschatzModal(true);
         };
 
@@ -3509,9 +3509,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       ...(item.translations || {}),
                       ua: wsFormTransUA.trim() || undefined,
                       en: wsFormTransEN.trim() || undefined,
-                      ru: wsFormTransRU.trim() || undefined,
                       tr: wsFormTransTR.trim() || undefined,
-                      pl: wsFormTransPL.trim() || undefined,
+                      es: wsFormTransES.trim() || undefined,
+                      ru: wsFormTransRU.trim() || undefined,
                     },
                   }
                 : item
@@ -3531,9 +3531,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               translations: {
                 ua: wsFormTransUA.trim() || undefined,
                 en: wsFormTransEN.trim() || undefined,
-                ru: wsFormTransRU.trim() || undefined,
                 tr: wsFormTransTR.trim() || undefined,
-                pl: wsFormTransPL.trim() || undefined,
+                es: wsFormTransES.trim() || undefined,
+                ru: wsFormTransRU.trim() || undefined,
               },
               orderIndex: wortschatzList.length + 1,
               createdAt: new Date().toISOString(),
@@ -3629,6 +3629,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             (item.exampleSentence || '').toLowerCase().includes(q) ||
             item.translations?.ua?.toLowerCase().includes(q) ||
             item.translations?.en?.toLowerCase().includes(q) ||
+            item.translations?.tr?.toLowerCase().includes(q) ||
+            item.translations?.es?.toLowerCase().includes(q) ||
             item.translations?.ru?.toLowerCase().includes(q)
           );
         });
@@ -4041,19 +4043,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
                       <div>
                         <label className="block text-slate-400 font-bold mb-1">
-                          🇷🇺 Russische Übersetzung:
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="z. B. принять решение"
-                          value={wsFormTransRU}
-                          onChange={(e) => setWsFormTransRU(e.target.value)}
-                          className="w-full p-2.5 rounded-xl glass-input text-white"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-slate-400 font-bold mb-1">
                           🇹🇷 Türkische Übersetzung:
                         </label>
                         <input
@@ -4067,13 +4056,26 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
                       <div>
                         <label className="block text-slate-400 font-bold mb-1">
-                          🇵🇱 Polnische Übersetzung:
+                          🇪🇸 Spanische Übersetzung:
                         </label>
                         <input
                           type="text"
-                          placeholder="z. B. podjąć decyzję"
-                          value={wsFormTransPL}
-                          onChange={(e) => setWsFormTransPL(e.target.value)}
+                          placeholder="z. B. tomar una decisión"
+                          value={wsFormTransES}
+                          onChange={(e) => setWsFormTransES(e.target.value)}
+                          className="w-full p-2.5 rounded-xl glass-input text-white"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="block text-slate-400 font-bold mb-1">
+                          🇷🇺 Russische Übersetzung:
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="z. B. принять решение"
+                          value={wsFormTransRU}
+                          onChange={(e) => setWsFormTransRU(e.target.value)}
                           className="w-full p-2.5 rounded-xl glass-input text-white"
                         />
                       </div>
