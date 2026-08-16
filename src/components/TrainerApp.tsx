@@ -56,6 +56,9 @@ import { PremiumLockedModal } from './PremiumLockedModal';
 import { ResetPasswordModal } from './ResetPasswordModal';
 import { UserProfileModal } from './UserProfileModal';
 import { PwaInstallPrompt } from './pwa/PwaInstallPrompt';
+import { LegalModal, type LegalTab } from './legal/LegalModal';
+import { CookieConsentBanner } from './legal/CookieConsentBanner';
+import { Footer } from './Footer';
 
 interface TrainerAppProps {
   theme: 'dark' | 'light';
@@ -114,6 +117,21 @@ export const TrainerApp: React.FC<TrainerAppProps> = ({ theme, onToggleTheme }) 
   const [isPremiumLockedModalOpen, setIsPremiumLockedModalOpen] = useState(false);
   const [isUserProfileModalOpen, setIsUserProfileModalOpen] = useState(false);
   const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
+  const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
+  const [legalModalTab, setLegalModalTab] = useState<LegalTab>('agb');
+
+  useEffect(() => {
+    const handleOpenLegal = (e: any) => {
+      if (e.detail?.tab) {
+        setLegalModalTab(e.detail.tab);
+      }
+      setIsLegalModalOpen(true);
+    };
+    window.addEventListener('open-legal-modal', handleOpenLegal);
+    return () => {
+      window.removeEventListener('open-legal-modal', handleOpenLegal);
+    };
+  }, []);
 
   // Toast State
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
@@ -457,15 +475,8 @@ export const TrainerApp: React.FC<TrainerAppProps> = ({ theme, onToggleTheme }) 
         )}
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-6 text-center text-xs text-slate-500">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <span>© 2026 Beruf B2+ Trainer. Alle Rechte vorbehalten.</span>
-          <span className="text-[11px] font-mono text-slate-500">
-            Vollständiges Prüfungssystem für Deutsch B2 Beruf (DTB)
-          </span>
-        </div>
-      </footer>
+      {/* Legal & Compliance Footer */}
+      <Footer />
 
       {/* Modals */}
       <LoginModal
@@ -516,6 +527,16 @@ export const TrainerApp: React.FC<TrainerAppProps> = ({ theme, onToggleTheme }) 
           confetti({ particleCount: 100, spread: 70 });
         }}
       />
+
+      {/* Universal Legal & Compliance Modal (AGB, Datenschutz, Cookies, Impressum) */}
+      <LegalModal
+        isOpen={isLegalModalOpen}
+        onClose={() => setIsLegalModalOpen(false)}
+        initialTab={legalModalTab}
+      />
+
+      {/* Cookie Consent Banner */}
+      <CookieConsentBanner />
 
       {/* Progressive Web App Install Prompt & Offline Toast */}
       <PwaInstallPrompt />

@@ -3,6 +3,7 @@ import { X, UserCheck, Lock, Mail, LogIn, ShieldAlert, UserPlus } from 'lucide-r
 import type { User, UserRole } from '../types';
 import { isAdminEmail, isFreeTrialEnabled, syncUserToRegisteredList, getRegisteredUsersLocal } from '../utils/storage';
 import { supabase, isSupabaseConfigured } from '../utils/supabase';
+import { openLegalModal } from './legal/LegalModal';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -349,6 +350,27 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               </>
             )}
           </button>
+
+          {mode === 'signup' && (
+            <p className="text-[11px] text-slate-500 text-center leading-tight pt-1">
+              Mit der Registrierung akzeptieren Sie unsere{' '}
+              <button
+                type="button"
+                onClick={() => openLegalModal('agb')}
+                className="text-indigo-600 dark:text-indigo-400 underline font-bold cursor-pointer"
+              >
+                AGB & Widerrufsverzicht
+              </button>{' '}
+              und die{' '}
+              <button
+                type="button"
+                onClick={() => openLegalModal('datenschutz')}
+                className="text-indigo-600 dark:text-indigo-400 underline font-bold cursor-pointer"
+              >
+                Datenschutzerklärung
+              </button>.
+            </p>
+          )}
         </form>
 
         <div className="flex items-center justify-between text-xs text-slate-400 pt-1">

@@ -19,13 +19,18 @@ import {
   BookOpen,
   Smartphone,
   Download,
-  RefreshCw
+  RefreshCw,
+  ShieldCheck,
+  FileText,
+  Cookie,
+  Landmark
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import type { User, PromoCode, TileResult, FullExamResult } from '../types';
 import { getRemainingPremiumTimeLabel, isAdminEmail } from '../utils/storage';
 import { supabase, isSupabaseConfigured } from '../utils/supabase';
 import { triggerPwaInstall, isRunningStandalone, checkForAppUpdates } from './pwa/PwaInstallPrompt';
+import { openLegalModal } from './legal/LegalModal';
 
 interface SettingsPageProps {
   currentUser: User | null;
@@ -612,6 +617,58 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 Ihr Konto ist durch verschlüsselte Supabase-Authentifizierung geschützt. Sie können Ihr Passwort jederzeit hier ändern.
               </p>
             )}
+          </div>
+
+          {/* Rechtliches & Datenschutz Card */}
+          <div className="glass-panel p-6 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-indigo-600 dark:text-indigo-400" /> Rechtliches & Datenschutz
+              </h3>
+              <span className="px-2 py-0.5 rounded text-[10px] font-black bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                DSGVO-konform
+              </span>
+            </div>
+            <p className="text-xs text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
+              Hier finden Sie alle offiziellen Dokumente zu unseren Nutzungsbedingungen, dem Widerrufsverzicht für digitale Inhalte sowie der DSGVO-Datenschutzerklärung.
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+              <button
+                type="button"
+                onClick={() => openLegalModal('agb')}
+                className="p-3 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-bold text-slate-800 dark:text-slate-200 flex flex-col items-center gap-1.5 transition-all text-center cursor-pointer shadow-2xs"
+              >
+                <FileText className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                <span>AGB & Widerruf</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => openLegalModal('datenschutz')}
+                className="p-3 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-bold text-slate-800 dark:text-slate-200 flex flex-col items-center gap-1.5 transition-all text-center cursor-pointer shadow-2xs"
+              >
+                <Shield className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                <span>Datenschutz</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => openLegalModal('cookies')}
+                className="p-3 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-bold text-slate-800 dark:text-slate-200 flex flex-col items-center gap-1.5 transition-all text-center cursor-pointer shadow-2xs"
+              >
+                <Cookie className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                <span>Cookies</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => openLegalModal('impressum')}
+                className="p-3 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-bold text-slate-800 dark:text-slate-200 flex flex-col items-center gap-1.5 transition-all text-center cursor-pointer shadow-2xs"
+              >
+                <Landmark className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                <span>Impressum</span>
+              </button>
+            </div>
           </div>
 
           {/* Super-Admin Dedicated Control Box */}
