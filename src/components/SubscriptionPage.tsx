@@ -25,6 +25,7 @@ export interface SubscriptionPlan {
   name: string;
   badge?: string;
   price: string;
+  originalPrice?: string;
   pricePerMonth?: string;
   period: string;
   durationDays: number | null; // null for lifetime
@@ -33,69 +34,61 @@ export interface SubscriptionPlan {
   features: string[];
 }
 
+const COMMON_FEATURES = [
+  'Voller Zugriff auf alle 12 Prüfungsteile',
+  'Unbegrenzte Modelltest-Simulationen mit Timer',
+  'Alle 104+ Forenbeiträge & 67+ Sprechen-Themen',
+  'Vollständiges Wortschatz-Training mit Spaced Repetition',
+  '100% Offline-fähig (PWA auf Smartphone & PC)',
+];
+
 const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   {
     id: 'sprint_7d',
     name: '7 Tage Sprint-Pass',
-    price: '4,99 €',
+    price: '9,99 €',
     period: 'für 7 Tage',
     durationDays: 7,
-    description: 'Perfekt für die intensive Generalprobe in der letzten Woche vor der Prüfung.',
-    features: [
-      'Voller Zugriff auf alle 12 Prüfungsteile',
-      'Unbegrenzte Prüfungssimulationen mit Timer',
-      'Alle Audioaufnahmen & Hörtexte',
-      '100% Offline-Funktion auf dem Smartphone',
-    ],
+    description: '1 Woche voller Zugriff. Ideal für den schnellen Endspurt vor dem Prüfungstermin.',
+    features: COMMON_FEATURES,
   },
   {
     id: 'standard_30d',
     name: '30 Tage Standard-Pass',
-    badge: 'Empfohlen & Bestseller',
-    price: '9,99 €',
+    badge: 'Bestseller',
+    price: '15,99 €',
     period: 'für 30 Tage',
     durationDays: 30,
     popular: true,
-    description: 'Die optimale Vorbereitung: Meistern Sie alle Module und den kompletten Wortschatz.',
-    features: [
-      'Voller Zugriff auf alle 12 Prüfungsteile',
-      'Unbegrenzte Modelltest-Simulationen (130 Min.)',
-      'Alle 104+ Forenbeiträge & 67+ Sprechen-Themen',
-      'Vollständiges Wortschatz-Training mit Spaced Repetition',
-      'Musterlösungen für Aufgabe 21 (Beschwerdebrief)',
-      '100% Offline-Nutzung auf iOS & Android',
-    ],
+    description: '1 Monat voller Zugriff. Die beliebteste Wahl für eine gründliche und stressfreie Vorbereitung.',
+    features: COMMON_FEATURES,
   },
   {
     id: 'complete_90d',
     name: '90 Tage Kursbegleiter',
-    badge: 'Spart 33%',
-    price: '19,99 €',
-    pricePerMonth: 'nur 6,66 € / Monat',
+    badge: 'Spart 38%',
+    price: '29,99 €',
+    pricePerMonth: 'nur 9,99 € / Monat',
     period: 'für 90 Tage',
     durationDays: 90,
-    description: 'Ideal für den gesamten B2-Berufssprachkurs: Kontinuierlich lernen ohne Zeitdruck.',
-    features: [
-      'Alle Inhalte des Standard-Passes für 3 Monate',
-      'Unbegrenzte Wiederholungen aller 57 Prüfungsfragen',
-      'Detaillierte Lernstatistiken & Fehleranalyse',
-      'Automatische Updates mit neuen Prüfungsfragen',
-      'Vorrangiger Support bei fachlichen Fragen',
-    ],
+    description: '3 Monate voller Zugriff. Begleitet Sie zuverlässig durch den gesamten B2-Berufssprachkurs.',
+    features: COMMON_FEATURES,
   },
   {
     id: 'lifetime',
     name: 'Lebenslanger Pass',
-    badge: 'Einmalzahlung',
-    price: '34,99 €',
-    period: 'dauerhafter Zugriff',
+    badge: 'Aktion: -20%',
+    price: '39,99 €',
+    originalPrice: '49,99 €',
+    period: 'dauerhaft',
     durationDays: null,
-    description: 'Einmal bezahlen, unbegrenzt üben bis zum sicheren Bestehen Ihrer DTB-Prüfung.',
+    description: 'Einmal zahlen, unbegrenzt üben ohne zeitliche Begrenzung bis zum sicheren Bestehen.',
     features: [
       'Dauerhafter unbegrenzter Zugang ohne Ablaufdatum',
-      'Alle aktuellen & zukünftigen Modelltests',
-      'Alle Schreibvorlagen & Sprechkarten',
-      'Keine automatische Verlängerung, kein Abo',
+      'Alle 12 Prüfungsteile & zukünftige Modelltests',
+      'Unbegrenzte Prüfungssimulationen mit Timer',
+      'Alle Forenbeiträge, Sprech-Themen & Wortschatz',
+      '100% Offline-fähig auf allen Geräten',
     ],
   },
 ];
@@ -147,10 +140,10 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({
   // IF USER ALREADY HAS ACTIVE PREMIUM AND NOT IN SUCCESS PURCHASE STATE
   if (isAlreadyPremium && !justPurchasedPlan) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-10 space-y-8 animate-fadeIn">
+      <div className="max-w-4xl mx-auto px-4 py-8 sm:py-12 space-y-8 animate-fadeIn">
         {/* Active Premium Card */}
-        <div className="p-8 sm:p-10 glass-panel rounded-3xl border-2 border-emerald-500/40 text-center space-y-6 shadow-xl bg-gradient-to-b from-emerald-950/20 via-slate-900/60 to-slate-900/90">
-          <div className="w-20 h-20 mx-auto rounded-3xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center justify-center shadow-lg">
+        <div className="p-8 sm:p-10 bg-white dark:bg-slate-900 rounded-3xl border-2 border-emerald-500/40 text-center space-y-6 shadow-xl">
+          <div className="w-20 h-20 mx-auto rounded-3xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center justify-center shadow-sm">
             <Crown className="w-10 h-10" />
           </div>
 
@@ -161,14 +154,14 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({
             <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
               Sie haben bereits vollen Premium-Zugriff! 👑
             </h2>
-            <p className="text-sm text-slate-600 dark:text-slate-300 font-medium max-w-lg mx-auto">
-              Alle 12 Prüfungsteile, unbegrenzte Simulationen, Wortschatz-Karten und Musterlösungen sind für Sie freigeschaltet.
+            <p className="text-sm text-slate-600 dark:text-slate-300 font-medium max-w-lg mx-auto leading-relaxed">
+              Alle 12 Prüfungsteile, unbegrenzte Simulationen, Wortschatz-Karten und Musterlösungen sind für Sie uneingeschränkt freigeschaltet.
             </p>
           </div>
 
           {/* Status Details */}
-          <div className="p-4 bg-white dark:bg-slate-950/80 rounded-2xl border border-slate-200 dark:border-slate-800 max-w-md mx-auto flex items-center justify-between text-xs font-bold">
-            <span className="text-slate-500">Verbleibende Laufzeit:</span>
+          <div className="p-4 bg-slate-50 dark:bg-slate-950/80 rounded-2xl border border-slate-200 dark:border-slate-800 max-w-md mx-auto flex items-center justify-between text-xs font-bold">
+            <span className="text-slate-500 dark:text-slate-400">Verbleibende Laufzeit:</span>
             <span className="text-emerald-600 dark:text-emerald-400 font-black text-sm">{remainingTime}</span>
           </div>
 
@@ -188,7 +181,7 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({
               className="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-2xl font-black text-xs sm:text-sm shadow-md flex items-center gap-2 transition-all cursor-pointer active:scale-95"
             >
               <Award className="w-4 h-4" />
-              <span>Komplette Prüfungssimulation</span>
+              <span>Prüfungssimulation</span>
             </button>
           </div>
         </div>
@@ -199,8 +192,8 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({
   // SUCCESS STATE DIRECTLY AFTER PURCHASE
   if (justPurchasedPlan) {
     return (
-      <div className="max-w-3xl mx-auto px-4 py-10 space-y-8 animate-fadeIn">
-        <div className="p-8 sm:p-12 glass-panel rounded-3xl border-2 border-emerald-500/50 text-center space-y-6 shadow-2xl bg-gradient-to-b from-emerald-950/30 to-slate-900/90">
+      <div className="max-w-3xl mx-auto px-4 py-8 sm:py-12 space-y-8 animate-fadeIn">
+        <div className="p-8 sm:p-12 bg-white dark:bg-slate-900 rounded-3xl border-2 border-emerald-500/50 text-center space-y-6 shadow-2xl">
           <div className="w-20 h-20 mx-auto rounded-3xl bg-emerald-500 text-slate-950 flex items-center justify-center shadow-xl animate-bounce">
             <Check className="w-10 h-10 stroke-[3]" />
           </div>
@@ -217,7 +210,7 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({
             </p>
           </div>
 
-          <div className="p-4 bg-slate-100 dark:bg-slate-950/80 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs space-y-1.5 max-w-md mx-auto text-left">
+          <div className="p-4 bg-slate-50 dark:bg-slate-950/80 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs space-y-1.5 max-w-md mx-auto text-left">
             <div className="flex justify-between font-bold text-slate-700 dark:text-slate-300">
               <span>Paket:</span>
               <span className="text-indigo-600 dark:text-indigo-400 font-black">{justPurchasedPlan.name}</span>
@@ -246,25 +239,25 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 space-y-12 animate-fadeIn">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-4 pb-14 space-y-10 animate-fadeIn">
       
       {/* Hero Header */}
-      <div className="text-center space-y-4 max-w-2xl mx-auto">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-indigo-500/20 border border-amber-500/30 text-amber-600 dark:text-amber-300 shadow-xs">
+      <div className="text-center space-y-3.5 max-w-2xl mx-auto">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-amber-500/15 border border-amber-500/30 text-amber-700 dark:text-amber-300 shadow-2xs">
           <Crown className="w-3.5 h-3.5 text-amber-500" />
           <span>Deutsch B2 Beruf (DTB) Prüfungspass</span>
         </div>
 
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
+        <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
           Bestehen Sie Ihre B2-Beruf-Prüfung beim ersten Versuch! 🚀
         </h1>
 
-        <p className="text-sm sm:text-base text-slate-600 dark:text-slate-300 font-medium leading-relaxed">
+        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-medium leading-relaxed">
           Wählen Sie den passenden Vorbereitungspass. Sofortiger Zugriff auf alle 12 Prüfungsteile, authentische Prüfungssimulationen, 104+ Musterbriefe und unbegrenztes Wortschatztraining.
         </p>
 
         {/* Guarantees Badges */}
-        <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-bold text-slate-500 pt-2">
+        <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-5 text-xs font-bold text-slate-600 dark:text-slate-400 pt-1">
           <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
             <CheckCircle2 className="w-4 h-4 shrink-0" /> 100% Offline-fähig (PWA)
           </span>
@@ -272,13 +265,13 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({
             <Zap className="w-4 h-4 shrink-0" /> Sofortige Freischaltung
           </span>
           <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
-            <ShieldCheck className="w-4 h-4 shrink-0" /> Keine automatische Abo-Falle
+            <ShieldCheck className="w-4 h-4 shrink-0" /> Keine automatische Verlängerung
           </span>
         </div>
       </div>
 
       {/* Pricing Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 pt-2">
         {SUBSCRIPTION_PLANS.map((plan) => {
           const isSelected = selectedPlanId === plan.id;
 
@@ -289,17 +282,19 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({
               className={`relative p-6 sm:p-7 rounded-3xl transition-all cursor-pointer flex flex-col justify-between border-2 ${
                 isSelected
                   ? 'bg-white dark:bg-slate-900 border-indigo-600 shadow-xl ring-4 ring-indigo-500/15 -translate-y-1'
-                  : 'glass-panel border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-sm'
+                  : 'bg-white dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-xs'
               }`}
             >
-              {/* Popular Badge */}
+              {/* Popular / Discount Badge */}
               {plan.badge && (
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap z-10">
                   <span
-                    className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-md ${
+                    className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-sm ${
                       plan.popular
-                        ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950'
-                        : 'bg-indigo-600 text-white'
+                        ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black'
+                        : plan.id === 'lifetime'
+                        ? 'bg-rose-600 text-white font-bold'
+                        : 'bg-indigo-600 text-white font-bold'
                     }`}
                   >
                     {plan.badge}
@@ -313,18 +308,23 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({
                   <h3 className="text-base font-black text-slate-900 dark:text-white">
                     {plan.name}
                   </h3>
-                  <p className="text-[11px] text-slate-500 mt-1 min-h-[32px] leading-relaxed">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 min-h-[32px] leading-relaxed">
                     {plan.description}
                   </p>
                 </div>
 
                 {/* Price Display */}
                 <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80">
-                  <div className="flex items-baseline gap-1">
+                  <div className="flex items-baseline gap-1.5 flex-wrap">
+                    {plan.originalPrice && (
+                      <span className="text-base font-bold text-slate-400 line-through">
+                        {plan.originalPrice}
+                      </span>
+                    )}
                     <span className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
                       {plan.price}
                     </span>
-                    <span className="text-xs font-bold text-slate-500">/ {plan.period}</span>
+                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400">/ {plan.period}</span>
                   </div>
                   {plan.pricePerMonth && (
                     <div className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
@@ -370,18 +370,18 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({
       </div>
 
       {/* Checkout Action Panel */}
-      <div className="p-6 sm:p-8 glass-panel rounded-3xl border border-indigo-500/30 space-y-6 shadow-xl bg-gradient-to-r from-indigo-950/20 via-slate-900/60 to-slate-900/90 max-w-3xl mx-auto">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
+      <div className="p-6 sm:p-8 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-6 shadow-xl max-w-3xl mx-auto">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-5">
           <div>
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Ihre Auswahl:</span>
-            <h4 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2 mt-0.5">
+            <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Ihre Auswahl:</span>
+            <h4 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2 mt-0.5 flex-wrap">
               <span>{selectedPlan.name}</span>
-              <span className="text-indigo-600 dark:text-indigo-400">({selectedPlan.price})</span>
+              <span className="text-indigo-600 dark:text-indigo-400 font-extrabold">({selectedPlan.price})</span>
             </h4>
           </div>
 
           <div className="text-left sm:text-right">
-            <span className="text-[11px] text-slate-400 block">Gesamtbetrag (inkl. MwSt.):</span>
+            <span className="text-[11px] text-slate-500 dark:text-slate-400 block">Gesamtbetrag (inkl. MwSt.):</span>
             <span className="text-2xl font-black text-slate-900 dark:text-white">{selectedPlan.price}</span>
           </div>
         </div>
@@ -409,18 +409,18 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({
           </button>
 
           {!currentUser && (
-            <p className="text-[11px] text-amber-500 text-center font-bold">
+            <p className="text-[11px] text-amber-600 dark:text-amber-400 text-center font-bold">
               * Sie werden vor der Zahlung gebeten, sich kurz einzuloggen oder zu registrieren, damit Ihr Zugang gesichert ist.
             </p>
           )}
 
           {/* Legal notice regarding digital contents */}
-          <p className="text-[11px] text-slate-500 text-center leading-tight">
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 text-center leading-tight">
             Mit dem Klick auf „Jetzt sicher freischalten“ akzeptieren Sie unsere{' '}
             <button
               type="button"
               onClick={() => openLegalModal('agb')}
-              className="text-indigo-600 dark:text-indigo-400 underline font-bold"
+              className="text-indigo-600 dark:text-indigo-400 underline font-bold cursor-pointer"
             >
               AGB & Widerrufsverzicht
             </button>{' '}
@@ -428,7 +428,7 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({
             <button
               type="button"
               onClick={() => openLegalModal('datenschutz')}
-              className="text-indigo-600 dark:text-indigo-400 underline font-bold"
+              className="text-indigo-600 dark:text-indigo-400 underline font-bold cursor-pointer"
             >
               Datenschutzerklärung
             </button>.
@@ -436,9 +436,9 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({
         </div>
 
         {/* Payment Methods Trust Banner */}
-        <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-center gap-4 text-xs text-slate-400 font-bold">
+        <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-center gap-4 text-xs text-slate-500 dark:text-slate-400 font-bold">
           <span className="flex items-center gap-1">
-            <CreditCard className="w-3.5 h-3.5 text-indigo-400" /> Apple Pay / Google Pay
+            <CreditCard className="w-3.5 h-3.5 text-indigo-500" /> Apple Pay / Google Pay
           </span>
           <span>•</span>
           <span>Visa & Mastercard</span>
@@ -447,46 +447,46 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({
           <span>•</span>
           <span>PayPal</span>
           <span>•</span>
-          <span className="flex items-center gap-1 text-emerald-500">
+          <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
             <ShieldCheck className="w-3.5 h-3.5" /> 256-Bit SSL
           </span>
         </div>
       </div>
 
       {/* Feature Comparison Section */}
-      <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-6">
+      <div className="p-6 sm:p-8 bg-slate-50 dark:bg-slate-900/40 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-6">
         <h3 className="text-lg font-black text-slate-900 dark:text-white text-center">
           Warum Beruf B2+ Trainer die beste Vorbereitung ist
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          <div className="p-4 bg-slate-50 dark:bg-slate-950/60 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2">
+          <div className="p-4 bg-white dark:bg-slate-950/60 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2">
             <div className="w-8 h-8 rounded-xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold">
               <Layers className="w-4 h-4" />
             </div>
             <h4 className="text-xs font-black text-slate-900 dark:text-white">Alle 12 DTB-Prüfungsmodule</h4>
-            <p className="text-[11px] text-slate-500 leading-relaxed">
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
               Lesen 1–4, Hören 1–4, Lesen & Schreiben, Hören & Schreiben sowie Sprachbausteine 1 & 2 im Original-Prüfungsformat.
             </p>
           </div>
 
-          <div className="p-4 bg-slate-50 dark:bg-slate-950/60 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2">
-            <div className="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-500 flex items-center justify-center font-bold">
+          <div className="p-4 bg-white dark:bg-slate-950/60 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2">
+            <div className="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold">
               <Clock className="w-4 h-4" />
             </div>
             <h4 className="text-xs font-black text-slate-900 dark:text-white">Echte Simulation mit Timer</h4>
-            <p className="text-[11px] text-slate-500 leading-relaxed">
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
               Üben Sie das 130-Minuten-Zeitmanagement unter realen Prüfungsbedingungen inklusive automatischer Punkteauswertung.
             </p>
           </div>
 
-          <div className="p-4 bg-slate-50 dark:bg-slate-950/60 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2">
-            <div className="w-8 h-8 rounded-xl bg-emerald-500/15 text-emerald-500 flex items-center justify-center font-bold">
+          <div className="p-4 bg-white dark:bg-slate-950/60 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2">
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
               <BookOpen className="w-4 h-4" />
             </div>
             <h4 className="text-xs font-black text-slate-900 dark:text-white">Spaced Repetition Wortschatz</h4>
-            <p className="text-[11px] text-slate-500 leading-relaxed">
-              Intelligenter Algorithmus für berufsspezifisches B2-Vokabular mit Nomen-Verb-Verbindungen und Satzbeispielen.
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+              Intelligenter Algorithmus für berufsspezifisches B2-Vokabular mit Nomen-Verb-Verbindungen und Beispielsätzen.
             </p>
           </div>
         </div>
