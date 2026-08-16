@@ -20,11 +20,15 @@ export function App() {
   useEffect(() => {
     const root = document.documentElement;
     if (theme === 'dark') {
-      root.classList.add('dark');
-      root.classList.remove('light');
+      root.classList.add('dark', 'dark-theme');
+      root.classList.remove('light', 'light-theme');
+      document.body.classList.add('dark', 'dark-theme');
+      document.body.classList.remove('light', 'light-theme');
     } else {
-      root.classList.add('light');
-      root.classList.remove('dark');
+      root.classList.add('light', 'light-theme');
+      root.classList.remove('dark', 'dark-theme');
+      document.body.classList.add('light', 'light-theme');
+      document.body.classList.remove('dark', 'dark-theme');
     }
     localStorage.setItem('b2_theme', theme);
   }, [theme]);
@@ -77,8 +81,6 @@ export function App() {
           path="/"
           element={
             <LandingPage
-              currentUser={currentUser}
-              onOpenLoginModal={() => setIsLoginModalOpen(true)}
               theme={theme}
               onToggleTheme={handleToggleTheme}
             />
