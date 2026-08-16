@@ -278,3 +278,30 @@ export interface WortschatzItem {
   createdAt?: string;
 }
 
+export type BlogPostCategory =
+  | 'Prüfungsratgeber'
+  | 'Schreiben'
+  | 'Wortschatz'
+  | 'Sprechen'
+  | 'Hören'
+  | 'Lesen'
+  | 'Grammatik';
+
+export interface BlogPost {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  content: string; // Markdown / structured post content
+  category: BlogPostCategory;
+  readTime: string;
+  date: string;
+  author: string;
+  seoKeywords: string[];
+  coverEmoji?: string;
+  published: boolean;
+  orderIndex?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+

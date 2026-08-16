@@ -63,6 +63,7 @@ import {
   isFreeTrialEnabled,
   setFreeTrialEnabled,
 } from '../utils/storage';
+import { AdminBlogManager } from './admin/AdminBlogManager';
 
 interface AdminPanelProps {
   modelltests: Modelltest[];
@@ -135,7 +136,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   onSaveWortschatz,
 }) => {
   const [adminHub, setAdminHub] = useState<'content' | 'users_system'>('content');
-  const [activeTab, setActiveTab] = useState<'modelltests' | 'promocodes' | 'forumsbeitrag' | 'sprechen' | 'wortschatz' | 'users' | 'system'>('modelltests');
+  const [activeTab, setActiveTab] = useState<'modelltests' | 'promocodes' | 'forumsbeitrag' | 'sprechen' | 'wortschatz' | 'blog' | 'users' | 'system'>('modelltests');
 
   // Wortschatz Admin State
   const [wortschatzList, setWortschatzList] = useState<WortschatzItem[]>(wortschatzItems);
@@ -1569,7 +1570,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
             }`}
           >
-            <Layers className="w-4 h-4" /> Wortschatz & NVV Datenbank ({wortschatzList.length})
+            <Layers className="w-4 h-4" /> Wortschatz & NVV ({wortschatzList.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('blog')}
+            className={`px-3.5 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'blog'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
+            }`}
+          >
+            <BookOpen className="w-4 h-4" /> 📝 Blog & SEO CMS
           </button>
         </div>
       ) : (
@@ -4257,6 +4268,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           </div>
         );
       })()}
+
+      {/* BLOG & SEO CMS TAB */}
+      {activeTab === 'blog' && (
+        <AdminBlogManager onShowToast={showToast} />
+      )}
 
       {/* SYSTEM & CLOUD BACKUP TAB */}
       {activeTab === 'system' && (

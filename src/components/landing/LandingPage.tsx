@@ -68,14 +68,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           {/* App Brand with Logo */}
           <Link to="/" className="flex items-center gap-3 shrink-0 group">
             <AppLogo size={38} />
-            <div>
-              <div className="text-base sm:text-lg font-black tracking-tight flex items-center gap-1.5 text-slate-900 dark:text-white">
-                <span>Beruf B2+</span>
-                <span className="px-1.5 py-0.5 text-[10px] font-black uppercase rounded bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30">
-                  Trainer
-                </span>
-              </div>
-            </div>
+            <span className="font-black text-base sm:text-lg tracking-tight text-slate-900 dark:text-white group-hover:text-indigo-600 transition-colors">
+              Beruf B2+ Trainer
+            </span>
           </Link>
 
           {/* Navigation Links (Desktop) */}

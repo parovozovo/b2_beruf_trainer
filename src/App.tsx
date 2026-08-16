@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { LandingPage } from './components/landing/LandingPage';
 import { PricingPage } from './components/landing/PricingPage';
 import { BlogPage } from './components/blog/BlogPage';
+import { BlogPostReader } from './components/blog/BlogPostReader';
 import { TrainerApp } from './components/TrainerApp';
 import { getCurrentUser, setCurrentUser, getPromoCodesLocal, syncUserToRegisteredList } from './utils/storage';
 import { supabase, isSupabaseConfigured } from './utils/supabase';
@@ -92,15 +93,14 @@ export function App() {
           path="/pricing"
           element={
             <PricingPage
-              currentUser={currentUser}
-              onOpenLoginModal={() => setIsLoginModalOpen(true)}
               onOpenPromoModal={() => setIsPromoModalOpen(true)}
             />
           }
         />
 
-        {/* Blog Directory */}
+        {/* Blog Directory & Single Post Reader */}
         <Route path="/blog" element={<BlogPage />} />
+        <Route path="/blog/:slug" element={<BlogPostReader />} />
 
         {/* The Main B2 Beruf Trainer Platform */}
         <Route
