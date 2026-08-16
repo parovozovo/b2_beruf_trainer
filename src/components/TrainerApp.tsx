@@ -55,6 +55,7 @@ import { PromoModal } from './PromoModal';
 import { PremiumLockedModal } from './PremiumLockedModal';
 import { ResetPasswordModal } from './ResetPasswordModal';
 import { UserProfileModal } from './UserProfileModal';
+import { PwaInstallPrompt } from './pwa/PwaInstallPrompt';
 
 interface TrainerAppProps {
   theme: 'dark' | 'light';
@@ -515,6 +516,9 @@ export const TrainerApp: React.FC<TrainerAppProps> = ({ theme, onToggleTheme }) 
           confetti({ particleCount: 100, spread: 70 });
         }}
       />
+
+      {/* Progressive Web App Install Prompt & Offline Toast */}
+      <PwaInstallPrompt />
 
       {/* Global In-App Notification Toast */}
       {toast && (

@@ -16,12 +16,15 @@ import {
   ArrowRight,
   Clock,
   Award,
-  BookOpen
+  BookOpen,
+  Smartphone,
+  Download
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import type { User, PromoCode, TileResult, FullExamResult } from '../types';
 import { getRemainingPremiumTimeLabel, isAdminEmail } from '../utils/storage';
 import { supabase, isSupabaseConfigured } from '../utils/supabase';
+import { triggerPwaInstall } from './pwa/PwaInstallPrompt';
 
 interface SettingsPageProps {
   currentUser: User | null;
@@ -433,6 +436,35 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                     <span>Dunkler Modus</span>
                   </>
                 )}
+              </button>
+            </div>
+
+            {/* PWA App Installation & Offline Card */}
+            <div className="p-4 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 rounded-xl">
+                  <Smartphone className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+                    <span>App auf Smartphone / PC installieren</span>
+                    <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[10px]">
+                      100% Offline-fähig
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-slate-500">
+                    Üben Sie auch unterwegs im Flugzeug oder der Bahn ohne Internetverbindung.
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => triggerPwaInstall()}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-xs shadow flex items-center gap-1.5 transition-transform active:scale-95 cursor-pointer shrink-0"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Installieren</span>
               </button>
             </div>
           </div>
