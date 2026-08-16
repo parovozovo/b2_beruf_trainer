@@ -404,8 +404,8 @@ export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
                     </button>
 
                     {showBeschwerdePrompt && (
-                      <div className="mt-2.5 p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-xs sm:text-sm text-slate-900 dark:text-slate-100 font-serif leading-relaxed whitespace-pre-wrap shadow-sm">
-                        {activeTopic.promptText}
+                      <div className="mt-2.5 p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-xs sm:text-sm text-slate-900 dark:text-slate-100 font-serif leading-relaxed shadow-sm">
+                        <FormattedText text={activeTopic.promptText} />
                       </div>
                     )}
                   </div>
@@ -415,8 +415,8 @@ export const SchreibenModule: React.FC<SchreibenModuleProps> = ({
                     <h4 className="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
                       📝 Aufgabenstellung & Themenbeschreibung (Frage 58):
                     </h4>
-                    <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-xs sm:text-sm text-slate-900 dark:text-slate-100 font-serif leading-relaxed whitespace-pre-wrap shadow-sm">
-                      {activeTopic.promptText}
+                    <div className="p-4 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-xs sm:text-sm text-slate-900 dark:text-slate-100 font-serif leading-relaxed shadow-sm">
+                      <FormattedText text={activeTopic.promptText} />
                     </div>
                   </div>
                 )}

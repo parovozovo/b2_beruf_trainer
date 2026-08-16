@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { Modelltest, TileType, User } from '../types';
 import { Crown, CheckCircle, XCircle, Volume2, HelpCircle, ArrowRight, RotateCcw, Award, Layers, FileText, ChevronDown } from 'lucide-react';
-import { FormattedText } from './FormattedText';
+import { FormattedText, FormattedInline } from './FormattedText';
 import confetti from 'canvas-confetti';
 import {
   getTilePracticeAttempts,
@@ -512,7 +512,7 @@ export const AudioPlayerBlock: React.FC<{
 }> = ({ audioUrl, scriptText, autoShowScript = false }) => {
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
   const [playbackRate, setPlaybackRate] = React.useState<number>(1.0);
-  const [showScript, setShowScript] = React.useState<boolean>(autoShowScript || !audioUrl);
+  const [showScript, setShowScript] = React.useState<boolean>(autoShowScript);
 
   const handleSpeedChange = (rate: number) => {
     setPlaybackRate(rate);
@@ -581,7 +581,7 @@ export const AudioPlayerBlock: React.FC<{
           <button
             type="button"
             onClick={() => setShowScript(!showScript)}
-            className="text-xs sm:text-sm font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1.5"
+            className="text-xs sm:text-sm font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1.5 cursor-pointer"
           >
             <FileText className="w-4 h-4" />
             <span>{showScript ? '📜 Transkript / Skript ausblenden' : '📜 Transkript / Skript anzeigen'}</span>
@@ -589,8 +589,8 @@ export const AudioPlayerBlock: React.FC<{
           </button>
 
           {showScript && (
-            <div className="mt-3 p-4 bg-slate-100 dark:bg-slate-900/90 rounded-xl text-xs sm:text-sm text-slate-900 dark:text-slate-100 leading-relaxed font-sans whitespace-pre-wrap max-h-64 overflow-y-auto border border-slate-300 dark:border-slate-800 shadow-inner">
-              {scriptText}
+            <div className="mt-3 p-4 bg-slate-100 dark:bg-slate-900/90 rounded-xl text-xs sm:text-sm text-slate-900 dark:text-slate-100 leading-relaxed font-sans max-h-64 overflow-y-auto border border-slate-300 dark:border-slate-800 shadow-inner">
+              <FormattedText text={scriptText} className="font-sans" />
             </div>
           )}
         </div>
@@ -693,7 +693,7 @@ export const Lesen2UI: React.FC<{
           {/* Q6 Richtig / Falsch */}
           <div className="space-y-2.5">
             <span className="text-sm font-extrabold text-white leading-snug block">
-              Frage 6: {variant.q6Text || 'Die Teilnahme an der betriebsärztlichen Augenuntersuchung ist für Mitarbeiter an Bildschirmarbeitsplätzen verpflichtend.'}
+              Frage 6: <FormattedInline text={variant.q6Text || 'Die Teilnahme an der betriebsärztlichen Augenuntersuchung ist für Mitarbeiter an Bildschirmarbeitsplätzen verpflichtend.'} />
             </span>
             <div className="flex gap-2">
               {['richtig', 'falsch'].map((val) => (
@@ -722,7 +722,9 @@ export const Lesen2UI: React.FC<{
 
           {/* Q7 ABC */}
           <div className="space-y-2.5">
-            <span className="text-sm font-extrabold text-white leading-snug block">Frage 7: {variant.q7.questionText}</span>
+            <span className="text-sm font-extrabold text-white leading-snug block">
+              Frage 7: <FormattedInline text={variant.q7.questionText} />
+            </span>
             <div className="space-y-1.5">
               {variant.q7.options.map((opt, idx) => (
                 <label key={idx} className="flex items-center gap-2.5 text-xs sm:text-sm text-slate-200 cursor-pointer p-1 rounded hover:bg-slate-800/40">
@@ -734,7 +736,7 @@ export const Lesen2UI: React.FC<{
                     onChange={() => onAnswerChange('7', String(idx))}
                     className="accent-indigo-500 w-4 h-4"
                   />
-                  <span>{['a', 'b', 'c'][idx]}) {opt}</span>
+                  <span>{['a', 'b', 'c'][idx]}) <FormattedInline text={opt} /></span>
                 </label>
               ))}
             </div>
@@ -759,7 +761,7 @@ export const Lesen2UI: React.FC<{
           {/* Q8 Richtig / Falsch */}
           <div className="space-y-2.5">
             <span className="text-sm font-extrabold text-white leading-snug block">
-              Frage 8: {variant.q8Text || 'Im Falle eines Feueralarms dürfen die Aufzüge zur schnellen Evakuierung genutzt werden.'}
+              Frage 8: <FormattedInline text={variant.q8Text || 'Im Falle eines Feueralarms dürfen die Aufzüge zur schnellen Evakuierung genutzt werden.'} />
             </span>
             <div className="flex gap-2">
               {['richtig', 'falsch'].map((val) => (
@@ -788,7 +790,9 @@ export const Lesen2UI: React.FC<{
 
           {/* Q9 ABC */}
           <div className="space-y-2.5">
-            <span className="text-sm font-extrabold text-white leading-snug block">Frage 9: {variant.q9.questionText}</span>
+            <span className="text-sm font-extrabold text-white leading-snug block">
+              Frage 9: <FormattedInline text={variant.q9.questionText} />
+            </span>
             <div className="space-y-1.5">
               {variant.q9.options.map((opt, idx) => (
                 <label key={idx} className="flex items-center gap-2.5 text-xs sm:text-sm text-slate-200 cursor-pointer p-1 rounded hover:bg-slate-800/40">
@@ -800,7 +804,7 @@ export const Lesen2UI: React.FC<{
                     onChange={() => onAnswerChange('9', String(idx))}
                     className="accent-indigo-500 w-4 h-4"
                   />
-                  <span>{['a', 'b', 'c'][idx]}) {opt}</span>
+                  <span>{['a', 'b', 'c'][idx]}) <FormattedInline text={opt} /></span>
                 </label>
               ))}
             </div>
@@ -915,7 +919,7 @@ export const GenericABCQuestionsUI: React.FC<{
           return (
             <div key={q.id} className="p-4 sm:p-5 bg-slate-900/80 rounded-2xl border border-slate-700/80 space-y-3">
               <div className="font-extrabold text-sm sm:text-base text-white flex items-center justify-between gap-2">
-                <span>Frage {q.id}: {q.questionText}</span>
+                <span>Frage {q.id}: <FormattedInline text={q.questionText} /></span>
                 {q.questionText?.toLowerCase().includes('zusatzfrage') && (
                   <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 border border-indigo-500/30">
                     Zusatzfrage
@@ -933,7 +937,7 @@ export const GenericABCQuestionsUI: React.FC<{
                       onChange={() => onAnswerChange(String(q.id), String(idx))}
                       className="accent-indigo-500 w-4 h-4"
                     />
-                    <span>{['a', 'b', 'c'][idx]}) {opt}</span>
+                    <span>{['a', 'b', 'c'][idx]}) <FormattedInline text={opt} /></span>
                   </label>
                 ))}
               </div>
@@ -985,7 +989,7 @@ export const LesenSchreibenUI: React.FC<{
           return (
             <div key={q.id} className="p-4 sm:p-5 bg-slate-900/80 rounded-2xl border border-slate-700/80 space-y-3">
               <div className="font-extrabold text-sm sm:text-base text-white flex items-center justify-between gap-2">
-                <span>Frage {q.id}: {q.questionText}</span>
+                <span>Frage {q.id}: <FormattedInline text={q.questionText} /></span>
                 {(q.id > 20 || q.questionText?.toLowerCase().includes('zusatzfrage')) && (
                   <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 border border-indigo-500/30">
                     Zusatzfrage
@@ -1003,7 +1007,7 @@ export const LesenSchreibenUI: React.FC<{
                       onChange={() => onAnswerChange(String(q.id), String(idx))}
                       className="accent-indigo-500 w-4 h-4"
                     />
-                    <span>{['a', 'b', 'c'][idx]}) {opt}</span>
+                    <span>{['a', 'b', 'c'][idx]}) <FormattedInline text={opt} /></span>
                   </label>
                 ))}
               </div>
@@ -1087,7 +1091,7 @@ export const Hoeren1UI: React.FC<{
                 return (
                   <div key={q.id} className="p-4 sm:p-5 bg-slate-900/80 rounded-2xl border border-slate-700/80 space-y-3">
                     <div className="font-extrabold text-sm sm:text-base text-white">
-                      Frage {q.id}: {q.questionText}
+                      Frage {q.id}: <FormattedInline text={q.questionText} />
                     </div>
 
                     {q.type === 'richtig_falsch' ? (
@@ -1117,7 +1121,7 @@ export const Hoeren1UI: React.FC<{
                               onChange={() => onAnswerChange(String(q.id), String(idx))}
                               className="accent-indigo-500 w-4 h-4"
                             />
-                            <span>{['a', 'b', 'c'][idx]}) {opt}</span>
+                            <span>{['a', 'b', 'c'][idx]}) <FormattedInline text={opt} /></span>
                           </label>
                         ))}
                       </div>
@@ -1223,7 +1227,7 @@ export const HoerenSchreibenUI: React.FC<{
       {/* Q41 */}
       <div className="p-4 sm:p-5 bg-slate-900/40 rounded-2xl border border-slate-800 space-y-3">
         <div className="font-extrabold text-xs sm:text-sm text-slate-200">
-          Frage 41: {variant.q41Text || 'Grund für den Anruf (Der Anrufer macht ein/eine):'}
+          Frage 41: <FormattedInline text={variant.q41Text || 'Grund für den Anruf (Der Anrufer macht ein/eine):'} />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
           {(['a', 'b', 'c'] as const).map((optKey, idx) => {
@@ -1237,13 +1241,13 @@ export const HoerenSchreibenUI: React.FC<{
                 key={optKey}
                 disabled={submitted}
                 onClick={() => onAnswerChange('41', optKey)}
-                className={`py-2.5 px-3.5 rounded-xl text-xs font-extrabold transition-all border ${
+                className={`py-2.5 px-3.5 rounded-xl text-xs font-extrabold transition-all border cursor-pointer ${
                   isSelected
                     ? 'bg-indigo-600 text-white border-indigo-500 shadow-md ring-2 ring-indigo-500/30'
                     : 'glass-card text-slate-300 border-slate-700/80 hover:border-slate-600'
                 }`}
               >
-                {label}
+                <FormattedInline text={label} />
               </button>
             );
           })}
