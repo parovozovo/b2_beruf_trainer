@@ -12,6 +12,7 @@ import {
   X,
   Settings,
   Shield,
+  Crown
 } from 'lucide-react';
 import type { User } from '../types';
 import { AppLogo } from './AppLogo';
@@ -152,6 +153,21 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <BookOpen className="w-3.5 h-3.5" /> Wortschatz
             </button>
+
+            {/* CONDITIONAL PRICING / PREMIUM BUTTON (HIDDEN IF USER HAS PREMIUM) */}
+            {!currentUser?.isPremium && (
+              <button
+                onClick={() => handleTabClick('pricing')}
+                className={`px-3.5 py-1.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
+                  currentTab === 'pricing'
+                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black shadow-md'
+                    : 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-600 dark:text-amber-300 border border-amber-500/30 font-extrabold'
+                }`}
+              >
+                <Crown className="w-3.5 h-3.5 text-amber-500" />
+                <span>Premium</span>
+              </button>
+            )}
           </nav>
 
           {/* Right Actions: Theme Switcher, User Account, Hamburger (Mobile) */}
@@ -336,6 +352,29 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <div className="text-[11px] opacity-75 font-normal">Interaktive Karteikarten & Branchenvokabeln</div>
               </div>
             </button>
+
+            {/* CONDITIONAL MOBILE PRICING / PREMIUM BUTTON */}
+            {!currentUser?.isPremium && (
+              <button
+                onClick={() => handleTabClick('pricing')}
+                className={`w-full p-3 rounded-2xl text-left text-xs font-bold flex items-center gap-3 transition-all cursor-pointer bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-indigo-500/20 border border-amber-500/40 text-amber-800 dark:text-amber-200 ${
+                  currentTab === 'pricing' ? 'ring-2 ring-amber-400 font-extrabold' : ''
+                }`}
+              >
+                <div className="p-2 rounded-xl bg-amber-500 text-slate-950 shadow-xs">
+                  <Crown className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="font-extrabold text-sm flex items-center gap-1.5">
+                    <span>👑 Premium freischalten</span>
+                    <span className="px-1.5 py-0.5 rounded bg-amber-500/30 text-amber-900 dark:text-amber-100 text-[10px]">
+                      Tarife
+                    </span>
+                  </div>
+                  <div className="text-[11px] opacity-80 font-normal">Alle 12 Module & Prüfungssimulationen</div>
+                </div>
+              </button>
+            )}
 
             <button
               onClick={() => handleTabClick('settings')}

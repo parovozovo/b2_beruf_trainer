@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Crown, Sparkles, Key, X, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { Crown, Sparkles, Key, X, CheckCircle2, ShieldCheck, ArrowRight } from 'lucide-react';
 
 interface PremiumLockedModalProps {
   isOpen: boolean;
   onClose: () => void;
   onOpenPromoModal: () => void;
   onRedeemPromoCode?: (code: string) => void;
+  onNavigateToPricing?: () => void;
 }
 
 export const PremiumLockedModal: React.FC<PremiumLockedModalProps> = ({
@@ -13,6 +14,7 @@ export const PremiumLockedModal: React.FC<PremiumLockedModalProps> = ({
   onClose,
   onOpenPromoModal,
   onRedeemPromoCode,
+  onNavigateToPricing,
 }) => {
   const [promoInput, setPromoInput] = useState('');
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -101,6 +103,22 @@ export const PremiumLockedModal: React.FC<PremiumLockedModalProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Primary Action Button to Tariffs */}
+        <button
+          type="button"
+          onClick={() => {
+            onClose();
+            if (onNavigateToPricing) {
+              onNavigateToPricing();
+            }
+          }}
+          className="w-full py-3.5 px-5 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs sm:text-sm rounded-2xl shadow-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] cursor-pointer"
+        >
+          <Sparkles className="w-4 h-4" />
+          <span>Jetzt Premium freischalten (Tarife ansehen)</span>
+          <ArrowRight className="w-4 h-4" />
+        </button>
 
         {/* Promo Code Input Form */}
         <form onSubmit={handleApplyPromo} className="space-y-2 pt-2 border-t border-slate-200 dark:border-slate-800">

@@ -49,6 +49,7 @@ import { SprechenModule } from './SprechenModule';
 import { AdminPanel } from './AdminPanel';
 import { SettingsPage } from './SettingsPage';
 import { WortschatzModule } from './WortschatzModule';
+import { SubscriptionPage } from './SubscriptionPage';
 import { ErrorBoundary } from './ErrorBoundary';
 import { LoginModal } from './LoginModal';
 import { PromoModal } from './PromoModal';
@@ -71,13 +72,14 @@ export const TrainerApp: React.FC<TrainerAppProps> = ({ theme, onToggleTheme }) 
 
   const [currentUser, setCurrentUserTab] = useState<User | null>(getCurrentUser());
 
-  // Derive tab from pathname: /app, /app/training, /app/simulation, /app/schreiben, /app/sprechen, /app/wortschatz, /app/settings, /app/admin
+  // Derive tab from pathname: /app, /app/training, /app/simulation, /app/schreiben, /app/sprechen, /app/wortschatz, /app/pricing, /app/settings, /app/admin
   const getTabFromPath = (pathname: string): string => {
     if (pathname.includes('/training')) return 'tile_practice';
     if (pathname.includes('/simulation')) return 'full_exam';
     if (pathname.includes('/schreiben')) return 'schreiben';
     if (pathname.includes('/sprechen')) return 'sprechen';
     if (pathname.includes('/wortschatz')) return 'wortschatz';
+    if (pathname.includes('/pricing') || pathname.includes('/upgrade')) return 'pricing';
     if (pathname.includes('/settings')) return 'settings';
     if (pathname.includes('/admin')) return 'admin';
     return 'dashboard';
@@ -98,6 +100,7 @@ export const TrainerApp: React.FC<TrainerAppProps> = ({ theme, onToggleTheme }) 
     else if (tab === 'schreiben') navigate('/app/schreiben');
     else if (tab === 'sprechen') navigate('/app/sprechen');
     else if (tab === 'wortschatz') navigate('/app/wortschatz');
+    else if (tab === 'pricing') navigate('/app/pricing');
     else if (tab === 'settings') navigate('/app/settings');
     else if (tab === 'admin') navigate('/app/admin');
   };
@@ -337,6 +340,41 @@ export const TrainerApp: React.FC<TrainerAppProps> = ({ theme, onToggleTheme }) 
     return { success: true, message: 'Code erfolgreich eingelöst', durationDays: code.durationDays };
   };
 
+  const handleActivateSubscription = async (planId: string, durationDays: number | null) => {
+    if (!currentUser) return;
+    const expiresAt = durationDays
+      ? new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString()
+      : null;
+
+    const updatedUser: User = {
+      ...currentUser,
+      isPremium: true,
+      premiumExpiresAt: expiresAt,
+      appliedPromoCode: `PLAN-${planId.toUpperCase()}`,
+    };
+
+    setCurrentUser(updatedUser);
+    setCurrentUserTab(updatedUser);
+    syncUserToRegisteredList(updatedUser);
+
+    if (isSupabaseConfigured) {
+      try {
+        await supabase
+          .from('registered_users')
+          .update({
+            is_premium: true,
+            premium_expires_at: expiresAt,
+            applied_promo_code: `PLAN-${planId.toUpperCase()}`,
+          })
+          .eq('email', currentUser.email.toLowerCase());
+      } catch (e) {
+        console.warn('Could not sync subscription to Supabase', e);
+      }
+    }
+
+    showToast('👑 Premium-Pass erfolgreich aktiviert! Viel Erfolg beim Lernen!', 'success');
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white selection:bg-indigo-500 selection:text-white transition-colors">
       {/* Top Navbar */}
@@ -440,6 +478,17 @@ export const TrainerApp: React.FC<TrainerAppProps> = ({ theme, onToggleTheme }) 
           </ErrorBoundary>
         )}
 
+        {currentTab === 'pricing' && (
+          <ErrorBoundary fallbackTitle="Fehler auf der Preisseite">
+            <SubscriptionPage
+              currentUser={currentUser}
+              onOpenLoginModal={() => setIsLoginModalOpen(true)}
+              onActivateSubscription={handleActivateSubscription}
+              onNavigateToTab={handleSelectTab}
+            />
+          </ErrorBoundary>
+        )}
+
         {currentTab === 'admin' && (
           <div>
             {currentUser && currentUser.role === 'admin' && isAdminEmail(currentUser.email) ? (
@@ -499,6 +548,7 @@ export const TrainerApp: React.FC<TrainerAppProps> = ({ theme, onToggleTheme }) 
         onClose={() => setIsPremiumLockedModalOpen(false)}
         onOpenPromoModal={() => setIsPromoModalOpen(true)}
         onRedeemPromoCode={handleRedeemPromoCode}
+        onNavigateToPricing={() => handleSelectTab('pricing')}
       />
 
       <UserProfileModal
