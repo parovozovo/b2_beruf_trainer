@@ -98,30 +98,55 @@
 .light-theme .bg-slate-900,
 .light-theme .bg-slate-900\/90,
 .light-theme .bg-slate-900\/80,
+.light-theme .bg-slate-900\/70,
 .light-theme .bg-slate-900\/60,
+.light-theme .bg-slate-900\/40,
 .light-theme .bg-slate-950,
 .light-theme .bg-slate-950\/90,
 .light-theme .bg-slate-950\/80,
+.light-theme .bg-slate-950\/70,
 .light-theme .bg-slate-950\/50,
-.light-theme .bg-slate-950\/30 {
-  background-color: #f8fafc;
+.light-theme .bg-slate-950\/30,
+.light-theme .bg-slate-800,
+.light-theme .bg-slate-800\/90,
+.light-theme .bg-slate-800\/80,
+.light-theme .bg-slate-800\/60,
+.light-theme .bg-slate-800\/40 {
+  background-color: #ffffff;
   border-color: #e2e8f0;
   color: #0f172a;
 }
 
 .light-theme .bg-slate-900 *,
-.light-theme .bg-slate-950 * {
+.light-theme .bg-slate-950 *,
+.light-theme .bg-slate-800 * {
   border-color: #e2e8f0;
 }
 
+/* High-contrast Text Rules for Light Theme */
 .light-theme .text-slate-100,
 .light-theme .text-slate-200,
 .light-theme .text-slate-300 {
-  color: #1e293b;
+  color: #0f172a;
 }
 
-.light-theme .text-slate-400 {
+.light-theme .text-slate-400,
+.light-theme .text-slate-500 {
   color: #475569;
+}
+
+.light-theme .text-indigo-300,
+.light-theme .text-indigo-400 {
+  color: #4338ca;
+}
+
+/* Question Number Badge in Light Theme */
+.light-theme .bg-indigo-500\/25,
+.light-theme .bg-indigo-500\/20,
+.light-theme .bg-indigo-500\/10 {
+  background-color: #eef2ff !important;
+  color: #4338ca !important;
+  border-color: #c7d2fe !important;
 }
 
 /* Select dropdowns in Light Mode */
@@ -136,7 +161,7 @@
   color: #0f172a !important;
 }
 
-/* Light Theme Button Hovers & Neutral Elements (Prevent dark hover on light background) */
+/* Light Theme Button Hovers & Neutral Elements */
 .light-theme .hover\:bg-slate-800:hover,
 .light-theme .hover\:bg-slate-900:hover,
 .light-theme .hover\:bg-slate-950:hover {
@@ -151,8 +176,16 @@
 .light-theme button.bg-indigo-600:hover,
 .light-theme button.bg-emerald-600:hover,
 .light-theme button.bg-rose-600:hover,
+.light-theme button.bg-amber-600:hover,
 .light-theme button.bg-indigo-700:hover {
   color: #ffffff !important;
+}
+
+/* Result / Score Banners in Light Theme */
+.light-theme .bg-indigo-950\/20,
+.light-theme .bg-indigo-950\/40 {
+  background-color: #f5f3ff !important;
+  border-color: #ddd6fe !important;
 }
 
 /* =========================================================================

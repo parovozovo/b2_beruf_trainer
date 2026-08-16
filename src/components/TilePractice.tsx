@@ -355,21 +355,26 @@ export const TilePractice: React.FC<TilePracticeProps> = ({
           <p className="text-xs text-slate-500 mt-1">Der Administrator kann im Verwaltungsbereich neue Varianten hinzufügen.</p>
         </div>
       ) : (
-        <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-6">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+        <div className="glass-panel p-6 sm:p-7 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-6 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
             <div>
-              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
                 {activeVariant.title}
               </h2>
-              <span className="text-xs text-indigo-400 font-semibold">{activeTest.title}</span>
+              <span className="text-xs text-indigo-600 dark:text-indigo-400 font-bold tracking-wide uppercase">{activeTest.title}</span>
             </div>
 
             {submitted && currentScore && (
-              <div className="px-4 py-2 bg-slate-900 border border-indigo-500/40 rounded-xl flex items-center gap-3">
-                <Award className="w-5 h-5 text-indigo-400" />
-                <span className="text-sm font-bold text-white">
-                  Ergebnis: {currentScore.score} / {currentScore.maxScore} (
-                  {Math.round((currentScore.score / currentScore.maxScore) * 100)}%)
+              <div className="px-4 py-2.5 bg-indigo-50 dark:bg-slate-900 border border-indigo-200 dark:border-indigo-500/40 rounded-2xl flex items-center gap-3 shadow-xs">
+                <Award className="w-5 h-5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                <span className="text-sm font-black text-slate-900 dark:text-white">
+                  Ergebnis:{' '}
+                  <span className="text-indigo-600 dark:text-indigo-400 font-black">
+                    {currentScore.score} / {currentScore.maxScore}
+                  </span>{' '}
+                  <span className="text-xs text-slate-500 font-bold">
+                    ({Math.round((currentScore.score / currentScore.maxScore) * 100)}%)
+                  </span>
                 </span>
               </div>
             )}
@@ -610,29 +615,29 @@ export const Lesen1UI: React.FC<{
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div className="space-y-5">
-        <div className="p-5 sm:p-6 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-lg text-sm sm:text-base text-slate-100 leading-relaxed whitespace-pre-wrap font-sans">
+        <div className="p-5 sm:p-6 bg-white dark:bg-slate-900/90 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm text-sm sm:text-base text-slate-800 dark:text-slate-100 leading-relaxed whitespace-pre-wrap font-sans">
           <h4 className="font-extrabold text-indigo-600 dark:text-indigo-400 mb-3 text-sm uppercase tracking-wider">Situationen / Personen (1–5):</h4>
           <FormattedText text={variant.textBlock} />
         </div>
 
         {/* Answer Pickers */}
         <div className="space-y-3">
-          <h4 className="font-extrabold text-sm text-slate-200">Wählen Sie den passenden Buchstaben (A-H) für jede Person:</h4>
+          <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-200">Wählen Sie den passenden Buchstaben (A–H) für jede Person:</h4>
           {['1', '2', '3', '4', '5'].map((num) => {
             const correct = variant.correctAnswers[num];
             const userVal = userAnswers[num] || '';
             const isCorrect = userVal.toUpperCase() === correct?.toUpperCase();
 
             return (
-              <div key={num} className="flex items-center gap-3 p-3 bg-slate-900/80 rounded-xl border border-slate-700">
-                <span className="w-9 h-9 rounded-lg bg-indigo-500/25 text-indigo-300 font-extrabold flex items-center justify-center text-sm shrink-0">
+              <div key={num} className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/70 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
+                <span className="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30 font-black flex items-center justify-center text-sm shrink-0">
                   {num}
                 </span>
                 <select
                   value={userVal}
                   disabled={submitted}
                   onChange={(e) => onAnswerChange(num, e.target.value)}
-                  className="px-3.5 py-2 glass-input rounded-xl text-sm font-bold text-white"
+                  className="px-3.5 py-2 glass-input rounded-xl text-sm font-bold text-slate-900 dark:text-white"
                 >
                   <option value="">-- Option wählen --</option>
                   {options.map((opt) => (
@@ -643,11 +648,11 @@ export const Lesen1UI: React.FC<{
                 {submitted && (
                   <div className="flex items-center gap-1 text-sm ml-auto">
                     {isCorrect ? (
-                      <span className="text-emerald-400 flex items-center gap-1 font-extrabold">
+                      <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-extrabold">
                         <CheckCircle className="w-4 h-4" /> Richtig
                       </span>
                     ) : (
-                      <span className="text-rose-400 flex items-center gap-1 font-extrabold">
+                      <span className="text-rose-600 dark:text-rose-400 flex items-center gap-1 font-extrabold">
                         <XCircle className="w-4 h-4" /> Korrekt: {correct}
                       </span>
                     )}
@@ -659,7 +664,7 @@ export const Lesen1UI: React.FC<{
         </div>
       </div>
 
-      <div className="p-5 sm:p-6 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-lg text-sm sm:text-base text-slate-100 leading-relaxed font-sans">
+      <div className="p-5 sm:p-6 bg-white dark:bg-slate-900/90 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm text-sm sm:text-base text-slate-800 dark:text-slate-100 leading-relaxed font-sans">
         <h4 className="font-extrabold text-indigo-600 dark:text-indigo-400 mb-3 text-sm uppercase tracking-wider">Informationstexte / Anzeigen (A–H):</h4>
         <FormattedText text={variant.headingsBlock} />
       </div>
@@ -686,13 +691,13 @@ export const Lesen2UI: React.FC<{
   return (
     <div className="space-y-6">
       {/* Block 1: Text 1 + Q6 & Q7 */}
-      <div className="p-5 sm:p-6 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-lg space-y-5">
-        <FormattedText text={variant.text1} className="text-sm sm:text-base text-slate-100 leading-relaxed font-sans" />
+      <div className="p-5 sm:p-6 bg-white dark:bg-slate-900/90 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-5">
+        <FormattedText text={variant.text1} className="text-sm sm:text-base text-slate-800 dark:text-slate-100 leading-relaxed font-sans" />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-4 border-t border-slate-800">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-4 border-t border-slate-200 dark:border-slate-800">
           {/* Q6 Richtig / Falsch */}
           <div className="space-y-2.5">
-            <span className="text-sm font-extrabold text-white leading-snug block">
+            <span className="text-sm font-extrabold text-slate-900 dark:text-white leading-snug block">
               Frage 6: <FormattedInline text={variant.q6Text || 'Die Teilnahme an der betriebsärztlichen Augenuntersuchung ist für Mitarbeiter an Bildschirmarbeitsplätzen verpflichtend.'} />
             </span>
             <div className="flex gap-2">
@@ -701,8 +706,10 @@ export const Lesen2UI: React.FC<{
                   key={val}
                   disabled={submitted}
                   onClick={() => onAnswerChange('6', val)}
-                  className={`flex-1 py-2 rounded-xl text-xs sm:text-sm font-extrabold uppercase transition-all ${
-                    userAnswers['6'] === val ? 'bg-indigo-600 text-white shadow-lg' : 'glass-card text-slate-300'
+                  className={`flex-1 py-2 rounded-xl text-xs sm:text-sm font-extrabold uppercase transition-all cursor-pointer ${
+                    userAnswers['6'] === val
+                      ? 'bg-indigo-600 text-white shadow-md'
+                      : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
                   }`}
                 >
                   {val}
@@ -712,9 +719,9 @@ export const Lesen2UI: React.FC<{
             {submitted && (
               <div className="text-xs sm:text-sm">
                 {userAnswers['6'] === variant.q6Correct ? (
-                  <span className="text-emerald-400 font-extrabold">✓ Richtig</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-extrabold flex items-center gap-1">✓ Richtig</span>
                 ) : (
-                  <span className="text-rose-400 font-extrabold">✗ Korrekt: {variant.q6Correct}</span>
+                  <span className="text-rose-600 dark:text-rose-400 font-extrabold flex items-center gap-1">✗ Korrekt: {variant.q6Correct}</span>
                 )}
               </div>
             )}
@@ -722,19 +729,19 @@ export const Lesen2UI: React.FC<{
 
           {/* Q7 ABC */}
           <div className="space-y-2.5">
-            <span className="text-sm font-extrabold text-white leading-snug block">
+            <span className="text-sm font-extrabold text-slate-900 dark:text-white leading-snug block">
               Frage 7: <FormattedInline text={variant.q7.questionText} />
             </span>
             <div className="space-y-1.5">
               {variant.q7.options.map((opt, idx) => (
-                <label key={idx} className="flex items-center gap-2.5 text-xs sm:text-sm text-slate-200 cursor-pointer p-1 rounded hover:bg-slate-800/40">
+                <label key={idx} className="flex items-center gap-2.5 text-xs sm:text-sm text-slate-800 dark:text-slate-200 cursor-pointer p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800/40">
                   <input
                     type="radio"
                     name="q7"
                     disabled={submitted}
                     checked={userAnswers['7'] === String(idx)}
                     onChange={() => onAnswerChange('7', String(idx))}
-                    className="accent-indigo-500 w-4 h-4"
+                    className="accent-indigo-600 w-4 h-4"
                   />
                   <span>{['a', 'b', 'c'][idx]}) <FormattedInline text={opt} /></span>
                 </label>
@@ -743,9 +750,9 @@ export const Lesen2UI: React.FC<{
             {submitted && (
               <div className="text-xs sm:text-sm">
                 {userAnswers['7'] === String(variant.q7.correctIndex) ? (
-                  <span className="text-emerald-400 font-extrabold">✓ Richtig</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-extrabold flex items-center gap-1">✓ Richtig</span>
                 ) : (
-                  <span className="text-rose-400 font-extrabold">✗ Korrekt: {['a', 'b', 'c'][variant.q7.correctIndex]}</span>
+                  <span className="text-rose-600 dark:text-rose-400 font-extrabold flex items-center gap-1">✗ Korrekt: {['a', 'b', 'c'][variant.q7.correctIndex]}</span>
                 )}
               </div>
             )}
@@ -754,13 +761,13 @@ export const Lesen2UI: React.FC<{
       </div>
 
       {/* Block 2: Text 2 + Q8 & Q9 */}
-      <div className="p-5 sm:p-6 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-lg space-y-5">
-        <FormattedText text={variant.text2} className="text-sm sm:text-base text-slate-100 leading-relaxed font-sans" />
+      <div className="p-5 sm:p-6 bg-white dark:bg-slate-900/90 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-5">
+        <FormattedText text={variant.text2} className="text-sm sm:text-base text-slate-800 dark:text-slate-100 leading-relaxed font-sans" />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-4 border-t border-slate-800">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-4 border-t border-slate-200 dark:border-slate-800">
           {/* Q8 Richtig / Falsch */}
           <div className="space-y-2.5">
-            <span className="text-sm font-extrabold text-white leading-snug block">
+            <span className="text-sm font-extrabold text-slate-900 dark:text-white leading-snug block">
               Frage 8: <FormattedInline text={variant.q8Text || 'Im Falle eines Feueralarms dürfen die Aufzüge zur schnellen Evakuierung genutzt werden.'} />
             </span>
             <div className="flex gap-2">
@@ -769,8 +776,10 @@ export const Lesen2UI: React.FC<{
                   key={val}
                   disabled={submitted}
                   onClick={() => onAnswerChange('8', val)}
-                  className={`flex-1 py-2 rounded-xl text-xs sm:text-sm font-extrabold uppercase transition-all ${
-                    userAnswers['8'] === val ? 'bg-indigo-600 text-white shadow-lg' : 'glass-card text-slate-300'
+                  className={`flex-1 py-2 rounded-xl text-xs sm:text-sm font-extrabold uppercase transition-all cursor-pointer ${
+                    userAnswers['8'] === val
+                      ? 'bg-indigo-600 text-white shadow-md'
+                      : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
                   }`}
                 >
                   {val}
@@ -780,9 +789,9 @@ export const Lesen2UI: React.FC<{
             {submitted && (
               <div className="text-xs sm:text-sm">
                 {userAnswers['8'] === variant.q8Correct ? (
-                  <span className="text-emerald-400 font-extrabold">✓ Richtig</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-extrabold flex items-center gap-1">✓ Richtig</span>
                 ) : (
-                  <span className="text-rose-400 font-extrabold">✗ Korrekt: {variant.q8Correct}</span>
+                  <span className="text-rose-600 dark:text-rose-400 font-extrabold flex items-center gap-1">✗ Korrekt: {variant.q8Correct}</span>
                 )}
               </div>
             )}
@@ -790,19 +799,19 @@ export const Lesen2UI: React.FC<{
 
           {/* Q9 ABC */}
           <div className="space-y-2.5">
-            <span className="text-sm font-extrabold text-white leading-snug block">
+            <span className="text-sm font-extrabold text-slate-900 dark:text-white leading-snug block">
               Frage 9: <FormattedInline text={variant.q9.questionText} />
             </span>
             <div className="space-y-1.5">
               {variant.q9.options.map((opt, idx) => (
-                <label key={idx} className="flex items-center gap-2.5 text-xs sm:text-sm text-slate-200 cursor-pointer p-1 rounded hover:bg-slate-800/40">
+                <label key={idx} className="flex items-center gap-2.5 text-xs sm:text-sm text-slate-800 dark:text-slate-200 cursor-pointer p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800/40">
                   <input
                     type="radio"
                     name="q9"
                     disabled={submitted}
                     checked={userAnswers['9'] === String(idx)}
                     onChange={() => onAnswerChange('9', String(idx))}
-                    className="accent-indigo-500 w-4 h-4"
+                    className="accent-indigo-600 w-4 h-4"
                   />
                   <span>{['a', 'b', 'c'][idx]}) <FormattedInline text={opt} /></span>
                 </label>
@@ -811,9 +820,9 @@ export const Lesen2UI: React.FC<{
             {submitted && (
               <div className="text-xs sm:text-sm">
                 {userAnswers['9'] === String(variant.q9.correctIndex) ? (
-                  <span className="text-emerald-400 font-extrabold">✓ Richtig</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-extrabold flex items-center gap-1">✓ Richtig</span>
                 ) : (
-                  <span className="text-rose-400 font-extrabold">✗ Korrekt: {['a', 'b', 'c'][variant.q9.correctIndex]}</span>
+                  <span className="text-rose-600 dark:text-rose-400 font-extrabold flex items-center gap-1">✗ Korrekt: {['a', 'b', 'c'][variant.q9.correctIndex]}</span>
                 )}
               </div>
             )}
@@ -836,31 +845,31 @@ export const Lesen3UI: React.FC<{
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div className="space-y-5">
-        <div className="p-5 sm:p-6 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-lg text-sm sm:text-base text-slate-100 leading-relaxed font-sans">
+        <div className="p-5 sm:p-6 bg-white dark:bg-slate-900/90 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm text-sm sm:text-base text-slate-800 dark:text-slate-100 leading-relaxed font-sans">
           <h4 className="font-extrabold text-indigo-600 dark:text-indigo-400 mb-3 text-sm uppercase tracking-wider">Situationen / Anfragen (Fragen 10–13):</h4>
           <FormattedText text={variant.text1} className="mb-4 font-normal" />
           {variant.text2 ? <FormattedText text={variant.text2} className="font-normal" /> : null}
         </div>
 
         <div className="space-y-3">
-          <h4 className="font-extrabold text-sm text-slate-200">Wählen Sie den passenden Buchstaben (A-F oder X):</h4>
+          <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-200">Wählen Sie den passenden Buchstaben (A–F oder X):</h4>
           {['10', '11', '12', '13'].map((num) => {
             const correct = variant.correctAnswers[num];
             const userVal = userAnswers[num] || '';
             const isCorrect = userVal.toUpperCase() === correct?.toUpperCase();
 
             return (
-              <div key={num} className="flex items-center gap-3 p-3 bg-slate-900/80 rounded-xl border border-slate-700">
-                <span className="w-9 h-9 rounded-lg bg-indigo-500/25 text-indigo-300 font-extrabold flex items-center justify-center text-sm shrink-0">
+              <div key={num} className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/70 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
+                <span className="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30 font-black flex items-center justify-center text-sm shrink-0">
                   {num}
                 </span>
                 <select
                   value={userVal}
                   disabled={submitted}
                   onChange={(e) => onAnswerChange(num, e.target.value)}
-                  className="px-3.5 py-2 glass-input rounded-xl text-sm font-bold text-white"
+                  className="px-3.5 py-2 glass-input rounded-xl text-sm font-bold text-slate-900 dark:text-white"
                 >
-                  <option value="">-- Option --</option>
+                  <option value="">-- Option wählen --</option>
                   {options.map((opt) => (
                     <option key={opt} value={opt}>Option {opt}</option>
                   ))}
@@ -869,9 +878,9 @@ export const Lesen3UI: React.FC<{
                 {submitted && (
                   <div className="flex items-center gap-1 text-sm ml-auto">
                     {isCorrect ? (
-                      <span className="text-emerald-400 font-extrabold">✓ Richtig</span>
+                      <span className="text-emerald-600 dark:text-emerald-400 font-extrabold flex items-center gap-1">✓ Richtig</span>
                     ) : (
-                      <span className="text-rose-400 font-extrabold">✗ Korrekt: {correct}</span>
+                      <span className="text-rose-600 dark:text-rose-400 font-extrabold flex items-center gap-1">✗ Korrekt: {correct}</span>
                     )}
                   </div>
                 )}
@@ -881,7 +890,7 @@ export const Lesen3UI: React.FC<{
         </div>
       </div>
 
-      <div className="p-5 sm:p-6 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-lg text-sm sm:text-base text-slate-100 leading-relaxed font-sans">
+      <div className="p-5 sm:p-6 bg-white dark:bg-slate-900/90 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm text-sm sm:text-base text-slate-800 dark:text-slate-100 leading-relaxed font-sans">
         <h4 className="font-extrabold text-indigo-600 dark:text-indigo-400 mb-3 text-sm uppercase tracking-wider">Antworten / Forenbeiträge (A–F + X):</h4>
         <FormattedText text={variant.optionsAtoF} />
       </div>
@@ -906,7 +915,7 @@ export const GenericABCQuestionsUI: React.FC<{
       {variant.audioUrl !== undefined || variant.scriptText ? (
         <AudioPlayerBlock audioUrl={variant.audioUrl} scriptText={variant.scriptText} />
       ) : variant.protocolText ? (
-        <div className="p-5 sm:p-6 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-lg text-sm sm:text-base text-slate-100 leading-relaxed font-sans">
+        <div className="p-5 sm:p-6 bg-white dark:bg-slate-900/90 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm text-sm sm:text-base text-slate-800 dark:text-slate-100 leading-relaxed font-sans">
           <FormattedText text={variant.protocolText} />
         </div>
       ) : null}
@@ -917,25 +926,25 @@ export const GenericABCQuestionsUI: React.FC<{
           const isCorrect = uVal === String(q.correctIndex);
 
           return (
-            <div key={q.id} className="p-4 sm:p-5 bg-slate-900/80 rounded-2xl border border-slate-700/80 space-y-3">
-              <div className="font-extrabold text-sm sm:text-base text-white flex items-center justify-between gap-2">
+            <div key={q.id} className="p-4 sm:p-5 bg-white dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+              <div className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white flex items-center justify-between gap-2">
                 <span>Frage {q.id}: <FormattedInline text={q.questionText} /></span>
                 {q.questionText?.toLowerCase().includes('zusatzfrage') && (
-                  <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 border border-indigo-500/30">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30">
                     Zusatzfrage
                   </span>
                 )}
               </div>
               <div className="space-y-2 pl-2">
                 {q.options.map((opt, idx) => (
-                  <label key={idx} className="flex items-center gap-2.5 text-xs sm:text-sm text-slate-200 cursor-pointer p-1 rounded hover:bg-slate-800/40">
+                  <label key={idx} className="flex items-center gap-2.5 text-xs sm:text-sm text-slate-800 dark:text-slate-200 cursor-pointer p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/40 transition-colors">
                     <input
                       type="radio"
                       name={`q-${q.id}`}
                       disabled={submitted}
                       checked={uVal === String(idx)}
                       onChange={() => onAnswerChange(String(q.id), String(idx))}
-                      className="accent-indigo-500 w-4 h-4"
+                      className="accent-indigo-600 w-4 h-4"
                     />
                     <span>{['a', 'b', 'c'][idx]}) <FormattedInline text={opt} /></span>
                   </label>
@@ -945,11 +954,11 @@ export const GenericABCQuestionsUI: React.FC<{
               {submitted && (
                 <div className="text-xs sm:text-sm pt-1">
                   {isCorrect ? (
-                    <span className="text-emerald-400 font-extrabold flex items-center gap-1">
+                    <span className="text-emerald-600 dark:text-emerald-400 font-extrabold flex items-center gap-1">
                       <CheckCircle className="w-4 h-4" /> Richtig
                     </span>
                   ) : (
-                    <span className="text-rose-400 font-extrabold flex items-center gap-1">
+                    <span className="text-rose-600 dark:text-rose-400 font-extrabold flex items-center gap-1">
                       <XCircle className="w-4 h-4" /> Richtige Antwort: {['a', 'b', 'c'][q.correctIndex]}
                     </span>
                   )}
@@ -976,7 +985,7 @@ export const LesenSchreibenUI: React.FC<{
 }> = ({ variant, userAnswers, onAnswerChange, submitted }) => {
   return (
     <div className="space-y-6">
-      <div className="p-5 sm:p-6 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-lg text-sm sm:text-base text-slate-100 leading-relaxed font-sans">
+      <div className="p-5 sm:p-6 bg-white dark:bg-slate-900/90 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm text-sm sm:text-base text-slate-800 dark:text-slate-100 leading-relaxed font-sans">
         <h4 className="font-extrabold text-indigo-600 dark:text-indigo-400 mb-3 text-sm uppercase tracking-wider">E-Mail-Korrespondenz (Fragen 19–21):</h4>
         <FormattedText text={variant.emailsText} />
       </div>
@@ -987,25 +996,25 @@ export const LesenSchreibenUI: React.FC<{
           const isCorrect = uVal === String(q.correctIndex);
 
           return (
-            <div key={q.id} className="p-4 sm:p-5 bg-slate-900/80 rounded-2xl border border-slate-700/80 space-y-3">
-              <div className="font-extrabold text-sm sm:text-base text-white flex items-center justify-between gap-2">
+            <div key={q.id} className="p-4 sm:p-5 bg-white dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+              <div className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white flex items-center justify-between gap-2">
                 <span>Frage {q.id}: <FormattedInline text={q.questionText} /></span>
                 {(q.id > 20 || q.questionText?.toLowerCase().includes('zusatzfrage')) && (
-                  <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 border border-indigo-500/30">
+                  <span className="px-2 py-0.5 rounded text-[10px] font-extrabold bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30">
                     Zusatzfrage
                   </span>
                 )}
               </div>
               <div className="space-y-2 pl-2">
                 {q.options.map((opt, idx) => (
-                  <label key={idx} className="flex items-center gap-2.5 text-xs sm:text-sm text-slate-200 cursor-pointer p-1 rounded hover:bg-slate-800/40">
+                  <label key={idx} className="flex items-center gap-2.5 text-xs sm:text-sm text-slate-800 dark:text-slate-200 cursor-pointer p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/40 transition-colors">
                     <input
                       type="radio"
                       name={`q-${q.id}`}
                       disabled={submitted}
                       checked={uVal === String(idx)}
                       onChange={() => onAnswerChange(String(q.id), String(idx))}
-                      className="accent-indigo-500 w-4 h-4"
+                      className="accent-indigo-600 w-4 h-4"
                     />
                     <span>{['a', 'b', 'c'][idx]}) <FormattedInline text={opt} /></span>
                   </label>
@@ -1015,11 +1024,11 @@ export const LesenSchreibenUI: React.FC<{
               {submitted && (
                 <div className="text-xs pt-1">
                   {isCorrect ? (
-                    <span className="text-emerald-400 font-bold flex items-center gap-1">
+                    <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
                       <CheckCircle className="w-3.5 h-3.5" /> Richtig
                     </span>
                   ) : (
-                    <span className="text-rose-400 font-bold flex items-center gap-1">
+                    <span className="text-rose-600 dark:text-rose-400 font-bold flex items-center gap-1">
                       <XCircle className="w-3.5 h-3.5" /> Korrekt: {['a', 'b', 'c'][q.correctIndex]}
                     </span>
                   )}
@@ -1038,7 +1047,7 @@ export const LesenSchreibenUI: React.FC<{
               <HelpCircle className="w-5 h-5 text-indigo-500" />
               <span>Aufgabe 21: Musterlösung & Beispiel-Antwortbrief</span>
             </div>
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30">
               Musterbrief / Vorlage
             </span>
           </div>
@@ -1051,7 +1060,7 @@ export const LesenSchreibenUI: React.FC<{
             <FormattedText text={variant.beschwerdeTopicText} />
           </div>
 
-          <div className="text-[11px] sm:text-xs text-indigo-600 dark:text-indigo-400 font-semibold flex items-center gap-2">
+          <div className="text-[11px] sm:text-xs text-indigo-700 dark:text-indigo-300 font-semibold flex items-center gap-2">
             <span>💡 <strong>Wichtig für die Prüfung:</strong> Achten Sie auf Anrede, höfliche Entschuldigung, genaue Begründung, Kulanz-Angebot (z.B. Rabatt) und die passende Grußformel.</span>
           </div>
         </div>
@@ -1087,7 +1096,7 @@ export const Hoeren1UI: React.FC<{
         if (partQuestions.length === 0) return null;
 
         return (
-          <div key={pIdx} className="p-5 glass-panel rounded-2xl border border-slate-300 dark:border-slate-800 space-y-4">
+          <div key={pIdx} className="p-5 glass-panel rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4 shadow-sm">
             <h4 className="font-extrabold text-indigo-600 dark:text-indigo-400 text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2">
               <Volume2 className="w-4 h-4" /> {part.title}
             </h4>
@@ -1098,8 +1107,8 @@ export const Hoeren1UI: React.FC<{
                 const isCorrect = uVal === String(q.correct);
 
                 return (
-                  <div key={q.id} className="p-4 sm:p-5 bg-slate-900/80 rounded-2xl border border-slate-700/80 space-y-3">
-                    <div className="font-extrabold text-sm sm:text-base text-white">
+                  <div key={q.id} className="p-4 sm:p-5 bg-white dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+                    <div className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white">
                       Frage {q.id}: <FormattedInline text={q.questionText} />
                     </div>
 
@@ -1110,8 +1119,10 @@ export const Hoeren1UI: React.FC<{
                             key={val}
                             disabled={submitted}
                             onClick={() => onAnswerChange(String(q.id), val)}
-                            className={`flex-1 py-2 rounded-xl text-xs sm:text-sm font-extrabold uppercase transition-all ${
-                              uVal === val ? 'bg-indigo-600 text-white shadow-md' : 'glass-card text-slate-300'
+                            className={`flex-1 py-2 rounded-xl text-xs sm:text-sm font-extrabold uppercase transition-all cursor-pointer ${
+                              uVal === val
+                                ? 'bg-indigo-600 text-white shadow-md'
+                                : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
                             }`}
                           >
                             {val}
@@ -1121,14 +1132,14 @@ export const Hoeren1UI: React.FC<{
                     ) : (
                       <div className="space-y-2 pl-2">
                         {q.options?.map((opt, idx) => (
-                          <label key={idx} className="flex items-center gap-2.5 text-xs sm:text-sm text-slate-200 cursor-pointer p-1 rounded hover:bg-slate-800/40">
+                          <label key={idx} className="flex items-center gap-2.5 text-xs sm:text-sm text-slate-800 dark:text-slate-200 cursor-pointer p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/40 transition-colors">
                             <input
                               type="radio"
                               name={`q-${q.id}`}
                               disabled={submitted}
                               checked={uVal === String(idx)}
                               onChange={() => onAnswerChange(String(q.id), String(idx))}
-                              className="accent-indigo-500 w-4 h-4"
+                              className="accent-indigo-600 w-4 h-4"
                             />
                             <span>{['a', 'b', 'c'][idx]}) <FormattedInline text={opt} /></span>
                           </label>
@@ -1139,11 +1150,11 @@ export const Hoeren1UI: React.FC<{
                     {submitted && (
                       <div className="text-xs pt-1">
                         {isCorrect ? (
-                          <span className="text-emerald-400 font-bold flex items-center gap-1">
+                          <span className="text-emerald-600 dark:text-emerald-400 font-extrabold flex items-center gap-1">
                             <CheckCircle className="w-3.5 h-3.5" /> Richtig
                           </span>
                         ) : (
-                          <span className="text-rose-400 font-bold flex items-center gap-1">
+                          <span className="text-rose-600 dark:text-rose-400 font-extrabold flex items-center gap-1">
                             <XCircle className="w-3.5 h-3.5" /> Richtige Antwort:{' '}
                             {q.type === 'choice' ? ['a', 'b', 'c'][Number(q.correct)] : String(q.correct)}
                           </span>
@@ -1175,36 +1186,40 @@ export const Hoeren2UI: React.FC<{
       <AudioPlayerBlock audioUrl={variant.audioUrl} scriptText={variant.scriptText} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-2">
-          <h4 className="font-bold text-xs text-slate-300">Zuordnung der Buchstaben (A-F) zu den Gesprächen:</h4>
+        <div className="space-y-3">
+          <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-200">Zuordnung der Buchstaben (A–F) zu den Gesprächen:</h4>
           {['28', '29', '30', '31'].map((num) => {
             const correct = variant.correctAnswers[num];
             const userVal = userAnswers[num] || '';
             const isCorrect = userVal.toUpperCase() === correct?.toUpperCase();
 
             return (
-              <div key={num} className="flex items-center gap-3 p-2 bg-slate-900/40 rounded-xl border border-slate-800">
-                <span className="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-300 font-bold flex items-center justify-center text-xs">
+              <div key={num} className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-900/70 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs">
+                <span className="w-9 h-9 rounded-xl bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30 font-black flex items-center justify-center text-sm shrink-0">
                   {num}
                 </span>
                 <select
                   value={userVal}
                   disabled={submitted}
                   onChange={(e) => onAnswerChange(num, e.target.value)}
-                  className="px-3 py-1.5 glass-input rounded-lg text-xs font-bold"
+                  className="px-3.5 py-2 glass-input rounded-xl text-sm font-bold text-slate-900 dark:text-white"
                 >
-                  <option value="">-- Option --</option>
+                  <option value="">-- Option wählen --</option>
                   {options.map((opt) => (
                     <option key={opt} value={opt}>Option {opt}</option>
                   ))}
                 </select>
 
                 {submitted && (
-                  <div className="flex items-center gap-1 text-xs">
+                  <div className="flex items-center gap-1 text-sm ml-auto">
                     {isCorrect ? (
-                      <span className="text-emerald-400 font-bold">✓ Richtig</span>
+                      <span className="text-emerald-600 dark:text-emerald-400 font-extrabold flex items-center gap-1">
+                        <CheckCircle className="w-4 h-4" /> Richtig
+                      </span>
                     ) : (
-                      <span className="text-rose-400 font-bold">✗ Korrekt: {correct}</span>
+                      <span className="text-rose-600 dark:text-rose-400 font-extrabold flex items-center gap-1">
+                        <XCircle className="w-4 h-4" /> Korrekt: {correct}
+                      </span>
                     )}
                   </div>
                 )}
@@ -1213,7 +1228,7 @@ export const Hoeren2UI: React.FC<{
           })}
         </div>
 
-        <div className="p-5 sm:p-6 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-lg text-sm sm:text-base text-slate-100 leading-relaxed font-sans">
+        <div className="p-5 sm:p-6 bg-white dark:bg-slate-900/90 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm text-sm sm:text-base text-slate-800 dark:text-slate-100 leading-relaxed font-sans">
           <h4 className="font-extrabold text-indigo-600 dark:text-indigo-400 mb-3 text-sm uppercase tracking-wider">Aussagen / Optionen (A–F):</h4>
           <FormattedText text={variant.optionsAtoF} />
         </div>
@@ -1234,8 +1249,8 @@ export const HoerenSchreibenUI: React.FC<{
       <AudioPlayerBlock audioUrl={variant.audioUrl} scriptText={variant.scriptText} />
 
       {/* Q41 */}
-      <div className="p-4 sm:p-5 bg-slate-900/40 rounded-2xl border border-slate-800 space-y-3">
-        <div className="font-extrabold text-xs sm:text-sm text-slate-200">
+      <div className="p-4 sm:p-5 bg-white dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+        <div className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white">
           Frage 41: <FormattedInline text={variant.q41Text || 'Grund für den Anruf (Der Anrufer macht ein/eine):'} />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
@@ -1253,7 +1268,7 @@ export const HoerenSchreibenUI: React.FC<{
                 className={`py-2.5 px-3.5 rounded-xl text-xs font-extrabold transition-all border cursor-pointer ${
                   isSelected
                     ? 'bg-indigo-600 text-white border-indigo-500 shadow-md ring-2 ring-indigo-500/30'
-                    : 'glass-card text-slate-300 border-slate-700/80 hover:border-slate-600'
+                    : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
                 }`}
               >
                 <FormattedInline text={label} />
@@ -1264,34 +1279,34 @@ export const HoerenSchreibenUI: React.FC<{
         {submitted && (
           <div className="text-xs pt-1">
             {userAnswers['41'] === variant.q41Correct ? (
-              <span className="text-emerald-400 font-extrabold flex items-center gap-1">✓ Richtig</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-extrabold flex items-center gap-1">✓ Richtig</span>
             ) : (
-              <span className="text-rose-400 font-extrabold">✗ Richtige Antwort: {variant.q41Correct?.toUpperCase()}</span>
+              <span className="text-rose-600 dark:text-rose-400 font-extrabold">✗ Richtige Antwort: {variant.q41Correct?.toUpperCase()}</span>
             )}
           </div>
         )}
       </div>
 
       {/* Q42-45 Telefonnotiz Fields */}
-      <div className="p-4 bg-slate-900/60 rounded-xl border border-slate-800 space-y-4">
-        <h4 className="font-bold text-xs text-slate-300">Telefonnotiz (Notizfelder ausfüllen):</h4>
+      <div className="p-5 bg-white dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+        <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-200">Telefonnotiz (Notizfelder ausfüllen):</h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {variant.fields.map((f) => (
             <div key={f.key}>
-              <label className="block text-xs text-slate-400 mb-1">{f.label}</label>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">{f.label}</label>
               <input
                 type="text"
                 value={userAnswers[f.key] || ''}
                 disabled={submitted}
                 onChange={(e) => onAnswerChange(f.key, e.target.value)}
                 placeholder="Notieren Sie..."
-                className="w-full px-3 py-2 glass-input rounded-lg text-xs"
+                className="w-full px-3.5 py-2 glass-input rounded-xl text-xs font-medium"
               />
             </div>
           ))}
         </div>
         <p className="text-[11px] text-slate-500 italic">
-          * Die Notizfelder 42-45 dienen zur eigenen Kontrolle und Selbstüberprüfung.
+          * Die Notizfelder 42–45 dienen zur eigenen Kontrolle und Selbstüberprüfung.
         </p>
       </div>
     </div>
@@ -1312,13 +1327,13 @@ export const Sprachbausteine1UI: React.FC<{
 
   return (
     <div className="space-y-6">
-      <div className="p-5 sm:p-6 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-lg text-sm sm:text-base text-slate-100 leading-relaxed font-sans space-y-3">
+      <div className="p-5 sm:p-6 bg-white dark:bg-slate-900/90 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm text-sm sm:text-base text-slate-800 dark:text-slate-100 leading-relaxed font-sans space-y-3">
         <h4 className="font-extrabold text-indigo-600 dark:text-indigo-400 text-sm uppercase tracking-wider">Lückentext (Fragen 46–51):</h4>
         <FormattedText text={variant.textWithGaps} />
       </div>
 
-      <div className="p-4 bg-slate-900/40 rounded-xl border border-slate-800 space-y-3">
-        <h4 className="font-bold text-xs text-slate-300">Wählen Sie das passende Wort für jede Lücke:</h4>
+      <div className="p-5 bg-white dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
+        <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-200">Wählen Sie das passende Wort für jede Lücke:</h4>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {[46, 47, 48, 49, 50, 51].map((gNum) => {
@@ -1327,13 +1342,13 @@ export const Sprachbausteine1UI: React.FC<{
             const isCorrect = uVal.trim().toLowerCase() === correctWord?.trim().toLowerCase();
 
             return (
-              <div key={gNum} className="p-2.5 bg-slate-900/60 rounded-xl border border-slate-800 space-y-1.5">
-                <span className="text-xs font-bold text-indigo-400">Lücke [{gNum}]</span>
+              <div key={gNum} className="p-3 bg-slate-50 dark:bg-slate-900/70 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xs space-y-1.5">
+                <span className="text-xs font-black text-indigo-700 dark:text-indigo-400">Lücke [{gNum}]</span>
                 <select
                   value={uVal}
                   disabled={submitted}
                   onChange={(e) => onAnswerChange(String(gNum), e.target.value)}
-                  className="w-full px-3 py-1.5 glass-input rounded-lg text-xs font-medium"
+                  className="w-full px-3 py-2 glass-input rounded-xl text-xs font-bold text-slate-900 dark:text-white"
                 >
                   <option value="">-- Wort wählen --</option>
                   {allBank.map((word) => (
@@ -1344,9 +1359,9 @@ export const Sprachbausteine1UI: React.FC<{
                 {submitted && (
                   <div className="text-[11px] font-bold">
                     {isCorrect ? (
-                      <span className="text-emerald-400">✓ Richtig</span>
+                      <span className="text-emerald-600 dark:text-emerald-400">✓ Richtig</span>
                     ) : (
-                      <span className="text-rose-400">✗ Korrekt: {correctWord}</span>
+                      <span className="text-rose-600 dark:text-rose-400">✗ Korrekt: {correctWord}</span>
                     )}
                   </div>
                 )}
@@ -1371,7 +1386,7 @@ export const Sprachbausteine2UI: React.FC<{
 }> = ({ variant, userAnswers, onAnswerChange, submitted }) => {
   return (
     <div className="space-y-6">
-      <div className="p-5 sm:p-6 bg-slate-900/90 rounded-2xl border border-slate-700/80 shadow-lg text-sm sm:text-base text-slate-100 leading-relaxed font-sans space-y-3">
+      <div className="p-5 sm:p-6 bg-white dark:bg-slate-900/90 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm text-sm sm:text-base text-slate-800 dark:text-slate-100 leading-relaxed font-sans space-y-3">
         <h4 className="font-extrabold text-indigo-600 dark:text-indigo-400 text-sm uppercase tracking-wider">Mitteilung (Fragen 52–57):</h4>
         <FormattedText text={variant.textWithGaps} />
       </div>
@@ -1382,20 +1397,20 @@ export const Sprachbausteine2UI: React.FC<{
           const isCorrect = uVal === String(q.correctIndex);
 
           return (
-            <div key={q.id} className="p-3 bg-slate-900/40 rounded-xl border border-slate-800 space-y-2">
-              <div className="font-bold text-xs text-slate-200">
+            <div key={q.id} className="p-4 bg-white dark:bg-slate-900/80 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-2.5">
+              <div className="font-black text-xs text-indigo-700 dark:text-indigo-400">
                 Lücke [{q.id}]
               </div>
-              <div className="space-y-1">
+              <div className="space-y-1.5">
                 {q.options.map((opt, idx) => (
-                  <label key={idx} className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer">
+                  <label key={idx} className="flex items-center gap-2 text-xs sm:text-sm text-slate-800 dark:text-slate-200 cursor-pointer p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800/40 transition-colors">
                     <input
                       type="radio"
                       name={`sb2-${q.id}`}
                       disabled={submitted}
                       checked={uVal === String(idx)}
                       onChange={() => onAnswerChange(String(q.id), String(idx))}
-                      className="accent-indigo-500"
+                      className="accent-indigo-600"
                     />
                     <span>{['a', 'b', 'c'][idx]}) {opt}</span>
                   </label>
@@ -1405,9 +1420,9 @@ export const Sprachbausteine2UI: React.FC<{
               {submitted && (
                 <div className="text-xs pt-1">
                   {isCorrect ? (
-                    <span className="text-emerald-400 font-bold">✓ Richtig</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">✓ Richtig</span>
                   ) : (
-                    <span className="text-rose-400 font-bold">✗ Korrekt: {['a', 'b', 'c'][q.correctIndex]}</span>
+                    <span className="text-rose-600 dark:text-rose-400 font-extrabold">✗ Korrekt: {['a', 'b', 'c'][q.correctIndex]}</span>
                   )}
                 </div>
               )}
