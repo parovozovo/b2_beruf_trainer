@@ -89,7 +89,7 @@ export const AdminImportModal: React.FC<AdminImportModalProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'file' | 'paste'>('paste');
   const [jsonText, setJsonText] = useState('');
-  const [selectedTargetTestId, setSelectedTargetTestId] = useState<string>(initialTargetModelltestId || 'auto');
+  const [selectedTargetTestId, setSelectedTargetTestId] = useState<string>(initialTargetModelltestId || 'new');
   const [selectedTileTypeOverride, setSelectedTileTypeOverride] = useState<TileType | 'auto'>(initialTargetTileType || 'auto');
   const [mergeMode, setMergeMode] = useState<'merge' | 'replace'>('merge');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -98,7 +98,7 @@ export const AdminImportModal: React.FC<AdminImportModalProps> = ({
   // Reset or initialize state when opened
   React.useEffect(() => {
     if (isOpen) {
-      if (initialTargetModelltestId) setSelectedTargetTestId(initialTargetModelltestId);
+      setSelectedTargetTestId(initialTargetModelltestId || 'new');
       if (initialTargetTileType) setSelectedTileTypeOverride(initialTargetTileType);
     }
   }, [isOpen, initialTargetModelltestId, initialTargetTileType]);
@@ -591,46 +591,61 @@ export const AdminImportModal: React.FC<AdminImportModalProps> = ({
 
         {/* Target Options & Merge Config (Only when JSON is valid) */}
         {detectedPayload && !('error' in detectedPayload) && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-slate-900/60 rounded-2xl border border-slate-800 text-xs">
-            {/* Target Modelltest */}
-            <div className="space-y-1.5">
-              <label className="block text-[11px] font-extrabold text-indigo-400">
-                🎯 Ziel-Modelltest (Wohin importieren?):
-              </label>
-              <select
-                value={selectedTargetTestId}
-                onChange={(e) => setSelectedTargetTestId(e.target.value)}
-                className="w-full px-3 py-2 glass-input rounded-xl text-xs font-bold"
-              >
-                <option value="auto">🤖 Automatisch (Aus JSON / Erster Test)</option>
-                <option value="new">➕ Als neuen Modelltest anlegen</option>
-                <optgroup label="Bestehenden Modelltest wählen:">
-                  {modelltests.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.title} ({m.id})
-                    </option>
-                  ))}
-                </optgroup>
-              </select>
+          <div className="space-y-3 p-4 bg-slate-900/60 rounded-2xl border border-slate-800 text-xs">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Target Modelltest */}
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-extrabold text-indigo-400">
+                  🎯 Ziel-Modelltest (Wohin importieren?):
+                </label>
+                <select
+                  value={selectedTargetTestId}
+                  onChange={(e) => setSelectedTargetTestId(e.target.value)}
+                  className="w-full px-3 py-2 glass-input rounded-xl text-xs font-bold"
+                >
+                  <option value="new">➕ Als NEUEN separaten Modelltest anlegen (Empfohlen)</option>
+                  <option value="auto">🤖 Automatisch (Aus JSON / Bestehenden Test suchen)</option>
+                  <optgroup label="In bestehenden Modelltest mergen:">
+                    {modelltests.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {m.title} ({m.id})
+                      </option>
+                    ))}
+                  </optgroup>
+                </select>
+              </div>
+
+              {/* Merge Mode */}
+              <div className="space-y-1.5">
+                <label className="block text-[11px] font-extrabold text-indigo-400">
+                  🔄 Zusammenführungs-Modus:
+                </label>
+                <select
+                  value={mergeMode}
+                  onChange={(e) => setMergeMode(e.target.value as 'merge' | 'replace')}
+                  className="w-full px-3 py-2 glass-input rounded-xl text-xs font-bold"
+                >
+                  <option value="merge">
+                    Intelligent mergen (Bestehende Kacheln behalten)
+                  </option>
+                  <option value="replace">
+                    Kachel-Inhalte ersetzen (Nur importierte Kacheln)
+                  </option>
+                </select>
+              </div>
             </div>
 
-            {/* Merge Mode */}
-            <div className="space-y-1.5">
-              <label className="block text-[11px] font-extrabold text-indigo-400">
-                🔄 Zusammenführungs-Modus:
-              </label>
-              <select
-                value={mergeMode}
-                onChange={(e) => setMergeMode(e.target.value as 'merge' | 'replace')}
-                className="w-full px-3 py-2 glass-input rounded-xl text-xs font-bold"
-              >
-                <option value="merge">
-                  Intelligent mergen (Bestehende Kacheln behalten)
-                </option>
-                <option value="replace">
-                  Kachel-Inhalte ersetzen (Nur importierte Kacheln)
-                </option>
-              </select>
+            {/* Target Explanation Banner */}
+            <div className="pt-2 border-t border-slate-800/80">
+              {selectedTargetTestId === 'new' ? (
+                <div className="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-[11px] flex items-center gap-2 font-semibold">
+                  <span>✨ <strong>Neuer Test:</strong> Es wird ein <strong>separater neuer Modelltest</strong> erstellt. Bestehende Tests werden nicht angetastet.</span>
+                </div>
+              ) : (
+                <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] flex items-center gap-2 font-semibold">
+                  <span>⚠️ <strong>Merge-Modus:</strong> Die Daten werden in den bestehenden Test <strong>"{modelltests.find(m => m.id === selectedTargetTestId)?.title || selectedTargetTestId}"</strong> eingefügt.</span>
+                </div>
+              )}
             </div>
           </div>
         )}
