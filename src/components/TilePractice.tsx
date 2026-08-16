@@ -1047,67 +1047,37 @@ export const LesenSchreibenUI: React.FC<{
   );
 };
 
-// Hoeren 1 UI (Supports 1 single audio MP3 file OR 3 separate audio MP3 files)
+// Hoeren 1 UI (Single unified audio track for all 3 messages)
 export const Hoeren1UI: React.FC<{
   variant: {
     audioUrl?: string;
     scriptText?: string;
-    audioUrl1?: string;
-    scriptText1?: string;
-    audioUrl2?: string;
-    scriptText2?: string;
-    audioUrl3?: string;
-    scriptText3?: string;
     questions: Array<{ id: number; type: 'richtig_falsch' | 'choice'; questionText: string; options?: [string, string, string]; correct: string | number }>;
   };
   userAnswers: Record<string, string>;
   onAnswerChange: (key: string, val: string) => void;
   submitted: boolean;
 }> = ({ variant, userAnswers, onAnswerChange, submitted }) => {
-  const hasMultipleAudio = !!(variant.audioUrl2 || variant.audioUrl3);
-  const mainAudioUrl = variant.audioUrl || variant.audioUrl1;
-  const mainScriptText = variant.scriptText;
-
   const parts = [
-    {
-      title: 'Teil A / Nachricht 1 (Fragen 22–23)',
-      audioUrl: hasMultipleAudio ? variant.audioUrl1 : undefined,
-      scriptText: variant.scriptText1,
-      qIds: [22, 23],
-    },
-    {
-      title: 'Teil B / Nachricht 2 (Fragen 24–25)',
-      audioUrl: hasMultipleAudio ? variant.audioUrl2 : undefined,
-      scriptText: variant.scriptText2,
-      qIds: [24, 25],
-    },
-    {
-      title: 'Teil C / Nachricht 3 (Fragen 26–27)',
-      audioUrl: hasMultipleAudio ? variant.audioUrl3 : undefined,
-      scriptText: variant.scriptText3,
-      qIds: [26, 27],
-    },
+    { title: 'Teil A / Nachricht 1 (Fragen 22–23)', qIds: [22, 23] },
+    { title: 'Teil B / Nachricht 2 (Fragen 24–25)', qIds: [24, 25] },
+    { title: 'Teil C / Nachricht 3 (Fragen 26–27)', qIds: [26, 27] },
   ];
 
   return (
-    <div className="space-y-8">
-      {/* If 1 single audio file for all 3 Nachrichten */}
-      {!hasMultipleAudio && (mainAudioUrl || mainScriptText) && (
-        <AudioPlayerBlock audioUrl={mainAudioUrl} scriptText={mainScriptText} />
-      )}
+    <div className="space-y-6">
+      {/* Exactly 1 audio file for the entire Hören 1 tile */}
+      <AudioPlayerBlock audioUrl={variant.audioUrl} scriptText={variant.scriptText} />
+
       {parts.map((part, pIdx) => {
         const partQuestions = variant.questions.filter((q) => part.qIds.includes(q.id));
-        if (partQuestions.length === 0 && !part.audioUrl && !part.scriptText) return null;
+        if (partQuestions.length === 0) return null;
 
         return (
-          <div key={pIdx} className="p-5 glass-panel rounded-2xl border border-slate-300 dark:border-slate-800 space-y-5">
-            <h4 className="font-extrabold text-indigo-600 dark:text-indigo-400 text-sm uppercase tracking-wider flex items-center gap-2">
+          <div key={pIdx} className="p-5 glass-panel rounded-2xl border border-slate-300 dark:border-slate-800 space-y-4">
+            <h4 className="font-extrabold text-indigo-600 dark:text-indigo-400 text-xs sm:text-sm uppercase tracking-wider flex items-center gap-2">
               <Volume2 className="w-4 h-4" /> {part.title}
             </h4>
-
-            {(part.audioUrl || part.scriptText) && (
-              <AudioPlayerBlock audioUrl={part.audioUrl} scriptText={part.scriptText} />
-            )}
 
             <div className="space-y-4">
               {partQuestions.map((q) => {

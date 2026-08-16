@@ -224,9 +224,7 @@ export const INITIAL_MODELLTESTS: Modelltest[] = [
         {
           id: 'h1-v1',
           title: 'Hören Teil 1 - Durchsagen & Kurznachrichten',
-          scriptText1: `**Sprachnachricht 1 (Fragen 22–23):**\nHallo Frau Hoffmann, hier spricht Thomas vom Fuhrpark. Der Dienstwagen VW Passat steht frisch gereinigt auf Stellplatz 12. Die Schlüssel liegen beim Empfang.`,
-          scriptText2: `**Sprachnachricht 2 (Fragen 24–25):**\nGuten Tag, hier ist die Personalabteilung. Wir erinnern alle Kolleginnen und Kollegen an die Abgabe der Stundenzettel für diesen Monat bis morgen 12 Uhr.`,
-          scriptText3: `**Sprachnachricht 3 (Fragen 26–27):**\nHallo Herr Becker, hier ist die IT-Abteilung. Die Wartungsarbeiten am Server finden heute Abend ab 20 Uhr statt. Bitte speichern Sie alle Dokumente rechtzeitig.`,
+          scriptText: `**Sprachnachricht 1 (Fragen 22–23):**\nHallo Frau Hoffmann, hier spricht Thomas vom Fuhrpark. Der Dienstwagen VW Passat steht frisch gereinigt auf Stellplatz 12. Die Schlüssel liegen beim Empfang.\n\n**Sprachnachricht 2 (Fragen 24–25):**\nGuten Tag, hier ist die Personalabteilung. Wir erinnern alle Kolleginnen und Kollegen an die Abgabe der Stundenzettel für diesen Monat bis morgen 12 Uhr.\n\n**Sprachnachricht 3 (Fragen 26–27):**\nHallo Herr Becker, hier ist die IT-Abteilung. Die Wartungsarbeiten am Server finden heute Abend ab 20 Uhr statt. Bitte speichern Sie alle Dokumente rechtzeitig.`,
           questions: [
             { id: 22, type: 'richtig_falsch', questionText: 'Der Dienstwagen steht auf Stellplatz 12 bereit.', correct: 'richtig' },
             { id: 23, type: 'choice', questionText: 'Wo befinden sich die Autoschlüssel?', options: ['Beim Fuhrparkleiter', 'Beim Empfang', 'Im Fahrzeug'], correct: 1 },

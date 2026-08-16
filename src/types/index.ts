@@ -113,12 +113,6 @@ export interface Hoeren1Variant {
   title: string;
   audioUrl?: string;
   scriptText?: string;
-  audioUrl1?: string;
-  scriptText1?: string;
-  audioUrl2?: string;
-  scriptText2?: string;
-  audioUrl3?: string;
-  scriptText3?: string;
   questions: Hoeren1Question[];
 }
 
