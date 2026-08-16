@@ -1030,23 +1030,32 @@ export const LesenSchreibenUI: React.FC<{
         })}
       </div>
 
-      {/* Info box for Question 21 */}
-      <div className="p-5 glass-card rounded-2xl border border-indigo-500/30 text-sm space-y-3">
-        <div className="font-extrabold text-indigo-600 dark:text-indigo-400 flex items-center gap-2 text-base">
-          <HelpCircle className="w-5 h-5 text-indigo-500" /> 📌 Hinweis zu Aufgabe 21 (Beschwerdebrief):
-        </div>
-        {variant.beschwerdeTopicText && variant.beschwerdeTopicText !== variant.emailsText && (
-          <p className="text-slate-800 dark:text-slate-200 leading-relaxed font-semibold bg-indigo-500/10 p-3.5 rounded-xl border border-indigo-500/20 text-sm">
-            <span className="block font-bold text-indigo-700 dark:text-indigo-300 mb-1">Aufgabenstellung / Leitpunkte:</span>
-            {variant.beschwerdeTopicText}
+      {/* Info box for Question 21: Musterlösung / Antwortbrief */}
+      {variant.beschwerdeTopicText && variant.beschwerdeTopicText !== variant.emailsText && (
+        <div className="p-5 glass-panel rounded-2xl border border-indigo-500/30 text-sm space-y-3.5 bg-gradient-to-br from-indigo-950/20 to-slate-900/60 shadow-md animate-fadeIn">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="font-extrabold text-indigo-700 dark:text-indigo-300 flex items-center gap-2 text-base">
+              <HelpCircle className="w-5 h-5 text-indigo-500" />
+              <span>Aufgabe 21: Musterlösung & Beispiel-Antwortbrief</span>
+            </div>
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+              Musterbrief / Vorlage
+            </span>
+          </div>
+
+          <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
+            Auf der Grundlage der obigen E-Mails verfassen Sie in der Prüfung die offizielle Antwort (Beschwerdebrief). Hier ist der vollständige Musterbrief zum Lernen und Vergleichen:
           </p>
-        )}
-        <div className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 font-semibold leading-relaxed">
-          Auf der Grundlage dieser E-Mail-Korrespondenz verfassen Sie in der Prüfung eine Antwort (Beschwerdebrief).
-          <br />
-          <strong>Aufgabe 21 wird mit Tastatur, Wortzähler, Vorlagen und KI-Bewertung separat im Modul „Schreiben“ absolviert.</strong>
+
+          <div className="bg-slate-50 dark:bg-slate-950/70 p-4 sm:p-5 rounded-xl border border-indigo-500/20 text-slate-800 dark:text-slate-200">
+            <FormattedText text={variant.beschwerdeTopicText} />
+          </div>
+
+          <div className="text-[11px] sm:text-xs text-indigo-600 dark:text-indigo-400 font-semibold flex items-center gap-2">
+            <span>💡 <strong>Wichtig für die Prüfung:</strong> Achten Sie auf Anrede, höfliche Entschuldigung, genaue Begründung, Kulanz-Angebot (z.B. Rabatt) und die passende Grußformel.</span>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
