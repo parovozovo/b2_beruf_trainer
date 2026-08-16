@@ -64,6 +64,7 @@ import {
   setFreeTrialEnabled,
 } from '../utils/storage';
 import { AdminBlogManager } from './admin/AdminBlogManager';
+import { AdminImportModal } from './admin/AdminImportModal';
 
 interface AdminPanelProps {
   modelltests: Modelltest[];
@@ -370,6 +371,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
   // Edit Modelltest Metadata Modal State
   const [editingModelltest, setEditingModelltest] = useState<Modelltest | null>(null);
+
+  // Modular Import Modal State
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importTargetTestId, setImportTargetTestId] = useState<string | undefined>(undefined);
+  const [importTargetTileType, setImportTargetTileType] = useState<TileType | undefined>(undefined);
+
+  const handleOpenImportModal = (targetTestId?: string, targetTileType?: TileType) => {
+    setImportTargetTestId(targetTestId);
+    setImportTargetTileType(targetTileType);
+    setIsImportModalOpen(true);
+  };
 
   // New Promo Code form state
   const [promoCodeInput, setPromoCodeInput] = useState('');
@@ -1294,90 +1306,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     showToast(`Modelltest "${mt.title}" als JSON exportiert!`);
   };
 
-  const handleImportDataJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      try {
-        const parsed = JSON.parse(event.target?.result as string);
-        let importedSomething = false;
-
-        // Standard Full Backup Object (contains keys like modelltests, forumsbeitragTopics...)
-        if (parsed.modelltests && Array.isArray(parsed.modelltests)) {
-          const updatedTests = [...modelltests];
-          parsed.modelltests.forEach((impMT: Modelltest) => {
-            const idx = updatedTests.findIndex((mt) => mt.id === impMT.id);
-            if (idx >= 0) {
-              updatedTests[idx] = impMT;
-            } else {
-              updatedTests.push(impMT);
-            }
-          });
-          await onSaveModelltests(updatedTests);
-          importedSomething = true;
-        }
-
-        // Single Modelltest Object uploaded directly
-        if (!parsed.modelltests && parsed.id && parsed.variants) {
-          const updatedTests = [...modelltests];
-          const idx = updatedTests.findIndex((mt) => mt.id === parsed.id);
-          if (idx >= 0) {
-            updatedTests[idx] = parsed;
-          } else {
-            updatedTests.push(parsed);
-          }
-          await onSaveModelltests(updatedTests);
-          importedSomething = true;
-        }
-
-        // Single array of Modelltests uploaded directly
-        if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].variants) {
-          const updatedTests = [...modelltests];
-          parsed.forEach((impMT: Modelltest) => {
-            const idx = updatedTests.findIndex((mt) => mt.id === impMT.id);
-            if (idx >= 0) {
-              updatedTests[idx] = impMT;
-            } else {
-              updatedTests.push(impMT);
-            }
-          });
-          await onSaveModelltests(updatedTests);
-          importedSomething = true;
-        }
-
-        // Promo Codes
-        if (parsed.promoCodes && Array.isArray(parsed.promoCodes)) {
-          await onSavePromoCodes(parsed.promoCodes);
-          importedSomething = true;
-        }
-
-        // Forenbeitrag Topics (Q58)
-        if (parsed.forumsbeitragTopics && Array.isArray(parsed.forumsbeitragTopics)) {
-          await onSaveForumsbeitragTopics(parsed.forumsbeitragTopics);
-          importedSomething = true;
-        }
-
-        // Sprechen Topics (Q1A, Q2, Q3)
-        if (parsed.sprechenTopics && typeof parsed.sprechenTopics === 'object') {
-          await onSaveSprechenTopics(parsed.sprechenTopics);
-          importedSomething = true;
-        }
-
-        if (importedSomething) {
-          showToast('Daten erfolgreich importiert & mit БД синхронізовано!');
-        } else {
-          showToast('Unbekanntes JSON-Format! Bitte Backup-Struktur prüfen.', 'error');
-        }
-      } catch (err) {
-        console.error('Import JSON Error:', err);
-        showToast('Fehler beim Importieren der JSON-Datei!', 'error');
-      }
-    };
-    reader.readAsText(file);
-    e.target.value = '';
-  };
-
   return (
     <div className="space-y-8 animate-fadeIn relative">
       {/* UI Toast Notification Banner */}
@@ -1486,6 +1414,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             <RefreshCw className="w-3.5 h-3.5" /> Mit Supabase synchronisieren
           </button>
           <button
+            type="button"
+            onClick={() => handleOpenImportModal()}
+            className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg flex items-center gap-1.5 cursor-pointer shadow-sm transition-colors"
+            title="Modelltests oder Kacheln per JSON importieren"
+          >
+            <Upload className="w-3.5 h-3.5" /> Import (JSON)
+          </button>
+          <button
             onClick={handleExportDataJSON}
             className="px-3.5 py-2 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold rounded-lg border border-slate-300 dark:border-slate-700 flex items-center gap-1.5 cursor-pointer transition-colors"
           >
@@ -1588,9 +1524,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         <div className="space-y-6">
           {/* Create New Modelltest Form */}
           <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <Plus className="w-4 h-4 text-rose-400" /> Neuen Modelltest erstellen
-            </h3>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <Plus className="w-4 h-4 text-rose-400" /> Neuen Modelltest erstellen
+              </h3>
+              <button
+                type="button"
+                onClick={() => handleOpenImportModal()}
+                className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl flex items-center gap-1.5 shadow-sm cursor-pointer transition-colors"
+                title="Modelltest oder Modul-JSON importieren"
+              >
+                <Upload className="w-3.5 h-3.5" /> Modelltest / Module importieren (JSON)
+              </button>
+            </div>
 
             <form onSubmit={handleCreateModelltest} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
@@ -1638,13 +1584,23 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
           {/* VISUAL VARIANT EDITOR */}
           <div className="glass-panel p-6 rounded-2xl border border-indigo-500/30 space-y-6">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3 flex-wrap gap-2">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <Edit3 className="w-4 h-4 text-indigo-400" /> Visueller Editor für Prüfungsteile
               </h3>
-              <span className="text-xs text-indigo-400 font-mono font-bold uppercase">
-                [{selectedTileType}]
-              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleOpenImportModal(selectedModelltestId, selectedTileType)}
+                  className="px-3 py-1 bg-indigo-600/30 hover:bg-indigo-600 text-indigo-200 hover:text-white border border-indigo-500/40 text-xs font-bold rounded-lg flex items-center gap-1.5 cursor-pointer transition-colors"
+                  title={`JSON für ${selectedTileType} in diesen Test importieren`}
+                >
+                  <Upload className="w-3 h-3" /> JSON-Import für [{selectedTileType}]
+                </button>
+                <span className="text-xs text-indigo-400 font-mono font-bold uppercase hidden sm:inline">
+                  [{selectedTileType}]
+                </span>
+              </div>
             </div>
 
             {/* Selectors Bar */}
@@ -2404,6 +2360,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-bold flex items-center gap-1 shadow-sm transition-colors cursor-pointer"
                       >
                         <Edit3 className="w-3.5 h-3.5" /> Bearbeiten
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleOpenImportModal(mt.id)}
+                        className="px-3 py-1.5 bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 hover:text-white border border-indigo-500/30 text-xs font-bold rounded-lg flex items-center gap-1 transition-colors cursor-pointer"
+                        title="Module/Kacheln in diesen Test importieren"
+                      >
+                        <Upload className="w-3.5 h-3.5" /> Import (JSON)
                       </button>
 
                       <button
@@ -4212,12 +4177,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     onClick={handleExportDataJSON}
                     className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                   >
-                    <Download className="w-3.5 h-3.5" /> Backup herunterladen
+                    <Download className="w-3.5 h-3.5" /> Backup herunterladen (JSON)
                   </button>
-                  <label className="flex-1 py-2.5 glass-card hover:bg-slate-800 text-indigo-300 text-xs font-bold rounded-xl border border-slate-700 flex items-center justify-center gap-1.5 cursor-pointer transition-all">
-                    <Upload className="w-3.5 h-3.5" /> Backup wiederherstellen
-                    <input type="file" accept=".json" onChange={handleImportDataJSON} className="hidden" />
-                  </label>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenImportModal()}
+                    className="flex-1 py-2.5 glass-card hover:bg-slate-800 text-indigo-300 hover:text-white text-xs font-bold rounded-xl border border-slate-700 flex items-center justify-center gap-1.5 cursor-pointer transition-all"
+                  >
+                    <Upload className="w-3.5 h-3.5" /> Backup / JSON importieren
+                  </button>
                 </div>
               </div>
             </div>
@@ -4589,6 +4557,28 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         </div>,
         document.body
       )}
+
+      {/* Modular Modelltest & Kachel Import Modal */}
+      <AdminImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        modelltests={modelltests}
+        onSaveModelltests={async (updated) => {
+          await onSaveModelltests(updated);
+        }}
+        onSavePromoCodes={async (codes) => {
+          if (onSavePromoCodes) await onSavePromoCodes(codes);
+        }}
+        onSaveForumsbeitragTopics={async (topics) => {
+          if (onSaveForumsbeitragTopics) await onSaveForumsbeitragTopics(topics);
+        }}
+        onSaveSprechenTopics={async (topics) => {
+          if (onSaveSprechenTopics) await onSaveSprechenTopics(topics);
+        }}
+        initialTargetModelltestId={importTargetTestId}
+        initialTargetTileType={importTargetTileType}
+        showToast={showToast}
+      />
     </div>
   );
 };
