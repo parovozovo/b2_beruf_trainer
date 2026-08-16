@@ -18,13 +18,14 @@ import {
   Award,
   BookOpen,
   Smartphone,
-  Download
+  Download,
+  RefreshCw
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import type { User, PromoCode, TileResult, FullExamResult } from '../types';
 import { getRemainingPremiumTimeLabel, isAdminEmail } from '../utils/storage';
 import { supabase, isSupabaseConfigured } from '../utils/supabase';
-import { triggerPwaInstall } from './pwa/PwaInstallPrompt';
+import { triggerPwaInstall, isRunningStandalone, checkForAppUpdates } from './pwa/PwaInstallPrompt';
 
 interface SettingsPageProps {
   currentUser: User | null;
@@ -60,6 +61,40 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   // Settings State
   const [fontScale, setFontScale] = useState<string>(() => localStorage.getItem('b2_font_scale') || '100%');
   const [audioSpeed, setAudioSpeed] = useState<string>(() => localStorage.getItem('b2_audio_speed') || '1.0');
+
+  // PWA Install & Update State
+  const [isPwaInstalled, setIsPwaInstalled] = useState(() => isRunningStandalone());
+  const [checkingUpdate, setCheckingUpdate] = useState(false);
+  const [updateMsg, setUpdateMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleInstalled = () => setIsPwaInstalled(true);
+    window.addEventListener('pwa-installed', handleInstalled);
+    window.addEventListener('appinstalled', handleInstalled);
+    return () => {
+      window.removeEventListener('pwa-installed', handleInstalled);
+      window.removeEventListener('appinstalled', handleInstalled);
+    };
+  }, []);
+
+  const handleCheckUpdates = async () => {
+    setCheckingUpdate(true);
+    setUpdateMsg(null);
+    const res = await checkForAppUpdates();
+    setCheckingUpdate(false);
+    if (res === 'updated') {
+      setUpdateMsg('✨ Neue Version wurde installiert! Seite wird neu geladen...');
+    } else if (res === 'latest') {
+      setUpdateMsg('✓ Sie nutzen bereits die aktuellste Version!');
+      setTimeout(() => setUpdateMsg(null), 4000);
+    } else if (res === 'offline') {
+      setUpdateMsg('⚠️ Offline – keine Internetverbindung für Updates.');
+      setTimeout(() => setUpdateMsg(null), 4000);
+    } else {
+      setUpdateMsg('✓ App ist aktuell.');
+      setTimeout(() => setUpdateMsg(null), 4000);
+    }
+  };
 
   // Password Change State
   const [showPasswordChange, setShowPasswordChange] = useState(false);
@@ -440,33 +475,64 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
             </div>
 
             {/* PWA App Installation & Offline Card */}
-            <div className="p-4 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 rounded-xl">
-                  <Smartphone className="w-5 h-5" />
-                </div>
-                <div>
-                  <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
-                    <span>App auf Smartphone / PC installieren</span>
-                    <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[10px]">
-                      100% Offline-fähig
-                    </span>
+            {isPwaInstalled ? (
+              <div className="p-4 bg-emerald-50/70 dark:bg-emerald-950/20 rounded-2xl border border-emerald-200 dark:border-emerald-800/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 rounded-xl shrink-0">
+                    <CheckCircle2 className="w-5 h-5" />
                   </div>
-                  <div className="text-[11px] text-slate-500">
-                    Üben Sie auch unterwegs im Flugzeug oder der Bahn ohne Internetverbindung.
+                  <div>
+                    <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5 flex-wrap">
+                      <span>App ist installiert</span>
+                      <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-black text-[10px]">
+                        ✓ Offline-Modus aktiv
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-slate-500">
+                      {updateMsg || 'Die App aktualisiert sich automatisch bei jedem Start im Hintergrund.'}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <button
-                type="button"
-                onClick={() => triggerPwaInstall()}
-                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-xs shadow flex items-center gap-1.5 transition-transform active:scale-95 cursor-pointer shrink-0"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>Installieren</span>
-              </button>
-            </div>
+                <button
+                  type="button"
+                  onClick={handleCheckUpdates}
+                  disabled={checkingUpdate}
+                  className="px-3.5 py-2 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl font-black text-xs shadow-xs flex items-center gap-1.5 transition-transform active:scale-95 cursor-pointer shrink-0"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${checkingUpdate ? 'animate-spin text-indigo-600' : ''}`} />
+                  <span>{checkingUpdate ? 'Prüfen...' : 'Nach Updates suchen'}</span>
+                </button>
+              </div>
+            ) : (
+              <div className="p-4 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 rounded-xl shrink-0">
+                    <Smartphone className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5 flex-wrap">
+                      <span>App auf Smartphone / PC installieren</span>
+                      <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold text-[10px]">
+                        100% Offline-fähig
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-slate-500">
+                      Üben Sie auch unterwegs im Flugzeug oder der Bahn ohne Internetverbindung.
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => triggerPwaInstall()}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold text-xs shadow flex items-center gap-1.5 transition-transform active:scale-95 cursor-pointer shrink-0"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Installieren / Anleitung</span>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Security & Password Change */}
