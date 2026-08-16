@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import type { Modelltest, TileType, User } from '../types';
-import { Crown, CheckCircle, XCircle, Volume2, HelpCircle, ArrowRight, RotateCcw, Award, Layers, FileText, ChevronDown } from 'lucide-react';
+import { Crown, CheckCircle, XCircle, Volume2, VolumeX, Play, Pause, Loader2, HelpCircle, ArrowRight, RotateCcw, Award, Layers, FileText, ChevronDown } from 'lucide-react';
 import { FormattedText, FormattedInline } from './FormattedText';
 import confetti from 'canvas-confetti';
 import {
@@ -516,8 +516,70 @@ export const AudioPlayerBlock: React.FC<{
   autoShowScript?: boolean;
 }> = ({ audioUrl, scriptText, autoShowScript = false }) => {
   const audioRef = React.useRef<HTMLAudioElement | null>(null);
+  const [isPlaying, setIsPlaying] = React.useState<boolean>(false);
+  const [currentTime, setCurrentTime] = React.useState<number>(0);
+  const [duration, setDuration] = React.useState<number>(0);
   const [playbackRate, setPlaybackRate] = React.useState<number>(1.0);
+  const [isMuted, setIsMuted] = React.useState<boolean>(false);
+  const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const [showScript, setShowScript] = React.useState<boolean>(autoShowScript);
+
+  // Reset playback state when audioUrl changes
+  React.useEffect(() => {
+    setIsPlaying(false);
+    setCurrentTime(0);
+    setDuration(0);
+    setIsLoading(false);
+  }, [audioUrl]);
+
+  const togglePlay = () => {
+    if (!audioRef.current || !audioUrl) return;
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      setIsLoading(true);
+      audioRef.current.playbackRate = playbackRate;
+      audioRef.current
+        .play()
+        .then(() => {
+          setIsPlaying(true);
+          setIsLoading(false);
+        })
+        .catch((err) => {
+          console.warn('Audio playback error:', err);
+          setIsPlaying(false);
+          setIsLoading(false);
+        });
+    }
+  };
+
+  const handleTimeUpdate = () => {
+    if (audioRef.current) {
+      setCurrentTime(audioRef.current.currentTime);
+    }
+  };
+
+  const handleLoadedMetadata = () => {
+    if (audioRef.current) {
+      setDuration(audioRef.current.duration || 0);
+    }
+  };
+
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const time = Number(e.target.value);
+    setCurrentTime(time);
+    if (audioRef.current) {
+      audioRef.current.currentTime = time;
+    }
+  };
+
+  const skip = (seconds: number) => {
+    if (!audioRef.current) return;
+    const newTime = Math.max(0, Math.min(duration || 0, audioRef.current.currentTime + seconds));
+    audioRef.current.currentTime = newTime;
+    setCurrentTime(newTime);
+  };
 
   const handleSpeedChange = (rate: number) => {
     setPlaybackRate(rate);
@@ -526,32 +588,86 @@ export const AudioPlayerBlock: React.FC<{
     }
   };
 
+  const toggleMute = () => {
+    if (!audioRef.current) return;
+    audioRef.current.muted = !isMuted;
+    setIsMuted(!isMuted);
+  };
+
+  const formatTime = (secs: number) => {
+    if (isNaN(secs) || secs < 0) return '0:00';
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60);
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  };
+
+  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+
   return (
-    <div className="p-4 sm:p-5 glass-panel rounded-2xl border border-slate-300 dark:border-slate-800 space-y-4 shadow-sm">
+    <div
+      onContextMenu={(e) => e.preventDefault()}
+      className="select-none p-4 sm:p-5 glass-panel rounded-3xl border border-slate-200 dark:border-slate-800 space-y-4 shadow-sm"
+    >
       {audioUrl ? (
-        <div className="space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
-                <Volume2 className="w-4 h-4" />
+        <div className="space-y-4">
+          {/* Hidden native audio element to disable all browser download menus */}
+          <audio
+            ref={audioRef}
+            src={audioUrl}
+            preload="metadata"
+            controlsList="nodownload noplaybackrate"
+            onTimeUpdate={handleTimeUpdate}
+            onLoadedMetadata={handleLoadedMetadata}
+            onWaiting={() => setIsLoading(true)}
+            onPlaying={() => {
+              setIsLoading(false);
+              setIsPlaying(true);
+            }}
+            onPause={() => setIsPlaying(false)}
+            onEnded={() => {
+              setIsPlaying(false);
+              setCurrentTime(0);
+            }}
+            className="hidden"
+          />
+
+          {/* Top Header: Title & Equalizer / Speed */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-600/25 shrink-0">
+                <Volume2 className="w-5 h-5" />
               </div>
-              <span className="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white">
-                Audio-Wiedergabe (Hörtext)
-              </span>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-black text-slate-900 dark:text-white">
+                    Audio-Wiedergabe (Hörtext)
+                  </span>
+                  {isPlaying && (
+                    <span className="flex items-center gap-0.5 h-3">
+                      <span className="w-1 bg-indigo-600 rounded-full animate-bounce h-2" style={{ animationDuration: '600ms' }}></span>
+                      <span className="w-1 bg-indigo-600 rounded-full animate-bounce h-3" style={{ animationDuration: '800ms', animationDelay: '150ms' }}></span>
+                      <span className="w-1 bg-indigo-600 rounded-full animate-bounce h-2" style={{ animationDuration: '700ms', animationDelay: '300ms' }}></span>
+                    </span>
+                  )}
+                </div>
+                <span className="text-[11px] font-bold text-slate-500">
+                  {isPlaying ? 'Hördatei wird abgespielt...' : 'Bereit zur Wiedergabe'}
+                </span>
+              </div>
             </div>
 
-            {/* SPEED CONTROLLER PILLS (0.8x, 1.0x, 1.2x) */}
-            <div className="flex items-center gap-1.5 self-start sm:self-auto">
-              <span className="text-[11px] font-extrabold text-slate-700 dark:text-slate-300 mr-1">Tempo:</span>
-              {[0.8, 1.0, 1.2].map((rate) => (
+            {/* Speed Pills */}
+            <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-900/80 p-1 rounded-xl border border-slate-200 dark:border-slate-800">
+              <span className="text-[10px] font-black uppercase text-slate-500 px-1.5">Tempo:</span>
+              {[0.8, 1.0, 1.2, 1.5].map((rate) => (
                 <button
                   key={rate}
                   type="button"
                   onClick={() => handleSpeedChange(rate)}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all ${
+                  className={`px-2 py-0.5 rounded-lg text-xs font-black transition-all cursor-pointer ${
                     playbackRate === rate
-                      ? 'bg-indigo-600 text-white shadow-sm'
-                      : 'bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700'
+                      ? 'bg-indigo-600 text-white shadow-xs'
+                      : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
                   }`}
                 >
                   {rate}x
@@ -560,33 +676,105 @@ export const AudioPlayerBlock: React.FC<{
             </div>
           </div>
 
-          <audio
-            ref={audioRef}
-            controls
-            key={audioUrl}
-            onPlay={() => {
-              if (audioRef.current) audioRef.current.playbackRate = playbackRate;
-            }}
-            className="w-full h-11 rounded-xl accent-indigo-600"
-          >
-            <source src={audioUrl} type="audio/mp3" />
-            Ihr Browser unterstützt das Audio-Element nicht.
-          </audio>
+          {/* Scrubber / Progress Bar */}
+          <div className="space-y-1.5 pt-1">
+            <div className="relative flex items-center">
+              <input
+                type="range"
+                min={0}
+                max={duration || 100}
+                step={0.1}
+                value={currentTime}
+                onChange={handleSeek}
+                disabled={!audioUrl}
+                aria-label="Audio Fortschritt"
+                className="w-full h-2.5 rounded-lg appearance-none cursor-pointer accent-indigo-600 focus:outline-none transition-all"
+                style={{
+                  background: `linear-gradient(to right, #4f46e5 ${progressPercent}%, rgba(148, 163, 184, 0.25) ${progressPercent}%)`
+                }}
+              />
+            </div>
+            <div className="flex justify-between items-center text-xs font-black font-mono text-slate-500">
+              <span>{formatTime(currentTime)}</span>
+              <span>{formatTime(duration)}</span>
+            </div>
+          </div>
+
+          {/* Main Controls Row */}
+          <div className="flex items-center justify-between gap-4 pt-1">
+            <div className="flex items-center gap-2">
+              {/* -5s Skip Button */}
+              <button
+                type="button"
+                onClick={() => skip(-5)}
+                disabled={!audioUrl}
+                title="5 Sekunden zurück"
+                className="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-all text-xs font-black flex items-center gap-1 active:scale-95 cursor-pointer shadow-2xs"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>-5s</span>
+              </button>
+
+              {/* Main Play / Pause Button */}
+              <button
+                type="button"
+                onClick={togglePlay}
+                disabled={!audioUrl}
+                aria-label={isPlaying ? 'Audio pausieren' : 'Audio abspielen'}
+                className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-md transition-all active:scale-95 cursor-pointer ${
+                  isPlaying
+                    ? 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-600/30 ring-4 ring-indigo-500/20'
+                    : 'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-600/25'
+                }`}
+              >
+                {isLoading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : isPlaying ? (
+                  <Pause className="w-5 h-5 fill-current" />
+                ) : (
+                  <Play className="w-5 h-5 fill-current ml-0.5" />
+                )}
+              </button>
+
+              {/* +5s Skip Button */}
+              <button
+                type="button"
+                onClick={() => skip(5)}
+                disabled={!audioUrl}
+                title="5 Sekunden vor"
+                className="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-all text-xs font-black flex items-center gap-1 active:scale-95 cursor-pointer shadow-2xs"
+              >
+                <span>+5s</span>
+                <RotateCcw className="w-3.5 h-3.5 transform -scale-x-100" />
+              </button>
+            </div>
+
+            {/* Mute Button */}
+            <button
+              type="button"
+              onClick={toggleMute}
+              disabled={!audioUrl}
+              className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-all active:scale-95 cursor-pointer"
+              title={isMuted ? 'Ton einschalten' : 'Stummschalten'}
+            >
+              {isMuted ? <VolumeX className="w-4 h-4 text-rose-500" /> : <Volume2 className="w-4 h-4" />}
+            </button>
+          </div>
         </div>
       ) : (
-        <div className="p-3.5 bg-amber-500/10 rounded-xl border border-amber-500/20 text-xs sm:text-sm text-slate-800 dark:text-slate-200 font-semibold flex items-center gap-2">
-          <Volume2 className="w-4.5 h-4.5 text-amber-500 shrink-0" />
+        <div className="p-4 bg-amber-500/10 rounded-2xl border border-amber-500/20 text-xs sm:text-sm text-slate-800 dark:text-slate-200 font-bold flex items-center gap-2.5">
+          <Volume2 className="w-5 h-5 text-amber-500 shrink-0" />
           <span>Keine MP3-Audiodatei hinterlegt. (Transkript zum Lesen verfügbar)</span>
         </div>
       )}
 
-      {/* COLLAPSIBLE TRANSCRIPT / SKRIPT TOGGLE BUTTON */}
+      {/* Collapsible Transcript Toggle */}
       {scriptText && (
         <div className="pt-2 border-t border-slate-200 dark:border-slate-800/80">
           <button
             type="button"
             onClick={() => setShowScript(!showScript)}
-            className="text-xs sm:text-sm font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1.5 cursor-pointer"
+            className="text-xs sm:text-sm font-black text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1.5 cursor-pointer"
           >
             <FileText className="w-4 h-4" />
             <span>{showScript ? '📜 Transkript / Skript ausblenden' : '📜 Transkript / Skript anzeigen'}</span>
@@ -594,7 +782,7 @@ export const AudioPlayerBlock: React.FC<{
           </button>
 
           {showScript && (
-            <div className="mt-3 p-4 bg-slate-100 dark:bg-slate-900/90 rounded-xl text-xs sm:text-sm text-slate-900 dark:text-slate-100 leading-relaxed font-sans max-h-64 overflow-y-auto border border-slate-300 dark:border-slate-800 shadow-inner">
+            <div className="mt-3 p-4 bg-slate-50 dark:bg-slate-900/90 rounded-2xl text-xs sm:text-sm text-slate-900 dark:text-slate-100 leading-relaxed font-sans max-h-64 overflow-y-auto border border-slate-200 dark:border-slate-800 shadow-inner">
               <FormattedText text={scriptText} className="font-sans" />
             </div>
           )}
