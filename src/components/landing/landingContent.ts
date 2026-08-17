@@ -119,8 +119,8 @@ export interface LandingTranslation {
     plan4Period: string;
     btnSelect: string;
     btnUnlock: string;
-    features: string[];
-    featuresLifetime: string[];
+    allIncludedTitle: string;
+    allIncludedItems: string[];
     mainCta: string;
     trustSsl: string;
     trustNoSub: string;
@@ -280,18 +280,13 @@ export const LANDING_TRANSLATIONS: Record<LandingLang, LandingTranslation> = {
       plan4Period: 'dauerhaft',
       btnSelect: 'Auswählen',
       btnUnlock: 'Jetzt freischalten',
-      features: [
-        'Voller Zugriff auf alle 12 Prüfungsteile',
-        'Unbegrenzte Simulationen mit Timer',
-        'Alle 104+ Forenbeiträge & 67+ Sprech-Themen',
-        'Vollständiges Wortschatz-Training',
-        '100% Offline-fähig (PWA)',
-      ],
-      featuresLifetime: [
-        'Dauerhafter unbegrenzter Zugang',
-        'Alle 12 Teile & zukünftige Modelltests',
-        'Unbegrenzte Prüfungssimulationen',
-        '100% Offline-fähig (PWA)',
+      allIncludedTitle: 'In jedem Tarif 100% enthalten:',
+      allIncludedItems: [
+        'Alle 12 DTB-Prüfungsmodule',
+        'Unbegrenzte 130-Min. Simulationen mit Timer',
+        '104+ Mustertexte Q58 & 67+ Sprech-Themen',
+        'Spaced Repetition Wortschatz-Training',
+        '100% Offline-fähig (PWA auf Smartphone & PC)',
       ],
       mainCta: '✨ Tarif in der App wählen & sicher freischalten',
       trustSsl: '256-Bit SSL Verschlüsselung',
@@ -463,18 +458,13 @@ export const LANDING_TRANSLATIONS: Record<LandingLang, LandingTranslation> = {
       plan4Period: 'назавжди',
       btnSelect: 'Обрати',
       btnUnlock: 'Активувати зараз',
-      features: [
-        'Повний доступ до всіх 12 модулів',
+      allIncludedTitle: 'У кожному тарифі 100% включено:',
+      allIncludedItems: [
+        'Усі 12 модулів DTB',
         'Необмежені симуляції з таймером',
-        'Усі 104+ листів та 67+ усних тем',
+        '104+ зразків листів Q58 та 67+ усних тем',
         'Повний словниковий тренажер (SRS)',
-        '100% робота офлайн (PWA)',
-      ],
-      featuresLifetime: [
-        'Вічний необмежений доступ',
-        'Усі 12 модулів та майбутні тести',
-        'Необмежені симуляції іспиту',
-        '100% робота офлайн (PWA)',
+        '100% робота офлайн (PWA на телефоні й ПК)',
       ],
       mainCta: '✨ Обрати тариф у додатку та безпечно оплатити',
       trustSsl: '256-бітне SSL-шифрування',
@@ -646,18 +636,13 @@ export const LANDING_TRANSLATIONS: Record<LandingLang, LandingTranslation> = {
       plan4Period: 'lifetime',
       btnSelect: 'Select',
       btnUnlock: 'Unlock Now',
-      features: [
-        'Full access to all 12 exam sections',
-        'Unlimited simulations with timer',
-        'All 104+ forum posts & 67+ speaking topics',
-        'Full vocabulary SRS training',
-        '100% offline capable (PWA)',
-      ],
-      featuresLifetime: [
-        'Lifetime unlimited access',
-        'All 12 sections & future tests',
-        'Unlimited exam simulations',
-        '100% offline capable (PWA)',
+      allIncludedTitle: '100% Included in Every Plan:',
+      allIncludedItems: [
+        'All 12 DTB Exam Modules',
+        'Unlimited 130-Min. Simulations with Timer',
+        '104+ Model Letters Q58 & 67+ Speaking Topics',
+        'Spaced Repetition Vocabulary Training',
+        '100% Offline Capable (PWA on Phone & PC)',
       ],
       mainCta: '✨ Select Plan in App & Unlock Securely',
       trustSsl: '256-Bit SSL Encryption',
@@ -829,18 +814,13 @@ export const LANDING_TRANSLATIONS: Record<LandingLang, LandingTranslation> = {
       plan4Period: 'ömür boyu',
       btnSelect: 'Seç',
       btnUnlock: 'Hemen Aç',
-      features: [
-        '12 sınav bölümünün tamamına erişim',
-        'Zamanlayıcılı sınırsız simülasyonlar',
-        '104+ forum konusu ve 67+ konuşma kartı',
-        'Eksiksiz SRS kelime eğitimi',
-        '%100 çevrimdışı kullanım (PWA)',
-      ],
-      featuresLifetime: [
-        'Kalıcı sınırsız erişim',
-        'Tüm 12 modül ve gelecekteki denemeler',
-        'Sınırsız sınav simülasyonları',
-        '%100 çevrimdışı kullanım (PWA)',
+      allIncludedTitle: 'Her Pakette %100 Dahil:',
+      allIncludedItems: [
+        'Tüm 12 DTB Sınav Modülü',
+        'Zamanlayıcılı Sınırsız 130 Dk. Denemeler',
+        '104+ Örnek Mektup Q58 ve 67+ Konuşma Konusu',
+        'Aralıklı Tekrar Kelime Eğitimi (SRS)',
+        '%100 Çevrimdışı Kullanım (Telefonda ve PC\'de PWA)',
       ],
       mainCta: '✨ Uygulamada Paketi Seçin ve Güvenle Açın',
       trustSsl: '256-Bit SSL Şifreleme',
@@ -1012,18 +992,13 @@ export const LANDING_TRANSLATIONS: Record<LandingLang, LandingTranslation> = {
       plan4Period: 'ilimitado',
       btnSelect: 'Seleccionar',
       btnUnlock: 'Activar Ahora',
-      features: [
-        'Acceso total a las 12 partes del examen',
-        'Simulacros ilimitados con cronómetro',
-        '104+ cartas de muestra y 67+ temas orales',
-        'Entrenamiento completo de vocabulario SRS',
-        '100% utilizable offline (PWA)',
-      ],
-      featuresLifetime: [
-        'Acceso permanente ilimitado',
-        'Los 12 módulos y futuros exámenes',
-        'Simulacros de examen ilimitados',
-        '100% utilizable offline (PWA)',
+      allIncludedTitle: '100% Incluido en Cada Plan:',
+      allIncludedItems: [
+        'Los 12 Módulos Oficiales del DTB',
+        'Simulacros Ilimitados de 130 Min. con Cronómetro',
+        '104+ Cartas de Muestra Q58 y 67+ Temas Orales',
+        'Entrenamiento de Vocabulario SRS',
+        '100% Funcional Offline (PWA en Móvil y PC)',
       ],
       mainCta: '✨ Seleccionar Plan en la App y Desbloquear',
       trustSsl: 'Encriptación SSL de 256 bits',
@@ -1195,18 +1170,13 @@ export const LANDING_TRANSLATIONS: Record<LandingLang, LandingTranslation> = {
       plan4Period: 'навсегда',
       btnSelect: 'Выбрать',
       btnUnlock: 'Открыть доступ',
-      features: [
-        'Полный доступ ко всем 12 модулям',
+      allIncludedTitle: 'В каждый тариф 100% включено:',
+      allIncludedItems: [
+        'Все 12 модулей DTB',
         'Неограниченные симуляции с таймером',
-        'Все 104+ тем писем и 67+ устных тем',
-        'Полный тренажер словаря (SRS)',
-        '100% работа офлайн (PWA)',
-      ],
-      featuresLifetime: [
-        'Бессрочный неограниченный доступ',
-        'Все 12 модулей и будущие тесты',
-        'Неограниченные симуляции экзамена',
-        '100% работа офлайн (PWA)',
+        '104+ тем писем Q58 и 67+ устных тем',
+        'Тренажер словаря (SRS)',
+        '100% работа офлайн (PWA на телефоне и ПК)',
       ],
       mainCta: '✨ Выбрать тариф в приложении и безопасно оплатить',
       trustSsl: '256-битное SSL шифрование',

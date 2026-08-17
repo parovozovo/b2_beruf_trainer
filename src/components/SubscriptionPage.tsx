@@ -30,16 +30,7 @@ export interface SubscriptionPlan {
   durationDays: number | null; // null for lifetime
   description: string;
   popular?: boolean;
-  features: string[];
 }
-
-const COMMON_FEATURES = [
-  'Voller Zugriff auf alle 12 Prüfungsteile',
-  'Unbegrenzte Modelltest-Simulationen mit Timer',
-  'Alle 104+ Forenbeiträge & 67+ Sprechen-Themen',
-  'Vollständiges Wortschatz-Training mit Spaced Repetition',
-  '100% Offline-fähig (PWA auf Smartphone & PC)',
-];
 
 const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   {
@@ -49,7 +40,6 @@ const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     period: 'für 7 Tage',
     durationDays: 7,
     description: '1 Woche voller Zugriff. Ideal für den schnellen Endspurt vor dem Prüfungstermin.',
-    features: COMMON_FEATURES,
   },
   {
     id: 'standard_30d',
@@ -60,7 +50,6 @@ const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     durationDays: 30,
     popular: true,
     description: '1 Monat voller Zugriff. Die beliebteste Wahl für eine gründliche und stressfreie Vorbereitung.',
-    features: COMMON_FEATURES,
   },
   {
     id: 'complete_90d',
@@ -70,7 +59,6 @@ const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     period: 'für 90 Tage',
     durationDays: 90,
     description: '3 Monate voller Zugriff. Begleitet Sie zuverlässig durch den gesamten B2-Berufssprachkurs.',
-    features: COMMON_FEATURES,
   },
   {
     id: 'lifetime',
@@ -81,13 +69,6 @@ const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     period: 'dauerhaft',
     durationDays: null,
     description: 'Einmal zahlen, unbegrenzt üben ohne zeitliche Begrenzung bis zum sicheren Bestehen.',
-    features: [
-      'Dauerhafter unbegrenzter Zugang ohne Ablaufdatum',
-      'Alle 12 Prüfungsteile & zukünftige Modelltests',
-      'Unbegrenzte Prüfungssimulationen mit Timer',
-      'Alle Forenbeiträge, Sprech-Themen & Wortschatz',
-      '100% Offline-fähig auf allen Geräten',
-    ],
   },
 ];
 
@@ -325,16 +306,6 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({
                     <span className="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">/ {plan.period}</span>
                   </div>
                 </div>
-
-                {/* Features List */}
-                <div className="space-y-2.5 pt-3 border-t border-slate-100 dark:border-slate-800/80 text-xs">
-                  {plan.features.map((feat, fIdx) => (
-                    <div key={fIdx} className="flex items-start gap-2 text-slate-700 dark:text-slate-300">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                      <span className="leading-snug">{feat}</span>
-                    </div>
-                  ))}
-                </div>
               </div>
 
               {/* Card Bottom Radio */}
@@ -360,6 +331,20 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({
             </div>
           );
         })}
+      </div>
+
+      {/* Unified Inclusions Banner */}
+      <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center max-w-4xl mx-auto shadow-xs space-y-2">
+        <div className="text-[11px] font-black uppercase text-indigo-600 dark:text-indigo-400 tracking-wider">
+          ✨ In allen Tarifen 100% uneingeschränkt enthalten:
+        </div>
+        <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 text-xs font-bold text-slate-700 dark:text-slate-300">
+          <span className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" /> Alle 12 DTB-Prüfungsmodule</span>
+          <span className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" /> 130-Min. Simulationen mit Timer</span>
+          <span className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" /> 104+ Mustertexte & 67+ Sprech-Themen</span>
+          <span className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" /> Spaced Repetition Wortschatz</span>
+          <span className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" /> 100% Offline-fähig (PWA)</span>
+        </div>
       </div>
 
       {/* Checkout Action Panel */}
