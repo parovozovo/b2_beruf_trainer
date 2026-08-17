@@ -21,7 +21,9 @@ import {
   FileText,
   Shield,
   Cookie,
-  Landmark
+  Landmark,
+  Menu,
+  X
 } from 'lucide-react';
 import { AppLogo } from '../AppLogo';
 import {
@@ -40,6 +42,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   theme,
   onToggleTheme,
 }) => {
+  // Mobile Menu Drawer state
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   // Language state (default DE or previous preference)
   const [lang, setLang] = useState<LandingLang>(() => {
     return (localStorage.getItem('b2_landing_lang') as LandingLang) || 'de';
@@ -74,15 +79,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 selection:bg-indigo-600 selection:text-white transition-colors">
       
       {/* ================= HEADER / NAVBAR ================= */}
-      <header className="sticky top-0 z-40 bg-white/90 dark:bg-slate-950/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 transition-colors">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <header className="sticky top-0 z-40 pt-safe bg-white/90 dark:bg-slate-950/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 transition-colors">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 min-h-16 flex items-center justify-between gap-2 sm:gap-4">
           
           {/* App Brand with Logo */}
-          <Link to="/" className="flex items-center gap-3 shrink-0 group">
+          <Link to="/" className="flex items-center gap-2 sm:gap-3 shrink-0 group">
             <div className="transition-transform group-hover:scale-105 duration-200">
-              <AppLogo size={38} />
+              <AppLogo size={36} />
             </div>
-            <span className="font-black text-base sm:text-lg tracking-tight text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+            <span className="font-black text-sm sm:text-base lg:text-lg tracking-tight text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">
               Beruf B2+ Trainer
             </span>
           </Link>
@@ -110,14 +115,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </nav>
 
           {/* Right Header Controls */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             {/* Language Switcher Dropdown */}
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-xs font-bold shadow-2xs hover:border-indigo-500 transition-colors">
+            <div className="flex items-center gap-1 px-2 py-1 sm:px-2.5 sm:py-1 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-[11px] sm:text-xs font-bold shadow-2xs hover:border-indigo-500 transition-colors">
               <Globe className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
               <select
                 value={lang}
                 onChange={(e) => handleSetLang(e.target.value as LandingLang)}
-                className="bg-transparent text-xs font-bold text-slate-900 dark:text-white cursor-pointer focus:outline-none"
+                className="bg-transparent text-[11px] sm:text-xs font-bold text-slate-900 dark:text-white cursor-pointer focus:outline-none"
               >
                 {(Object.keys(LANDING_LANGUAGES) as LandingLang[]).map((k) => (
                   <option key={k} value={k} className="text-slate-900 bg-white dark:bg-slate-900 dark:text-white">
@@ -139,13 +144,86 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             {/* Primary Action Button */}
             <Link
               to="/app"
-              className="px-4 sm:px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs sm:text-sm shadow-md shadow-amber-500/25 flex items-center gap-1.5 transition-all transform hover:scale-105 active:scale-95 cursor-pointer shrink-0"
+              className="px-3 sm:px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs sm:text-sm shadow-md shadow-amber-500/25 flex items-center gap-1 transition-all transform hover:scale-105 active:scale-95 cursor-pointer shrink-0"
             >
               <span>{t.nav.ctaApp}</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-3.5 h-3.5 hidden xs:inline" />
             </Link>
+
+            {/* Mobile Hamburger Toggle Button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="lg:hidden p-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800 transition-all cursor-pointer shrink-0"
+              title="Menü"
+            >
+              {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile Landing Navigation Drawer */}
+        {mobileMenuOpen && (
+          <>
+            <div
+              className="lg:hidden fixed inset-0 top-[calc(4rem+env(safe-area-inset-top))] z-30 bg-slate-950/60 backdrop-blur-xs transition-opacity animate-fadeIn"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+            <div className="lg:hidden relative z-40 border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/95 backdrop-blur-2xl px-5 py-5 space-y-2 max-h-[calc(100dvh-4.5rem-env(safe-area-inset-top))] overflow-y-auto pb-[max(2rem,calc(env(safe-area-inset-bottom)+1.5rem))] shadow-2xl animate-fadeIn">
+              <a
+                href="#vorteile"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
+              >
+                ✨ {t.nav.features}
+              </a>
+              <a
+                href="#module"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
+              >
+                🧩 {t.nav.modules}
+              </a>
+              <a
+                href="#vergleich"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
+              >
+                ⚖️ {t.nav.comparison}
+              </a>
+              <a
+                href="#pricing"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
+              >
+                💎 {t.nav.pricing}
+              </a>
+              <a
+                href="#faq"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
+              >
+                ❓ {t.nav.faq}
+              </a>
+              <Link
+                to="/blog"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block p-3 rounded-xl text-sm font-bold text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
+              >
+                📚 {t.nav.blog}
+              </Link>
+              <div className="pt-3 border-t border-slate-200 dark:border-slate-800">
+                <Link
+                  to="/app"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black text-sm text-center shadow-lg flex items-center justify-center gap-2"
+                >
+                  <span>{t.nav.ctaApp}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+            </div>
+          </>
+        )}
       </header>
 
       {/* ================= HERO SECTION ================= */}

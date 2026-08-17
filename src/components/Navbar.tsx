@@ -48,21 +48,21 @@ export const Navbar: React.FC<NavbarProps> = ({
     <>
       {/* Desktop & Mobile Top Header Navigation */}
       <header
-        className={`sticky top-0 z-40 w-full backdrop-blur-xl border-b transition-colors duration-200 ${
+        className={`sticky top-0 z-40 w-full pt-safe backdrop-blur-xl border-b transition-colors duration-200 ${
           isDark
             ? 'bg-slate-950/90 border-slate-800/80 text-white'
             : 'bg-white/90 border-slate-200 text-slate-900 shadow-sm'
         }`}
       >
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2 sm:gap-4 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 min-h-16 flex items-center justify-between gap-2 sm:gap-4">
           {/* BRAND LOGO & TITLE */}
           <div
             onClick={() => handleTabClick('dashboard')}
-            className="flex items-center gap-3 cursor-pointer group shrink-0 min-w-0"
+            className="flex items-center gap-2.5 sm:gap-3 cursor-pointer group shrink-0 min-w-0"
           >
-            <AppLogo size={38} />
+            <AppLogo size={36} />
             <span
-              className={`font-black text-base sm:text-lg tracking-tight truncate transition-colors ${
+              className={`font-black text-sm sm:text-base lg:text-lg tracking-tight truncate transition-colors ${
                 isDark ? 'text-white group-hover:text-indigo-300' : 'text-slate-900 group-hover:text-indigo-600'
               }`}
             >
@@ -248,182 +248,190 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Mobile Slide-Down Drawer Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-4 py-3 space-y-1 shadow-2xl animate-fadeIn">
-            <button
-              onClick={() => handleTabClick('dashboard')}
-              className={`w-full p-3 rounded-2xl text-left text-xs font-bold flex items-center gap-3 transition-all cursor-pointer ${
-                currentTab === 'dashboard'
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-800 dark:text-slate-200'
-              }`}
-            >
-              <div className="p-2 rounded-xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400">
-                <BookOpen className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="font-extrabold text-sm">Dashboard / Start</div>
-                <div className="text-[11px] opacity-75 font-normal">Übersicht & Fortschritt</div>
-              </div>
-            </button>
+          <>
+            {/* Backdrop Overlay to close on tap outside */}
+            <div
+              className="md:hidden fixed inset-0 top-[calc(4rem+env(safe-area-inset-top))] z-30 bg-slate-950/60 backdrop-blur-xs transition-opacity animate-fadeIn"
+              onClick={() => setMobileMenuOpen(false)}
+            />
 
-            <button
-              onClick={() => handleTabClick('tile_practice')}
-              className={`w-full p-3 rounded-2xl text-left text-xs font-bold flex items-center gap-3 transition-all cursor-pointer ${
-                currentTab === 'tile_practice'
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-800 dark:text-slate-200'
-              }`}
-            >
-              <div className="p-2 rounded-xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400">
-                <Layers className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="font-extrabold text-sm">Kachel-Training (12 Teile)</div>
-                <div className="text-[11px] opacity-75 font-normal">Lesen, Hören, Schreiben, Sprachbausteine</div>
-              </div>
-            </button>
-
-            <button
-              onClick={() => handleTabClick('full_exam')}
-              className={`w-full p-3 rounded-2xl text-left text-xs font-bold flex items-center gap-3 transition-all cursor-pointer ${
-                currentTab === 'full_exam'
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-800 dark:text-slate-200'
-              }`}
-            >
-              <div className="p-2 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400">
-                <Award className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="font-extrabold text-sm">Prüfungssimulation (1–57)</div>
-                <div className="text-[11px] opacity-75 font-normal">Kompletter B2 Beruf Modelltest mit Timer</div>
-              </div>
-            </button>
-
-            <button
-              onClick={() => handleTabClick('schreiben')}
-              className={`w-full p-3 rounded-2xl text-left text-xs font-bold flex items-center gap-3 transition-all cursor-pointer ${
-                currentTab === 'schreiben'
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-800 dark:text-slate-200'
-              }`}
-            >
-              <div className="p-2 rounded-xl bg-pink-500/15 text-pink-600 dark:text-pink-400">
-                <Edit3 className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="font-extrabold text-sm">Schreibtrainer (Q58)</div>
-                <div className="text-[11px] opacity-75 font-normal">Forenbeiträge & Firmenkorrespondenz</div>
-              </div>
-            </button>
-
-            <button
-              onClick={() => handleTabClick('sprechen')}
-              className={`w-full p-3 rounded-2xl text-left text-xs font-bold flex items-center gap-3 transition-all cursor-pointer ${
-                currentTab === 'sprechen'
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-800 dark:text-slate-200'
-              }`}
-            >
-              <div className="p-2 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
-                <Mic className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="font-extrabold text-sm">Sprechtrainer (1A, 2 & 3)</div>
-                <div className="text-[11px] opacity-75 font-normal">Mündliche Prüfung mit Gong-Timer</div>
-              </div>
-            </button>
-
-            <button
-              onClick={() => handleTabClick('wortschatz')}
-              className={`w-full p-3 rounded-2xl text-left text-xs font-bold flex items-center gap-3 transition-all cursor-pointer ${
-                currentTab === 'wortschatz'
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-800 dark:text-slate-200'
-              }`}
-            >
-              <div className="p-2 rounded-xl bg-violet-500/15 text-violet-600 dark:text-violet-400">
-                <BookOpen className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="font-extrabold text-sm flex items-center gap-2">
-                  Wortschatz & NVV
-                </div>
-                <div className="text-[11px] opacity-75 font-normal">Interaktive Karteikarten & Branchenvokabeln</div>
-              </div>
-            </button>
-
-            {/* CONDITIONAL MOBILE PRICING / PREMIUM BUTTON */}
-            {!currentUser?.isPremium && (
+            <div className="md:hidden relative z-40 border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/95 backdrop-blur-2xl px-4 py-4 space-y-1.5 max-h-[calc(100dvh-4.5rem-env(safe-area-inset-top))] overflow-y-auto pb-[max(2rem,calc(env(safe-area-inset-bottom)+1.5rem))] shadow-2xl animate-fadeIn">
               <button
-                onClick={() => handleTabClick('pricing')}
-                className={`w-full p-3 rounded-2xl text-left text-xs font-bold flex items-center gap-3 transition-all cursor-pointer bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-indigo-500/20 border border-amber-500/40 text-amber-800 dark:text-amber-200 ${
-                  currentTab === 'pricing' ? 'ring-2 ring-amber-400 font-extrabold' : ''
+                onClick={() => handleTabClick('dashboard')}
+                className={`w-full p-3 rounded-2xl text-left text-xs font-bold flex items-center gap-3 transition-all cursor-pointer ${
+                  currentTab === 'dashboard'
+                    ? 'bg-indigo-600 text-white shadow-md'
+                    : 'hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-800 dark:text-slate-200'
                 }`}
               >
-                <div className="p-2 rounded-xl bg-amber-500 text-slate-950 shadow-xs">
-                  <Crown className="w-4 h-4" />
+                <div className="p-2 rounded-xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400">
+                  <BookOpen className="w-4 h-4" />
                 </div>
                 <div>
-                  <div className="font-extrabold text-sm flex items-center gap-1.5">
-                    <span>👑 Premium freischalten</span>
-                    <span className="px-1.5 py-0.5 rounded bg-amber-500/30 text-amber-900 dark:text-amber-100 text-[10px]">
-                      Tarife
-                    </span>
-                  </div>
-                  <div className="text-[11px] opacity-80 font-normal">Alle 12 Module & Prüfungssimulationen</div>
+                  <div className="font-extrabold text-sm">Dashboard / Start</div>
+                  <div className="text-[11px] opacity-75 font-normal">Übersicht & Fortschritt</div>
                 </div>
               </button>
-            )}
 
-            <button
-              onClick={() => handleTabClick('settings')}
-              className={`w-full p-3 rounded-2xl text-left text-xs font-bold flex items-center gap-3 transition-all cursor-pointer border-t border-slate-200 dark:border-slate-800/80 pt-3 ${
-                currentTab === 'settings'
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-800 dark:text-slate-200'
-              }`}
-            >
-              <div className="p-2 rounded-xl bg-slate-500/15 text-slate-700 dark:text-slate-300">
-                <Settings className="w-4 h-4" />
-              </div>
-              <div>
-                <div className="font-extrabold text-sm">Mein Profil & Einstellungen</div>
-                <div className="text-[11px] opacity-75 font-normal">Gutscheine, Schriftgröße, Audio-Tempo</div>
-              </div>
-            </button>
-
-            {currentUser?.role === 'admin' && (
               <button
-                onClick={() => {
-                  handleTabClick('admin');
-                  window.location.hash = 'admin-beruf';
-                }}
-                className="w-full p-3 rounded-2xl text-left text-xs font-bold flex items-center gap-3 bg-gradient-to-r from-rose-950/20 to-amber-950/20 border border-rose-500/30 text-rose-700 dark:text-rose-300 hover:bg-rose-500/20 transition-all cursor-pointer"
+                onClick={() => handleTabClick('tile_practice')}
+                className={`w-full p-3 rounded-2xl text-left text-xs font-bold flex items-center gap-3 transition-all cursor-pointer ${
+                  currentTab === 'tile_practice'
+                    ? 'bg-indigo-600 text-white shadow-md'
+                    : 'hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-800 dark:text-slate-200'
+                }`}
               >
-                <div className="p-2 rounded-xl bg-rose-500/20 text-rose-400">
-                  <Shield className="w-4 h-4" />
+                <div className="p-2 rounded-xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400">
+                  <Layers className="w-4 h-4" />
                 </div>
                 <div>
-                  <div className="font-extrabold text-sm">🛡️ Admin-Verwaltung</div>
-                  <div className="text-[11px] opacity-75 font-normal">Prüfungseditor & Benutzer</div>
+                  <div className="font-extrabold text-sm">Kachel-Training (12 Teile)</div>
+                  <div className="text-[11px] opacity-75 font-normal">Lesen, Hören, Schreiben, Sprachbausteine</div>
                 </div>
               </button>
-            )}
-          </div>
+
+              <button
+                onClick={() => handleTabClick('full_exam')}
+                className={`w-full p-3 rounded-2xl text-left text-xs font-bold flex items-center gap-3 transition-all cursor-pointer ${
+                  currentTab === 'full_exam'
+                    ? 'bg-indigo-600 text-white shadow-md'
+                    : 'hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-800 dark:text-slate-200'
+                }`}
+              >
+                <div className="p-2 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                  <Award className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="font-extrabold text-sm">Prüfungssimulation (1–57)</div>
+                  <div className="text-[11px] opacity-75 font-normal">Kompletter B2 Beruf Modelltest mit Timer</div>
+                </div>
+              </button>
+
+              <button
+                onClick={() => handleTabClick('schreiben')}
+                className={`w-full p-3 rounded-2xl text-left text-xs font-bold flex items-center gap-3 transition-all cursor-pointer ${
+                  currentTab === 'schreiben'
+                    ? 'bg-indigo-600 text-white shadow-md'
+                    : 'hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-800 dark:text-slate-200'
+                }`}
+              >
+                <div className="p-2 rounded-xl bg-pink-500/15 text-pink-600 dark:text-pink-400">
+                  <Edit3 className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="font-extrabold text-sm">Schreibtrainer (Q58)</div>
+                  <div className="text-[11px] opacity-75 font-normal">Forenbeiträge & Firmenkorrespondenz</div>
+                </div>
+              </button>
+
+              <button
+                onClick={() => handleTabClick('sprechen')}
+                className={`w-full p-3 rounded-2xl text-left text-xs font-bold flex items-center gap-3 transition-all cursor-pointer ${
+                  currentTab === 'sprechen'
+                    ? 'bg-indigo-600 text-white shadow-md'
+                    : 'hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-800 dark:text-slate-200'
+                }`}
+              >
+                <div className="p-2 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                  <Mic className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="font-extrabold text-sm">Sprechtrainer (1A, 2 & 3)</div>
+                  <div className="text-[11px] opacity-75 font-normal">Mündliche Prüfung mit Gong-Timer</div>
+                </div>
+              </button>
+
+              <button
+                onClick={() => handleTabClick('wortschatz')}
+                className={`w-full p-3 rounded-2xl text-left text-xs font-bold flex items-center gap-3 transition-all cursor-pointer ${
+                  currentTab === 'wortschatz'
+                    ? 'bg-indigo-600 text-white shadow-md'
+                    : 'hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-800 dark:text-slate-200'
+                }`}
+              >
+                <div className="p-2 rounded-xl bg-violet-500/15 text-violet-600 dark:text-violet-400">
+                  <BookOpen className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="font-extrabold text-sm flex items-center gap-2">
+                    Wortschatz & NVV
+                  </div>
+                  <div className="text-[11px] opacity-75 font-normal">Interaktive Karteikarten & Branchenvokabeln</div>
+                </div>
+              </button>
+
+              {/* CONDITIONAL MOBILE PRICING / PREMIUM BUTTON */}
+              {!currentUser?.isPremium && (
+                <button
+                  onClick={() => handleTabClick('pricing')}
+                  className={`w-full p-3 rounded-2xl text-left text-xs font-bold flex items-center gap-3 transition-all cursor-pointer bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-indigo-500/20 border border-amber-500/40 text-amber-800 dark:text-amber-200 ${
+                    currentTab === 'pricing' ? 'ring-2 ring-amber-400 font-extrabold' : ''
+                  }`}
+                >
+                  <div className="p-2 rounded-xl bg-amber-500 text-slate-950 shadow-xs">
+                    <Crown className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="font-extrabold text-sm flex items-center gap-1.5">
+                      <span>👑 Premium freischalten</span>
+                      <span className="px-1.5 py-0.5 rounded bg-amber-500/30 text-amber-900 dark:text-amber-100 text-[10px]">
+                        Tarife
+                      </span>
+                    </div>
+                    <div className="text-[11px] opacity-80 font-normal">Alle 12 Module & Prüfungssimulationen</div>
+                  </div>
+                </button>
+              )}
+
+              <button
+                onClick={() => handleTabClick('settings')}
+                className={`w-full p-3 rounded-2xl text-left text-xs font-bold flex items-center gap-3 transition-all cursor-pointer border-t border-slate-200 dark:border-slate-800/80 pt-3 ${
+                  currentTab === 'settings'
+                    ? 'bg-indigo-600 text-white shadow-md'
+                    : 'hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-800 dark:text-slate-200'
+                }`}
+              >
+                <div className="p-2 rounded-xl bg-slate-500/15 text-slate-700 dark:text-slate-300">
+                  <Settings className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="font-extrabold text-sm">Mein Profil & Einstellungen</div>
+                  <div className="text-[11px] opacity-75 font-normal">Gutscheine, Schriftgröße, Audio-Tempo</div>
+                </div>
+              </button>
+
+              {currentUser?.role === 'admin' && (
+                <button
+                  onClick={() => {
+                    handleTabClick('admin');
+                    window.location.hash = 'admin-beruf';
+                  }}
+                  className="w-full p-3 rounded-2xl text-left text-xs font-bold flex items-center gap-3 bg-gradient-to-r from-rose-950/20 to-amber-950/20 border border-rose-500/30 text-rose-700 dark:text-rose-300 hover:bg-rose-500/20 transition-all cursor-pointer"
+                >
+                  <div className="p-2 rounded-xl bg-rose-500/20 text-rose-400">
+                    <Shield className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="font-extrabold text-sm">🛡️ Admin-Verwaltung</div>
+                    <div className="text-[11px] opacity-75 font-normal">Prüfungseditor & Benutzer</div>
+                  </div>
+                </button>
+              )}
+            </div>
+          </>
         )}
       </header>
 
-      {/* Fixed Mobile Bottom Bar Navigation: Start | Training | Schreiben | Sprechen | Wortschatz */}
+      {/* Fixed Mobile Bottom Bar Navigation with iOS Safe Area: Start | Training | Prüfung | Schreiben | Wortschatz */}
       <div
-        className={`md:hidden fixed bottom-0 left-0 right-0 z-40 px-1 py-1.5 flex items-center justify-around text-[10px] border-t backdrop-blur-xl transition-colors duration-200 ${
-          isDark ? 'bg-slate-950/95 border-slate-800 text-slate-300' : 'bg-white/95 border-slate-200 text-slate-700 shadow-xl'
+        className={`md:hidden fixed bottom-0 left-0 right-0 z-30 px-1 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] flex items-center justify-around text-[10px] border-t backdrop-blur-xl transition-colors duration-200 shadow-2xl ${
+          isDark ? 'bg-slate-950/95 border-slate-800 text-slate-300' : 'bg-white/95 border-slate-200 text-slate-700'
         }`}
       >
         <button
           onClick={() => handleTabClick('dashboard')}
-          className={`flex-1 flex flex-col items-center justify-center gap-1 py-1 px-1 rounded-xl font-bold min-h-[48px] transition-all cursor-pointer ${
-            currentTab === 'dashboard' ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-500/10' : 'opacity-70'
+          className={`flex-1 flex flex-col items-center justify-center gap-1 py-1 px-1 rounded-xl font-bold min-h-[44px] transition-all cursor-pointer ${
+            currentTab === 'dashboard' ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-500/15 font-black scale-105' : 'opacity-70 hover:opacity-100'
           }`}
         >
           <BookOpen className="w-4 h-4" />
@@ -432,8 +440,8 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         <button
           onClick={() => handleTabClick('tile_practice')}
-          className={`flex-1 flex flex-col items-center justify-center gap-1 py-1 px-1 rounded-xl font-bold min-h-[48px] transition-all cursor-pointer ${
-            currentTab === 'tile_practice' ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-500/10' : 'opacity-70'
+          className={`flex-1 flex flex-col items-center justify-center gap-1 py-1 px-1 rounded-xl font-bold min-h-[44px] transition-all cursor-pointer ${
+            currentTab === 'tile_practice' ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-500/15 font-black scale-105' : 'opacity-70 hover:opacity-100'
           }`}
         >
           <Layers className="w-4 h-4" />
@@ -441,9 +449,19 @@ export const Navbar: React.FC<NavbarProps> = ({
         </button>
 
         <button
+          onClick={() => handleTabClick('full_exam')}
+          className={`flex-1 flex flex-col items-center justify-center gap-1 py-1 px-1 rounded-xl font-bold min-h-[44px] transition-all cursor-pointer ${
+            currentTab === 'full_exam' ? 'text-amber-600 dark:text-amber-400 bg-amber-500/15 font-black scale-105' : 'opacity-70 hover:opacity-100'
+          }`}
+        >
+          <Award className="w-4 h-4 text-amber-500" />
+          <span className="text-[10px]">Prüfung</span>
+        </button>
+
+        <button
           onClick={() => handleTabClick('schreiben')}
-          className={`flex-1 flex flex-col items-center justify-center gap-1 py-1 px-1 rounded-xl font-bold min-h-[48px] transition-all cursor-pointer ${
-            currentTab === 'schreiben' ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-500/10' : 'opacity-70'
+          className={`flex-1 flex flex-col items-center justify-center gap-1 py-1 px-1 rounded-xl font-bold min-h-[44px] transition-all cursor-pointer ${
+            currentTab === 'schreiben' ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-500/15 font-black scale-105' : 'opacity-70 hover:opacity-100'
           }`}
         >
           <Edit3 className="w-4 h-4" />
@@ -451,22 +469,12 @@ export const Navbar: React.FC<NavbarProps> = ({
         </button>
 
         <button
-          onClick={() => handleTabClick('sprechen')}
-          className={`flex-1 flex flex-col items-center justify-center gap-1 py-1 px-1 rounded-xl font-bold min-h-[48px] transition-all cursor-pointer ${
-            currentTab === 'sprechen' ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-500/10' : 'opacity-70'
-          }`}
-        >
-          <Mic className="w-4 h-4" />
-          <span className="text-[10px]">Sprechen</span>
-        </button>
-
-        <button
           onClick={() => handleTabClick('wortschatz')}
-          className={`flex-1 flex flex-col items-center justify-center gap-1 py-1 px-1 rounded-xl font-bold min-h-[48px] transition-all cursor-pointer ${
-            currentTab === 'wortschatz' ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-500/10' : 'opacity-70'
+          className={`flex-1 flex flex-col items-center justify-center gap-1 py-1 px-1 rounded-xl font-bold min-h-[44px] transition-all cursor-pointer ${
+            currentTab === 'wortschatz' ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-500/15 font-black scale-105' : 'opacity-70 hover:opacity-100'
           }`}
         >
-          <BookOpen className="w-4 h-4 text-amber-500" />
+          <BookOpen className="w-4 h-4 text-violet-500" />
           <span className="text-[10px]">Wörter</span>
         </button>
       </div>
