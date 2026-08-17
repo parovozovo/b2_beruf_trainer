@@ -548,9 +548,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 </div>
 
                 <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">9,99 €</span>
-                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400">/ für 7 Tage</span>
+                  <div className="flex items-baseline gap-1.5 flex-wrap">
+                    <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white whitespace-nowrap">
+                      9,99&nbsp;€
+                    </span>
+                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                      / für 7 Tage
+                    </span>
                   </div>
                 </div>
 
@@ -599,9 +603,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 </div>
 
                 <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">15,99 €</span>
-                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400">/ für 30 Tage</span>
+                  <div className="flex items-baseline gap-1.5 flex-wrap">
+                    <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white whitespace-nowrap">
+                      15,99&nbsp;€
+                    </span>
+                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                      / für 30 Tage
+                    </span>
                   </div>
                 </div>
 
@@ -655,12 +663,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 </div>
 
                 <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">29,99 €</span>
-                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400">/ für 90 Tage</span>
-                  </div>
-                  <div className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
-                    nur 9,99 € / Monat
+                  <div className="flex items-baseline gap-1.5 flex-wrap">
+                    <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white whitespace-nowrap">
+                      29,99&nbsp;€
+                    </span>
+                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                      / für 90 Tage
+                    </span>
                   </div>
                 </div>
 
@@ -709,10 +718,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 </div>
 
                 <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-                  <div className="flex items-baseline gap-1.5">
-                    <span className="text-base font-bold text-slate-400 line-through">49,99 €</span>
-                    <span className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">39,99 €</span>
-                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400">/ dauerhaft</span>
+                  <div className="flex items-baseline gap-1.5 flex-wrap">
+                    <span className="text-sm sm:text-base font-bold text-slate-400 line-through whitespace-nowrap">
+                      49,99&nbsp;€
+                    </span>
+                    <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white whitespace-nowrap">
+                      39,99&nbsp;€
+                    </span>
+                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                      / dauerhaft
+                    </span>
                   </div>
                 </div>
 

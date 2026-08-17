@@ -26,7 +26,6 @@ export interface SubscriptionPlan {
   badge?: string;
   price: string;
   originalPrice?: string;
-  pricePerMonth?: string;
   period: string;
   durationDays: number | null; // null for lifetime
   description: string;
@@ -68,7 +67,6 @@ const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     name: '90 Tage Kursbegleiter',
     badge: 'Spart 38%',
     price: '29,99 €',
-    pricePerMonth: 'nur 9,99 € / Monat',
     period: 'für 90 Tage',
     durationDays: 90,
     description: '3 Monate voller Zugriff. Begleitet Sie zuverlässig durch den gesamten B2-Berufssprachkurs.',
@@ -317,20 +315,15 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({
                 <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80">
                   <div className="flex items-baseline gap-1.5 flex-wrap">
                     {plan.originalPrice && (
-                      <span className="text-base font-bold text-slate-400 line-through">
+                      <span className="text-sm sm:text-base font-bold text-slate-400 line-through whitespace-nowrap">
                         {plan.originalPrice}
                       </span>
                     )}
-                    <span className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+                    <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight whitespace-nowrap">
                       {plan.price}
                     </span>
-                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400">/ {plan.period}</span>
+                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">/ {plan.period}</span>
                   </div>
-                  {plan.pricePerMonth && (
-                    <div className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
-                      {plan.pricePerMonth}
-                    </div>
-                  )}
                 </div>
 
                 {/* Features List */}
