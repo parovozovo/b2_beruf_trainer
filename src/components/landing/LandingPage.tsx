@@ -76,18 +76,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const isDark = theme === 'dark';
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 selection:bg-indigo-600 selection:text-white transition-colors">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 selection:bg-indigo-600 selection:text-white transition-colors overflow-x-hidden w-full max-w-full">
       
       {/* ================= HEADER / NAVBAR ================= */}
-      <header className="sticky top-0 z-40 pt-safe bg-white/90 dark:bg-slate-950/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 transition-colors">
+      <header className="sticky top-0 z-40 pt-safe bg-white/90 dark:bg-slate-950/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 transition-colors w-full">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 min-h-16 flex items-center justify-between gap-2 sm:gap-4">
           
           {/* App Brand with Logo */}
-          <Link to="/" className="flex items-center gap-2 sm:gap-3 shrink-0 group">
-            <div className="transition-transform group-hover:scale-105 duration-200">
-              <AppLogo size={36} />
+          <Link to="/" className="flex items-center gap-2 sm:gap-3 shrink-0 group min-w-0">
+            <div className="transition-transform group-hover:scale-105 duration-200 shrink-0">
+              <AppLogo size={34} />
             </div>
-            <span className="font-black text-sm sm:text-base lg:text-lg tracking-tight text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">
+            <span className="font-black text-sm sm:text-base lg:text-lg tracking-tight text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate max-w-[130px] sm:max-w-none">
               Beruf B2+ Trainer
             </span>
           </Link>
@@ -115,9 +115,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </nav>
 
           {/* Right Header Controls */}
-          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-1 sm:gap-2.5 shrink-0">
             {/* Language Switcher Dropdown */}
-            <div className="flex items-center gap-1 px-2 py-1 sm:px-2.5 sm:py-1 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-[11px] sm:text-xs font-bold shadow-2xs hover:border-indigo-500 transition-colors">
+            <div className="flex items-center gap-1 px-2 py-1 sm:px-2.5 sm:py-1 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 text-[11px] sm:text-xs font-bold shadow-2xs hover:border-indigo-500 transition-colors shrink-0">
               <Globe className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
               <select
                 value={lang}
@@ -135,19 +135,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             {/* Theme Toggle Button */}
             <button
               onClick={onToggleTheme}
-              className="p-2 rounded-xl text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900 transition-all active:scale-95 cursor-pointer"
+              className="p-2 rounded-xl text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-900 transition-all active:scale-95 cursor-pointer shrink-0"
               title="Design umschalten"
             >
               {isDark ? '☀️' : '🌙'}
             </button>
 
-            {/* Primary Action Button */}
+            {/* Primary Action Button (Desktop & Tablet >= md) */}
             <Link
               to="/app"
-              className="px-3 sm:px-5 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs sm:text-sm shadow-md shadow-amber-500/25 flex items-center gap-1 transition-all transform hover:scale-105 active:scale-95 cursor-pointer shrink-0"
+              className="hidden md:inline-flex px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs sm:text-sm shadow-md shadow-amber-500/25 items-center gap-1.5 transition-all transform hover:scale-105 active:scale-95 cursor-pointer shrink-0"
             >
               <span>{t.nav.ctaApp}</span>
-              <ArrowRight className="w-3.5 h-3.5 hidden xs:inline" />
+              <ArrowRight className="w-4 h-4" />
             </Link>
 
             {/* Mobile Hamburger Toggle Button */}
@@ -168,7 +168,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               className="lg:hidden fixed inset-0 top-[calc(4rem+env(safe-area-inset-top))] z-30 bg-slate-950/60 backdrop-blur-xs transition-opacity animate-fadeIn"
               onClick={() => setMobileMenuOpen(false)}
             />
-            <div className="lg:hidden relative z-40 border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/95 backdrop-blur-2xl px-5 py-5 space-y-2 max-h-[calc(100dvh-4.5rem-env(safe-area-inset-top))] overflow-y-auto pb-[max(2rem,calc(env(safe-area-inset-bottom)+1.5rem))] shadow-2xl animate-fadeIn">
+            <div className="lg:hidden relative z-40 border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/95 backdrop-blur-2xl px-4 py-4 space-y-1.5 max-h-[calc(100dvh-4.5rem-env(safe-area-inset-top))] overflow-y-auto pb-[max(2rem,calc(env(safe-area-inset-bottom)+1.5rem))] shadow-2xl animate-fadeIn">
               <a
                 href="#vorteile"
                 onClick={() => setMobileMenuOpen(false)}
@@ -211,11 +211,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               >
                 📚 {t.nav.blog}
               </Link>
-              <div className="pt-3 border-t border-slate-200 dark:border-slate-800">
+              <div className="pt-2.5 border-t border-slate-200 dark:border-slate-800">
                 <Link
                   to="/app"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black text-sm text-center shadow-lg flex items-center justify-center gap-2"
+                  className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black text-sm text-center shadow-lg flex items-center justify-center gap-2 transition-transform active:scale-95"
                 >
                   <span>{t.nav.ctaApp}</span>
                   <ArrowRight className="w-4 h-4" />
