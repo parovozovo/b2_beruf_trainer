@@ -146,21 +146,21 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         <div className="space-y-4">
           {/* Card 1: Teile-Training */}
-          <div className="glass-panel p-6 sm:p-7 rounded-3xl border border-indigo-500/30 hover:border-indigo-500/70 transition-all shadow-md flex flex-col md:flex-row md:items-center justify-between gap-6 group">
+          <div className="glass-panel p-5 sm:p-7 rounded-3xl border border-sky-500/30 hover:border-sky-500/70 transition-all shadow-md flex flex-col md:flex-row md:items-center justify-between gap-5 group">
             <div className="flex items-start sm:items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center border border-indigo-500/30 shrink-0 group-hover:scale-105 transition-transform">
-                <Dumbbell className="w-7 h-7" />
+              <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl bg-sky-500/15 text-sky-600 dark:text-sky-400 flex items-center justify-center border border-sky-500/30 shrink-0 group-hover:scale-105 transition-transform">
+                <Dumbbell className="w-6 h-6 sm:w-7 sm:h-7" />
               </div>
-              <div className="space-y-1.5 max-w-2xl">
+              <div className="space-y-1 max-w-2xl">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="px-2.5 py-0.5 bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 rounded-full text-[11px] font-bold">
+                  <span className="px-2.5 py-0.5 bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/30 rounded-full text-[11px] font-bold">
                     📚 12 Prüfungsteile
                   </span>
                   <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                     Lesen, Hören, Schreiben, Sprachbausteine
                   </span>
                 </div>
-                <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">
+                <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white">
                   Kachel-Training (Einzelteile)
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
@@ -171,7 +171,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
             <button
               onClick={() => onSelectMode('tile_practice')}
-              className="w-full md:w-auto py-3.5 px-6 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg hover:shadow-indigo-600/30 transition-all shrink-0 cursor-pointer"
+              className="w-full md:w-auto py-3 px-5 bg-sky-600 hover:bg-sky-500 text-white font-extrabold rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg hover:shadow-sky-600/30 transition-all shrink-0 cursor-pointer"
             >
               <span>Teile-Training starten</span>
               <ArrowRight className="w-4 h-4" />
@@ -179,12 +179,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
 
           {/* Card 2: Komplettprüfung */}
-          <div className="glass-panel p-6 sm:p-7 rounded-3xl border border-amber-500/30 hover:border-amber-500/70 transition-all shadow-md flex flex-col md:flex-row md:items-center justify-between gap-6 group">
+          <div className="glass-panel p-5 sm:p-7 rounded-3xl border border-amber-500/30 hover:border-amber-500/70 transition-all shadow-md flex flex-col md:flex-row md:items-center justify-between gap-5 group">
             <div className="flex items-start sm:items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-500/30 shrink-0 group-hover:scale-105 transition-transform">
-                <Award className="w-7 h-7" />
+              <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-500/30 shrink-0 group-hover:scale-105 transition-transform">
+                <Award className="w-6 h-6 sm:w-7 sm:h-7" />
               </div>
-              <div className="space-y-1.5 max-w-2xl">
+              <div className="space-y-1 max-w-2xl">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="px-2.5 py-0.5 bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 rounded-full text-[11px] font-bold flex items-center gap-1">
                     <Timer className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" /> 130 Min. Countdown
@@ -198,7 +198,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     Offizielles DTB / telc Format
                   </span>
                 </div>
-                <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">
+                <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white">
                   Vollständige Prüfungssimulation (Fragen 1–57)
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
@@ -209,7 +209,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
             <button
               onClick={() => onSelectMode('full_exam')}
-              className="w-full md:w-auto py-3.5 px-6 bg-amber-600 hover:bg-amber-500 text-white font-extrabold rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg hover:shadow-amber-600/30 transition-all shrink-0 cursor-pointer"
+              className="w-full md:w-auto py-3 px-5 bg-amber-600 hover:bg-amber-500 text-white font-extrabold rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg hover:shadow-amber-600/30 transition-all shrink-0 cursor-pointer"
             >
               <span>Prüfungssimulation starten</span>
               <ArrowRight className="w-4 h-4" />
@@ -217,21 +217,21 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
 
           {/* Card 3: Schreiben */}
-          <div className="glass-panel p-6 sm:p-7 rounded-3xl border border-pink-500/30 hover:border-pink-500/70 transition-all shadow-md flex flex-col md:flex-row md:items-center justify-between gap-6 group">
+          <div className="glass-panel p-5 sm:p-7 rounded-3xl border border-rose-500/30 hover:border-rose-500/70 transition-all shadow-md flex flex-col md:flex-row md:items-center justify-between gap-5 group">
             <div className="flex items-start sm:items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-pink-500/15 text-pink-600 dark:text-pink-400 flex items-center justify-center border border-pink-500/30 shrink-0 group-hover:scale-105 transition-transform">
-                <FileEdit className="w-7 h-7" />
+              <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl bg-rose-500/15 text-rose-600 dark:text-rose-400 flex items-center justify-center border border-rose-500/30 shrink-0 group-hover:scale-105 transition-transform">
+                <FileEdit className="w-6 h-6 sm:w-7 sm:h-7" />
               </div>
-              <div className="space-y-1.5 max-w-2xl">
+              <div className="space-y-1 max-w-2xl">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="px-2.5 py-0.5 bg-pink-500/15 text-pink-800 dark:text-pink-300 border border-pink-500/30 rounded-full text-[11px] font-bold">
+                  <span className="px-2.5 py-0.5 bg-rose-500/15 text-rose-800 dark:text-rose-300 border border-rose-500/30 rounded-full text-[11px] font-bold">
                     📝 Q58 Schreibaufgabe
                   </span>
                   <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                     Forenbeitrag & Beschwerdebrief
                   </span>
                 </div>
-                <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">
+                <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white">
                   Schreibtrainer (Forenbeiträge & Firmenkorrespondenz)
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
@@ -242,7 +242,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
             <button
               onClick={() => onSelectMode('schreiben')}
-              className="w-full md:w-auto py-3.5 px-6 bg-pink-600 hover:bg-pink-500 text-white font-extrabold rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg hover:shadow-pink-600/30 transition-all shrink-0 cursor-pointer"
+              className="w-full md:w-auto py-3 px-5 bg-rose-600 hover:bg-rose-500 text-white font-extrabold rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg hover:shadow-rose-600/30 transition-all shrink-0 cursor-pointer"
             >
               <span>Schreibtrainer öffnen</span>
               <ArrowRight className="w-4 h-4" />
@@ -283,21 +283,21 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
 
           {/* Card 5: Wortschatz & Nomen-Verb-Verbindungen */}
-          <div className="glass-panel p-6 sm:p-7 rounded-3xl border border-indigo-500/30 hover:border-indigo-500/70 transition-all shadow-md flex flex-col md:flex-row md:items-center justify-between gap-6 group">
+          <div className="glass-panel p-5 sm:p-7 rounded-3xl border border-purple-500/30 hover:border-purple-500/70 transition-all shadow-md flex flex-col md:flex-row md:items-center justify-between gap-5 group">
             <div className="flex items-start sm:items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center border border-indigo-500/30 shrink-0 group-hover:scale-105 transition-transform">
-                <Sparkles className="w-7 h-7" />
+              <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl bg-purple-500/15 text-purple-600 dark:text-purple-400 flex items-center justify-center border border-purple-500/30 shrink-0 group-hover:scale-105 transition-transform">
+                <Sparkles className="w-6 h-6 sm:w-7 sm:h-7" />
               </div>
-              <div className="space-y-1.5 max-w-2xl">
+              <div className="space-y-1 max-w-2xl">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="px-2.5 py-0.5 bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 rounded-full text-[11px] font-bold flex items-center gap-1">
+                  <span className="px-2.5 py-0.5 bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30 rounded-full text-[11px] font-bold flex items-center gap-1">
                     <Sparkles className="w-3.5 h-3.5 text-amber-500" /> 4 Interaktive Modi
                   </span>
                   <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                     Lexikon, Karteikarten (SRS), Quiz & NVV Match
                   </span>
                 </div>
-                <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">
+                <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white">
                   Wortschatz & Nomen-Verb-Verbindungen (Hub)
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
@@ -308,7 +308,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
             <button
               onClick={() => onSelectMode('wortschatz')}
-              className="w-full md:w-auto py-3.5 px-6 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg hover:shadow-indigo-600/30 transition-all shrink-0 cursor-pointer"
+              className="w-full md:w-auto py-3 px-5 bg-purple-600 hover:bg-purple-500 text-white font-extrabold rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg hover:shadow-purple-600/30 transition-all shrink-0 cursor-pointer"
             >
               <span>Wortschatz-Hub öffnen</span>
               <ArrowRight className="w-4 h-4" />

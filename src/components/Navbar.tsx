@@ -12,7 +12,8 @@ import {
   X,
   Settings,
   Shield,
-  Crown
+  Crown,
+  Sparkles,
 } from 'lucide-react';
 import type { User } from '../types';
 import { AppLogo } from './AppLogo';
@@ -93,7 +94,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               onClick={() => handleTabClick('tile_practice')}
               className={`px-3.5 py-1.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
                 currentTab === 'tile_practice'
-                  ? 'bg-indigo-600 text-white shadow-md font-extrabold'
+                  ? 'bg-sky-600 text-white shadow-md font-extrabold'
                   : isDark
                   ? 'text-slate-400 hover:text-white hover:bg-slate-800'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
@@ -106,20 +107,20 @@ export const Navbar: React.FC<NavbarProps> = ({
               onClick={() => handleTabClick('full_exam')}
               className={`px-3.5 py-1.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
                 currentTab === 'full_exam'
-                  ? 'bg-indigo-600 text-white shadow-md font-extrabold'
+                  ? 'bg-amber-600 text-white shadow-md font-extrabold'
                   : isDark
                   ? 'text-slate-400 hover:text-white hover:bg-slate-800'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
               }`}
             >
-              <Award className="w-3.5 h-3.5 text-amber-500" /> Prüfung
+              <Award className="w-3.5 h-3.5" /> Prüfung
             </button>
 
             <button
               onClick={() => handleTabClick('schreiben')}
               className={`px-3.5 py-1.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
                 currentTab === 'schreiben'
-                  ? 'bg-indigo-600 text-white shadow-md font-extrabold'
+                  ? 'bg-rose-600 text-white shadow-md font-extrabold'
                   : isDark
                   ? 'text-slate-400 hover:text-white hover:bg-slate-800'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
@@ -132,7 +133,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               onClick={() => handleTabClick('sprechen')}
               className={`px-3.5 py-1.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
                 currentTab === 'sprechen'
-                  ? 'bg-indigo-600 text-white shadow-md font-extrabold'
+                  ? 'bg-emerald-600 text-white shadow-md font-extrabold'
                   : isDark
                   ? 'text-slate-400 hover:text-white hover:bg-slate-800'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
@@ -145,7 +146,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               onClick={() => handleTabClick('wortschatz')}
               className={`px-3.5 py-1.5 rounded-xl transition-all flex items-center gap-1.5 cursor-pointer ${
                 currentTab === 'wortschatz'
-                  ? 'bg-indigo-600 text-white shadow-md font-extrabold'
+                  ? 'bg-purple-600 text-white shadow-md font-extrabold'
                   : isDark
                   ? 'text-slate-400 hover:text-white hover:bg-slate-800'
                   : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200'
@@ -425,13 +426,15 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* Fixed Mobile Bottom Bar Navigation with iOS Safe Area: Start | Training | Schreiben | Sprechen | Wörter */}
       <div
         className={`md:hidden fixed bottom-0 left-0 right-0 z-30 px-1 pt-1 pb-[max(0.4rem,env(safe-area-inset-bottom))] flex items-center justify-around text-[10px] border-t backdrop-blur-xl transition-colors duration-200 shadow-2xl ${
-          isDark ? 'bg-slate-950/95 border-slate-800 text-slate-300' : 'bg-white/95 border-slate-200 text-slate-700'
+          isDark ? 'bg-slate-950/95 border-slate-800 text-slate-400' : 'bg-white/95 border-slate-200 text-slate-600'
         }`}
       >
         <button
           onClick={() => handleTabClick('dashboard')}
           className={`flex-1 flex flex-col items-center justify-center gap-1 py-1 px-1 rounded-xl font-bold min-h-[44px] transition-all cursor-pointer ${
-            currentTab === 'dashboard' ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-500/15 font-black scale-105' : 'opacity-70 hover:opacity-100'
+            currentTab === 'dashboard'
+              ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-500/15 font-black scale-105'
+              : 'text-slate-500 dark:text-slate-400 opacity-70 hover:opacity-100'
           }`}
         >
           <BookOpen className="w-4 h-4" />
@@ -441,7 +444,9 @@ export const Navbar: React.FC<NavbarProps> = ({
         <button
           onClick={() => handleTabClick('tile_practice')}
           className={`flex-1 flex flex-col items-center justify-center gap-1 py-1 px-1 rounded-xl font-bold min-h-[44px] transition-all cursor-pointer ${
-            currentTab === 'tile_practice' ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-500/15 font-black scale-105' : 'opacity-70 hover:opacity-100'
+            currentTab === 'tile_practice'
+              ? 'text-sky-600 dark:text-sky-400 bg-sky-500/15 font-black scale-105'
+              : 'text-slate-500 dark:text-slate-400 opacity-70 hover:opacity-100'
           }`}
         >
           <Layers className="w-4 h-4" />
@@ -451,7 +456,9 @@ export const Navbar: React.FC<NavbarProps> = ({
         <button
           onClick={() => handleTabClick('schreiben')}
           className={`flex-1 flex flex-col items-center justify-center gap-1 py-1 px-1 rounded-xl font-bold min-h-[44px] transition-all cursor-pointer ${
-            currentTab === 'schreiben' ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-500/15 font-black scale-105' : 'opacity-70 hover:opacity-100'
+            currentTab === 'schreiben'
+              ? 'text-rose-600 dark:text-rose-400 bg-rose-500/15 font-black scale-105'
+              : 'text-slate-500 dark:text-slate-400 opacity-70 hover:opacity-100'
           }`}
         >
           <Edit3 className="w-4 h-4" />
@@ -461,20 +468,24 @@ export const Navbar: React.FC<NavbarProps> = ({
         <button
           onClick={() => handleTabClick('sprechen')}
           className={`flex-1 flex flex-col items-center justify-center gap-1 py-1 px-1 rounded-xl font-bold min-h-[44px] transition-all cursor-pointer ${
-            currentTab === 'sprechen' ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/15 font-black scale-105' : 'opacity-70 hover:opacity-100'
+            currentTab === 'sprechen'
+              ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/15 font-black scale-105'
+              : 'text-slate-500 dark:text-slate-400 opacity-70 hover:opacity-100'
           }`}
         >
-          <Mic className="w-4 h-4 text-emerald-500" />
+          <Mic className="w-4 h-4" />
           <span className="text-[10px]">Sprechen</span>
         </button>
 
         <button
           onClick={() => handleTabClick('wortschatz')}
           className={`flex-1 flex flex-col items-center justify-center gap-1 py-1 px-1 rounded-xl font-bold min-h-[44px] transition-all cursor-pointer ${
-            currentTab === 'wortschatz' ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-500/15 font-black scale-105' : 'opacity-70 hover:opacity-100'
+            currentTab === 'wortschatz'
+              ? 'text-purple-600 dark:text-purple-400 bg-purple-500/15 font-black scale-105'
+              : 'text-slate-500 dark:text-slate-400 opacity-70 hover:opacity-100'
           }`}
         >
-          <BookOpen className="w-4 h-4 text-violet-500" />
+          <Sparkles className="w-4 h-4" />
           <span className="text-[10px]">Wörter</span>
         </button>
       </div>

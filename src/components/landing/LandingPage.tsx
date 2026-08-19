@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import {
   Sparkles,
   Crown,
-  BookOpen,
   ArrowRight,
   Star,
   Layers,
@@ -388,12 +387,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
             
             {/* Card 1: Kachel-Training */}
-            <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-4 hover:border-indigo-500/60 hover:-translate-y-1.5 hover:shadow-xl transition-all duration-300 group">
+            <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-4 hover:border-sky-500/60 hover:-translate-y-1.5 hover:shadow-xl transition-all duration-300 group">
               <div className="space-y-3">
-                <div className="w-12 h-12 rounded-2xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-black group-hover:scale-110 transition-transform">
+                <div className="w-12 h-12 rounded-2xl bg-sky-500/15 text-sky-600 dark:text-sky-400 flex items-center justify-center font-black group-hover:scale-110 transition-transform">
                   <Layers className="w-6 h-6" />
                 </div>
-                <h3 className="text-lg font-black text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                <h3 className="text-lg font-black text-slate-900 dark:text-white group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">
                   {t.modules.card1Title}
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
@@ -402,7 +401,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </div>
               <Link
                 to="/app/training"
-                className="inline-flex items-center gap-1.5 text-xs font-extrabold text-indigo-600 dark:text-indigo-400 group-hover:underline pt-2"
+                className="inline-flex items-center gap-1.5 text-xs font-extrabold text-sky-600 dark:text-sky-400 group-hover:underline pt-2"
               >
                 <span>{t.modules.card1Link}</span>
                 <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
@@ -432,12 +431,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
 
             {/* Card 3: Schreibtrainer */}
-            <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-4 hover:border-pink-500/60 hover:-translate-y-1.5 hover:shadow-xl transition-all duration-300 group">
+            <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-4 hover:border-rose-500/60 hover:-translate-y-1.5 hover:shadow-xl transition-all duration-300 group">
               <div className="space-y-3">
-                <div className="w-12 h-12 rounded-2xl bg-pink-500/15 text-pink-600 dark:text-pink-400 flex items-center justify-center font-black group-hover:scale-110 transition-transform">
+                <div className="w-12 h-12 rounded-2xl bg-rose-500/15 text-rose-600 dark:text-rose-400 flex items-center justify-center font-black group-hover:scale-110 transition-transform">
                   <Edit3 className="w-6 h-6" />
                 </div>
-                <h3 className="text-lg font-black text-slate-900 dark:text-white group-hover:text-pink-500 transition-colors">
+                <h3 className="text-lg font-black text-slate-900 dark:text-white group-hover:text-rose-500 transition-colors">
                   {t.modules.card3Title}
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
@@ -446,7 +445,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </div>
               <Link
                 to="/app/schreiben"
-                className="inline-flex items-center gap-1.5 text-xs font-extrabold text-pink-600 dark:text-pink-400 group-hover:underline pt-2"
+                className="inline-flex items-center gap-1.5 text-xs font-extrabold text-rose-600 dark:text-rose-400 group-hover:underline pt-2"
               >
                 <span>{t.modules.card3Link}</span>
                 <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
@@ -476,12 +475,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
 
             {/* Card 5: Wortschatz & Spaced Repetition */}
-            <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-4 hover:border-violet-500/60 hover:-translate-y-1.5 hover:shadow-xl transition-all duration-300 group">
+            <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-4 hover:border-purple-500/60 hover:-translate-y-1.5 hover:shadow-xl transition-all duration-300 group">
               <div className="space-y-3">
-                <div className="w-12 h-12 rounded-2xl bg-violet-500/15 text-violet-600 dark:text-violet-400 flex items-center justify-center font-black group-hover:scale-110 transition-transform">
-                  <BookOpen className="w-6 h-6" />
+                <div className="w-12 h-12 rounded-2xl bg-purple-500/15 text-purple-600 dark:text-purple-400 flex items-center justify-center font-black group-hover:scale-110 transition-transform">
+                  <Sparkles className="w-6 h-6" />
                 </div>
-                <h3 className="text-lg font-black text-slate-900 dark:text-white group-hover:text-violet-500 transition-colors">
+                <h3 className="text-lg font-black text-slate-900 dark:text-white group-hover:text-purple-500 transition-colors">
                   {t.modules.card5Title}
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
@@ -490,7 +489,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </div>
               <Link
                 to="/app/wortschatz"
-                className="inline-flex items-center gap-1.5 text-xs font-extrabold text-violet-600 dark:text-violet-400 group-hover:underline pt-2"
+                className="inline-flex items-center gap-1.5 text-xs font-extrabold text-purple-600 dark:text-purple-400 group-hover:underline pt-2"
               >
                 <span>{t.modules.card5Link}</span>
                 <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
