@@ -1,15 +1,15 @@
 -- ==============================================================================
--- SUPABASE ROW LEVEL SECURITY (RLS) FIX & PRODUCTION SECURITY AUDIT
+-- SUPABASE ROW LEVEL SECURITY (RLS) FIX & PRODUCTION SECURITY AUDIT (v2 Fixed Type-Casting)
 -- Project: b2_beruf_trainer (alhjcuuzfaugdvnmhpjs)
 -- 
--- This script fixes the 'rls_disabled_in_public' security vulnerability:
--- 1. Enables RLS on ALL tables to protect user data from unauthorized access.
--- 2. Defines least-privilege security policies for Anon, Authenticated, and Admin.
+-- Fixes:
+-- 1. Adds explicit ::text casting to all UUID/TEXT comparisons to prevent ERROR 42883.
+-- 2. Enables RLS on ALL public tables.
 -- 3. Grants public read access ONLY to learning content (tests, vocabulary, topics).
 -- 4. Secures user profiles, emails, essays, and admin actions.
 -- ==============================================================================
 
--- 1. Create helper function to check admin status
+-- 1. Helper function to check admin status (with explicit text casting)
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS BOOLEAN AS $$
 BEGIN
@@ -18,11 +18,11 @@ BEGIN
     OR (auth.jwt() ->> 'email') LIKE '%@beruf-b2-trainer.de'
     OR EXISTS (
       SELECT 1 FROM public.profiles 
-      WHERE id = auth.uid() AND role = 'admin'
+      WHERE (id)::text = (auth.uid())::text AND role = 'admin'
     )
     OR EXISTS (
       SELECT 1 FROM public.registered_users
-      WHERE (id = auth.uid()::text OR email = (auth.jwt() ->> 'email')) AND role = 'admin'
+      WHERE ((id)::text = (auth.uid())::text OR email = (auth.jwt() ->> 'email')) AND role = 'admin'
     )
   );
 END;
@@ -179,27 +179,27 @@ CREATE POLICY "Admin can delete promo codes"
 -- 1. PROFILES
 CREATE POLICY "Users can view own profile or admin can view all"
   ON public.profiles FOR SELECT
-  USING (auth.uid() = id OR public.is_admin());
+  USING ((id)::text = (auth.uid())::text OR public.is_admin());
 
 CREATE POLICY "Users can insert own profile"
   ON public.profiles FOR INSERT
-  WITH CHECK (auth.uid() = id OR public.is_admin());
+  WITH CHECK ((id)::text = (auth.uid())::text OR public.is_admin());
 
 CREATE POLICY "Users can update own profile or admin can update"
   ON public.profiles FOR UPDATE
-  USING (auth.uid() = id OR public.is_admin())
-  WITH CHECK (auth.uid() = id OR public.is_admin());
+  USING ((id)::text = (auth.uid())::text OR public.is_admin())
+  WITH CHECK ((id)::text = (auth.uid())::text OR public.is_admin());
 
 CREATE POLICY "Users or admin can delete profile"
   ON public.profiles FOR DELETE
-  USING (auth.uid() = id OR public.is_admin());
+  USING ((id)::text = (auth.uid())::text OR public.is_admin());
 
 
 -- 2. REGISTERED_USERS
 CREATE POLICY "Users can view own registered user entry or admin can view all"
   ON public.registered_users FOR SELECT
   USING (
-    id = auth.uid()::text 
+    (id)::text = (auth.uid())::text 
     OR email = (auth.jwt() ->> 'email') 
     OR public.is_admin()
   );
@@ -207,21 +207,21 @@ CREATE POLICY "Users can view own registered user entry or admin can view all"
 CREATE POLICY "Users or admin can insert/upsert registered user entry"
   ON public.registered_users FOR INSERT
   WITH CHECK (
-    id = auth.uid()::text 
+    (id)::text = (auth.uid())::text 
     OR email = (auth.jwt() ->> 'email') 
     OR public.is_admin()
-    OR auth.role() = 'anon' -- Allows guest checkout/registration sync
+    OR auth.role() = 'anon' -- Allows guest registration sync
   );
 
 CREATE POLICY "Users can update own registered user entry or admin can update"
   ON public.registered_users FOR UPDATE
   USING (
-    id = auth.uid()::text 
+    (id)::text = (auth.uid())::text 
     OR email = (auth.jwt() ->> 'email') 
     OR public.is_admin()
   )
   WITH CHECK (
-    id = auth.uid()::text 
+    (id)::text = (auth.uid())::text 
     OR email = (auth.jwt() ->> 'email') 
     OR public.is_admin()
   );
@@ -229,7 +229,7 @@ CREATE POLICY "Users can update own registered user entry or admin can update"
 CREATE POLICY "Admin or user can delete registered user entry"
   ON public.registered_users FOR DELETE
   USING (
-    id = auth.uid()::text 
+    (id)::text = (auth.uid())::text 
     OR email = (auth.jwt() ->> 'email') 
     OR public.is_admin()
   );
@@ -244,62 +244,62 @@ CREATE POLICY "Admin or user can delete registered user entry"
 CREATE POLICY "Users can view own written essays or admin"
   ON public.written_essays FOR SELECT
   USING (
-    user_id = auth.uid()::text 
+    (user_id)::text = (auth.uid())::text 
     OR public.is_admin()
   );
 
 CREATE POLICY "Users can insert own written essays"
   ON public.written_essays FOR INSERT
   WITH CHECK (
-    user_id = auth.uid()::text 
+    (user_id)::text = (auth.uid())::text 
     OR auth.role() = 'authenticated'
     OR auth.role() = 'anon'
   );
 
 CREATE POLICY "Users can update own written essays"
   ON public.written_essays FOR UPDATE
-  USING (user_id = auth.uid()::text OR public.is_admin())
-  WITH CHECK (user_id = auth.uid()::text OR public.is_admin());
+  USING ((user_id)::text = (auth.uid())::text OR public.is_admin())
+  WITH CHECK ((user_id)::text = (auth.uid())::text OR public.is_admin());
 
 CREATE POLICY "Users can delete own written essays"
   ON public.written_essays FOR DELETE
-  USING (user_id = auth.uid()::text OR public.is_admin());
+  USING ((user_id)::text = (auth.uid())::text OR public.is_admin());
 
 
 -- 2. TILE RESULTS
 CREATE POLICY "Users can view own tile results or admin"
   ON public.tile_results FOR SELECT
-  USING (user_id = auth.uid()::text OR public.is_admin());
+  USING ((user_id)::text = (auth.uid())::text OR public.is_admin());
 
 CREATE POLICY "Users can insert own tile results"
   ON public.tile_results FOR INSERT
   WITH CHECK (
-    user_id = auth.uid()::text 
+    (user_id)::text = (auth.uid())::text 
     OR auth.role() = 'authenticated'
     OR auth.role() = 'anon'
   );
 
 CREATE POLICY "Users can delete own tile results"
   ON public.tile_results FOR DELETE
-  USING (user_id = auth.uid()::text OR public.is_admin());
+  USING ((user_id)::text = (auth.uid())::text OR public.is_admin());
 
 
 -- 3. FULL EXAM RESULTS
 CREATE POLICY "Users can view own full exam results or admin"
   ON public.full_exam_results FOR SELECT
-  USING (user_id = auth.uid()::text OR public.is_admin());
+  USING ((user_id)::text = (auth.uid())::text OR public.is_admin());
 
 CREATE POLICY "Users can insert own full exam results"
   ON public.full_exam_results FOR INSERT
   WITH CHECK (
-    user_id = auth.uid()::text 
+    (user_id)::text = (auth.uid())::text 
     OR auth.role() = 'authenticated'
     OR auth.role() = 'anon'
   );
 
 CREATE POLICY "Users can delete own full exam results"
   ON public.full_exam_results FOR DELETE
-  USING (user_id = auth.uid()::text OR public.is_admin());
+  USING ((user_id)::text = (auth.uid())::text OR public.is_admin());
 
 -- ==============================================================================
 -- E. SAFE PERMISSION GRANTS

@@ -139,11 +139,11 @@ BEGIN
     OR (auth.jwt() ->> 'email') LIKE '%@beruf-b2-trainer.de'
     OR EXISTS (
       SELECT 1 FROM public.profiles 
-      WHERE id = auth.uid() AND role = 'admin'
+      WHERE (id)::text = (auth.uid())::text AND role = 'admin'
     )
     OR EXISTS (
       SELECT 1 FROM public.registered_users
-      WHERE (id = auth.uid()::text OR email = (auth.jwt() ->> 'email')) AND role = 'admin'
+      WHERE ((id)::text = (auth.uid())::text OR email = (auth.jwt() ->> 'email')) AND role = 'admin'
     )
   );
 END;
@@ -180,24 +180,24 @@ CREATE POLICY "Admin can modify promo codes" ON public.promo_codes FOR ALL USING
 
 -- 4. User Profile & Data Policies
 CREATE POLICY "Profiles access" ON public.profiles FOR ALL 
-  USING (auth.uid() = id OR public.is_admin()) 
-  WITH CHECK (auth.uid() = id OR public.is_admin());
+  USING ((id)::text = (auth.uid())::text OR public.is_admin()) 
+  WITH CHECK ((id)::text = (auth.uid())::text OR public.is_admin());
 
 CREATE POLICY "Registered users access" ON public.registered_users FOR ALL 
-  USING (id = auth.uid()::text OR email = (auth.jwt() ->> 'email') OR public.is_admin()) 
-  WITH CHECK (id = auth.uid()::text OR email = (auth.jwt() ->> 'email') OR public.is_admin() OR auth.role() = 'anon');
+  USING ((id)::text = (auth.uid())::text OR email = (auth.jwt() ->> 'email') OR public.is_admin()) 
+  WITH CHECK ((id)::text = (auth.uid())::text OR email = (auth.jwt() ->> 'email') OR public.is_admin() OR auth.role() = 'anon');
 
 CREATE POLICY "Written essays access" ON public.written_essays FOR ALL 
-  USING (user_id = auth.uid()::text OR public.is_admin()) 
-  WITH CHECK (user_id = auth.uid()::text OR auth.role() IN ('authenticated', 'anon') OR public.is_admin());
+  USING ((user_id)::text = (auth.uid())::text OR public.is_admin()) 
+  WITH CHECK ((user_id)::text = (auth.uid())::text OR auth.role() IN ('authenticated', 'anon') OR public.is_admin());
 
 CREATE POLICY "Tile results access" ON public.tile_results FOR ALL 
-  USING (user_id = auth.uid()::text OR public.is_admin()) 
-  WITH CHECK (user_id = auth.uid()::text OR auth.role() IN ('authenticated', 'anon') OR public.is_admin());
+  USING ((user_id)::text = (auth.uid())::text OR public.is_admin()) 
+  WITH CHECK ((user_id)::text = (auth.uid())::text OR auth.role() IN ('authenticated', 'anon') OR public.is_admin());
 
 CREATE POLICY "Full exam results access" ON public.full_exam_results FOR ALL 
-  USING (user_id = auth.uid()::text OR public.is_admin()) 
-  WITH CHECK (user_id = auth.uid()::text OR auth.role() IN ('authenticated', 'anon') OR public.is_admin());
+  USING ((user_id)::text = (auth.uid())::text OR public.is_admin()) 
+  WITH CHECK ((user_id)::text = (auth.uid())::text OR auth.role() IN ('authenticated', 'anon') OR public.is_admin());
 
 -- 5. Safe Schema Grants
 GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
