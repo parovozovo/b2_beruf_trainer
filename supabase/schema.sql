@@ -126,28 +126,81 @@ CREATE TABLE IF NOT EXISTS public.wortschatz_items (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- ==========================================
--- DISABLE RLS & GRANT ALL PERMISSIONS TO FIX 42501 PERMISSION DENIED
--- ==========================================
-ALTER TABLE public.profiles DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.registered_users DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.modelltests DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.promo_codes DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.forumsbeitrag_topics DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.sprechen_topics DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.written_essays DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.tile_results DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.full_exam_results DISABLE ROW LEVEL SECURITY;
-ALTER TABLE public.wortschatz_items DISABLE ROW LEVEL SECURITY;
+-- ==============================================================================
+-- ROW LEVEL SECURITY (RLS) POLICIES & PRODUCTION ACCESS CONTROL
+-- ==============================================================================
 
-GRANT ALL ON TABLE public.profiles TO anon, authenticated, service_role;
-GRANT ALL ON TABLE public.registered_users TO anon, authenticated, service_role;
-GRANT ALL ON TABLE public.modelltests TO anon, authenticated, service_role;
-GRANT ALL ON TABLE public.promo_codes TO anon, authenticated, service_role;
-GRANT ALL ON TABLE public.forumsbeitrag_topics TO anon, authenticated, service_role;
-GRANT ALL ON TABLE public.sprechen_topics TO anon, authenticated, service_role;
-GRANT ALL ON TABLE public.written_essays TO anon, authenticated, service_role;
-GRANT ALL ON TABLE public.tile_results TO anon, authenticated, service_role;
-GRANT ALL ON TABLE public.full_exam_results TO anon, authenticated, service_role;
-GRANT ALL ON TABLE public.wortschatz_items TO anon, authenticated, service_role;
+-- 1. Helper function for Admin privileges
+CREATE OR REPLACE FUNCTION public.is_admin()
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN (
+    (auth.jwt() ->> 'email') = 'luck34y@yahoo.com'
+    OR (auth.jwt() ->> 'email') LIKE '%@beruf-b2-trainer.de'
+    OR EXISTS (
+      SELECT 1 FROM public.profiles 
+      WHERE id = auth.uid() AND role = 'admin'
+    )
+    OR EXISTS (
+      SELECT 1 FROM public.registered_users
+      WHERE (id = auth.uid()::text OR email = (auth.jwt() ->> 'email')) AND role = 'admin'
+    )
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
+
+-- 2. Enable RLS on all tables
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.registered_users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.modelltests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.promo_codes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.forumsbeitrag_topics ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.sprechen_topics ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.written_essays ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.tile_results ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.full_exam_results ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.wortschatz_items ENABLE ROW LEVEL SECURITY;
+
+-- 3. Public Content Policies (Read: Everyone | Write: Admin)
+CREATE POLICY "Public can view modelltests" ON public.modelltests FOR SELECT USING (true);
+CREATE POLICY "Admin can modify modelltests" ON public.modelltests FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+CREATE POLICY "Public can view wortschatz" ON public.wortschatz_items FOR SELECT USING (true);
+CREATE POLICY "Admin can modify wortschatz" ON public.wortschatz_items FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+CREATE POLICY "Public can view forumsbeitrag" ON public.forumsbeitrag_topics FOR SELECT USING (true);
+CREATE POLICY "Admin can modify forumsbeitrag" ON public.forumsbeitrag_topics FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+CREATE POLICY "Public can view sprechen" ON public.sprechen_topics FOR SELECT USING (true);
+CREATE POLICY "Admin can modify sprechen" ON public.sprechen_topics FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+CREATE POLICY "Public can view promo codes" ON public.promo_codes FOR SELECT USING (true);
+CREATE POLICY "Admin or user can update promo code redemption" ON public.promo_codes FOR UPDATE USING (true) WITH CHECK (true);
+CREATE POLICY "Admin can modify promo codes" ON public.promo_codes FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+
+-- 4. User Profile & Data Policies
+CREATE POLICY "Profiles access" ON public.profiles FOR ALL 
+  USING (auth.uid() = id OR public.is_admin()) 
+  WITH CHECK (auth.uid() = id OR public.is_admin());
+
+CREATE POLICY "Registered users access" ON public.registered_users FOR ALL 
+  USING (id = auth.uid()::text OR email = (auth.jwt() ->> 'email') OR public.is_admin()) 
+  WITH CHECK (id = auth.uid()::text OR email = (auth.jwt() ->> 'email') OR public.is_admin() OR auth.role() = 'anon');
+
+CREATE POLICY "Written essays access" ON public.written_essays FOR ALL 
+  USING (user_id = auth.uid()::text OR public.is_admin()) 
+  WITH CHECK (user_id = auth.uid()::text OR auth.role() IN ('authenticated', 'anon') OR public.is_admin());
+
+CREATE POLICY "Tile results access" ON public.tile_results FOR ALL 
+  USING (user_id = auth.uid()::text OR public.is_admin()) 
+  WITH CHECK (user_id = auth.uid()::text OR auth.role() IN ('authenticated', 'anon') OR public.is_admin());
+
+CREATE POLICY "Full exam results access" ON public.full_exam_results FOR ALL 
+  USING (user_id = auth.uid()::text OR public.is_admin()) 
+  WITH CHECK (user_id = auth.uid()::text OR auth.role() IN ('authenticated', 'anon') OR public.is_admin());
+
+-- 5. Safe Schema Grants
+GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon, authenticated;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role;
 
