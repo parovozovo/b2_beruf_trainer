@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Sparkles, ArrowRight, ShieldCheck, Award, Star, CheckCircle2 } from 'lucide-react';
+import { Sparkles, ArrowRight, ShieldCheck, Award, Star } from 'lucide-react';
 import { AppLogo } from '../AppLogo';
 
 interface PricingPageProps {
@@ -50,51 +50,32 @@ export const PricingPage: React.FC<PricingPageProps> = ({
           </p>
         </div>
 
-        {/* Pricing Cards Grid (3 Packages) */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto items-stretch">
-          {/* Plan 1: 14 Days Sprint */}
-          <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6 flex flex-col justify-between">
+        {/* Pricing Cards Grid (4 Packages) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto items-stretch">
+          {/* Plan 1: 7 Tage Sprint */}
+          <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-5 flex flex-col justify-between">
             <div className="space-y-4">
               <div>
-                <h3 className="text-lg font-black text-slate-900 dark:text-white">14 Tage Sprint</h3>
-                <p className="text-xs text-slate-500 mt-1">Perfekt für die intensive Endphase kurz vor dem Prüfungstermin.</p>
+                <h3 className="text-lg font-black text-slate-900 dark:text-white">7 Tage Sprint-Pass</h3>
+                <p className="text-xs text-slate-500 mt-1">Ideal für den schnellen Endspurt vor dem Prüfungstermin.</p>
               </div>
 
               <div className="flex items-baseline gap-1">
-                <span className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">€14.99</span>
-                <span className="text-[11px] text-slate-500 font-bold">/ 14 Tage Zugang</span>
+                <span className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">9,99 €</span>
+                <span className="text-[11px] text-slate-500 font-bold">/ für 7 Tage</span>
               </div>
-
-              <ul className="space-y-2.5 text-xs text-slate-700 dark:text-slate-300 pt-3 border-t border-slate-100 dark:border-slate-800">
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                  <span>Alle 12 Modelltests (Lesen, Hören, Grammatik)</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                  <span>385 Wortschatzkarten mit Wiederholungslogik</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                  <span>Muttersprachliche Audioaufnahmen</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                  <span>Detaillierte Fehleranalyse</span>
-                </li>
-              </ul>
             </div>
 
             <Link
-              to="/app"
+              to="/app/pricing"
               className="w-full py-3.5 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white font-black text-xs text-center transition-colors cursor-pointer"
             >
-              14 Tage starten
+              Plan wählen
             </Link>
           </div>
 
-          {/* Plan 2: 30 Days Full Prep (Featured) */}
-          <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-b from-indigo-900 via-slate-900 to-slate-950 border-2 border-amber-500 text-white shadow-2xl space-y-6 flex flex-col justify-between relative transform md:-translate-y-2">
+          {/* Plan 2: 30 Tage Standard (Featured) */}
+          <div className="p-6 sm:p-7 rounded-3xl bg-gradient-to-b from-indigo-900 via-slate-900 to-slate-950 border-2 border-amber-500 text-white shadow-2xl space-y-5 flex flex-col justify-between relative transform md:-translate-y-2">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2">
               <span className="px-3.5 py-1 bg-amber-500 text-slate-950 text-[10px] font-black uppercase rounded-full tracking-wider shadow">
                 🔥 Beliebteste Wahl
@@ -104,47 +85,24 @@ export const PricingPage: React.FC<PricingPageProps> = ({
             <div className="space-y-4">
               <div>
                 <h3 className="text-lg font-black flex items-center gap-2">
-                  <span>30 Tage Full Prep</span>
+                  <span>30 Tage Standard-Pass</span>
                   <Sparkles className="w-4 h-4 text-amber-400" />
                 </h3>
-                <p className="text-xs text-slate-300 mt-1">Umfassende und strukturierte Vorbereitung auf alle Prüfungsteile.</p>
+                <p className="text-xs text-slate-300 mt-1">Gründliche und stressfreie Vorbereitung auf alle Prüfungsteile.</p>
               </div>
 
               <div className="flex items-baseline gap-1">
-                <span className="text-3xl sm:text-4xl font-black text-white">€24.99</span>
-                <span className="text-[11px] text-emerald-400 font-bold">/ 30 Tage Zugang</span>
+                <span className="text-3xl sm:text-4xl font-black text-white">15,99 €</span>
+                <span className="text-[11px] text-emerald-400 font-bold">/ für 30 Tage</span>
               </div>
-
-              <ul className="space-y-2.5 text-xs text-slate-200 pt-3 border-t border-white/10">
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span className="font-bold">Alle 12 Modelltests in voller Länge</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span className="font-bold">92 Forumsbeitrag- & Schreibthemen mit Bausteinen</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>171 Sprechsituationen für Teil 2 & Teil 3</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Interaktiver Wortschatz SRS-Trainer</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Prioritäts-Support</span>
-                </li>
-              </ul>
             </div>
 
             <div className="space-y-2">
               <Link
-                to="/app"
-                className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs sm:text-sm text-center shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 transition-all transform hover:scale-105 cursor-pointer"
+                to="/app/pricing"
+                className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs sm:text-sm text-center shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 transition-all transform hover:scale-105 cursor-pointer"
               >
-                <span>30 Tage Full Prep freischalten</span>
+                <span>Jetzt freischalten</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <div className="text-center">
@@ -159,44 +117,60 @@ export const PricingPage: React.FC<PricingPageProps> = ({
             </div>
           </div>
 
-          {/* Plan 3: Lifetime */}
-          <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6 flex flex-col justify-between">
+          {/* Plan 3: 90 Tage Kursbegleiter */}
+          <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-slate-900 border border-indigo-500/30 shadow-sm space-y-5 flex flex-col justify-between relative">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+              <span className="px-3 py-0.5 bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 text-[10px] font-black uppercase rounded-full tracking-wider">
+                Spart 38%
+              </span>
+            </div>
+
             <div className="space-y-4">
               <div>
-                <h3 className="text-lg font-black text-slate-900 dark:text-white">Lifetime Zugang</h3>
-                <p className="text-xs text-slate-500 mt-1">Dauerhafter unbegrenzter Zugriff ohne Zeitbegrenzung.</p>
+                <h3 className="text-lg font-black text-slate-900 dark:text-white">90 Tage Kursbegleiter</h3>
+                <p className="text-xs text-slate-500 mt-1">Begleitet Sie zuverlässig durch den gesamten B2-Berufssprachkurs.</p>
               </div>
 
               <div className="flex items-baseline gap-1">
-                <span className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">€49.99</span>
-                <span className="text-[11px] text-slate-500 font-bold">/ Einmalig</span>
+                <span className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">29,99 €</span>
+                <span className="text-[11px] text-slate-500 font-bold">/ für 90 Tage</span>
               </div>
-
-              <ul className="space-y-2.5 text-xs text-slate-700 dark:text-slate-300 pt-3 border-t border-slate-100 dark:border-slate-800">
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                  <span>Lebenslanger unbegrenzter Zugang</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                  <span>Alle aktuellen & künftigen Modelltests</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                  <span>Alle 92 Schreibthemen + 171 Sprechthemen</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-                  <span>Offline PWA-Nutzung auf dem Smartphone</span>
-                </li>
-              </ul>
             </div>
 
             <Link
-              to="/app"
-              className="w-full py-3.5 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white font-black text-xs text-center transition-colors cursor-pointer"
+              to="/app/pricing"
+              className="w-full py-3.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs text-center shadow-md transition-colors cursor-pointer"
             >
-              Lifetime Zugang sichern
+              Plan wählen
+            </Link>
+          </div>
+
+          {/* Plan 4: Lifetime Pass */}
+          <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-5 flex flex-col justify-between relative">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+              <span className="px-3 py-0.5 bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-[10px] font-black uppercase rounded-full tracking-wider">
+                Aktion: -20%
+              </span>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-black text-slate-900 dark:text-white">Lebenslanger Pass</h3>
+                <p className="text-xs text-slate-500 mt-1">Einmal zahlen, unbegrenzt üben ohne zeitliche Begrenzung.</p>
+              </div>
+
+              <div className="flex items-baseline gap-2">
+                <span className="text-xs text-slate-400 line-through font-bold">49,99 €</span>
+                <span className="text-3xl sm:text-4xl font-black text-emerald-600 dark:text-emerald-400">39,99 €</span>
+                <span className="text-[11px] text-slate-500 font-bold">/ dauerhaft</span>
+              </div>
+            </div>
+
+            <Link
+              to="/app/pricing"
+              className="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs text-center shadow-md transition-colors cursor-pointer"
+            >
+              Dauerhaft sichern
             </Link>
           </div>
         </div>

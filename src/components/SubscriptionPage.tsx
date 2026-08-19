@@ -15,7 +15,6 @@ import {
   Check,
   CreditCard
 } from 'lucide-react';
-import confetti from 'canvas-confetti';
 import type { User } from '../types';
 import { getRemainingPremiumTimeLabel } from '../utils/storage';
 import { openLegalModal } from './legal/LegalModal';
@@ -75,19 +74,20 @@ const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
 interface SubscriptionPageProps {
   currentUser: User | null;
   onOpenLoginModal: () => void;
-  onActivateSubscription: (planId: string, durationDays: number | null) => void;
+  onActivateSubscription?: (planId: string, durationDays: number | null) => void;
   onNavigateToTab: (tab: string) => void;
 }
 
 export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({
   currentUser,
   onOpenLoginModal,
-  onActivateSubscription,
+  onActivateSubscription: _onActivateSubscription,
   onNavigateToTab,
 }) => {
   const [selectedPlanId, setSelectedPlanId] = useState<string>('standard_30d');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const [justPurchasedPlan, setJustPurchasedPlan] = useState<SubscriptionPlan | null>(null);
+  const [showComingSoonModal, setShowComingSoonModal] = useState<boolean>(false);
+  const [justPurchasedPlan] = useState<SubscriptionPlan | null>(null);
 
   const selectedPlan = SUBSCRIPTION_PLANS.find((p) => p.id === selectedPlanId) || SUBSCRIPTION_PLANS[1];
   const isAlreadyPremium = Boolean(currentUser?.isPremium);
@@ -101,19 +101,11 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({
 
     setIsProcessing(true);
 
-    // Simulate seamless checkout processing
+    // Provide immediate user feedback and explain payment integration status
     setTimeout(() => {
       setIsProcessing(false);
-      setJustPurchasedPlan(selectedPlan);
-      onActivateSubscription(selectedPlan.id, selectedPlan.durationDays);
-
-      // Trigger celebratory confetti
-      confetti({
-        particleCount: 120,
-        spread: 80,
-        origin: { y: 0.6 },
-      });
-    }, 1200);
+      setShowComingSoonModal(true);
+    }, 600);
   };
 
   // IF USER ALREADY HAS ACTIVE PREMIUM AND NOT IN SUCCESS PURCHASE STATE
@@ -469,6 +461,60 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({
           </div>
         </div>
       </div>
+
+      {/* ================= PAYMENT INTEGRATION IN PROGRESS MODAL ================= */}
+      {showComingSoonModal && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 sm:p-8 space-y-6 shadow-2xl text-center">
+            <div className="w-16 h-16 mx-auto rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-500/30">
+              <CreditCard className="w-8 h-8" />
+            </div>
+
+            <div className="space-y-2">
+              <span className="px-3 py-1 bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 rounded-full text-xs font-black inline-flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5" /> In Vorbereitung
+              </span>
+              <h3 className="text-xl font-black text-slate-900 dark:text-white">
+                Online-Zahlung in Kürze verfügbar! 🚀
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
+                Vielen Dank für Ihr Interesse am <strong>{selectedPlan.name}</strong> ({selectedPlan.price})! Die automatische Zahlungsabwicklung wird aktuell eingerichtet.
+              </p>
+            </div>
+
+            <div className="p-4 bg-slate-50 dark:bg-slate-950/60 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs text-left space-y-2 text-slate-600 dark:text-slate-400">
+              <div className="flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                <span>Alle freien Modelltests und Übungen stehen Ihnen <strong>sofort kostenlos</strong> zur Verfügung.</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <CheckCircle2 className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
+                <span>Haben Sie einen Promo-Gutschein? Diesen können Sie direkt in den <strong>Einstellungen</strong> aktivieren.</span>
+              </div>
+            </div>
+
+            <div className="pt-2 flex flex-col sm:flex-row gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowComingSoonModal(false);
+                  onNavigateToTab('tile_practice');
+                }}
+                className="flex-1 py-3 px-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black text-xs shadow-md transition-all cursor-pointer"
+              >
+                Zum kostenlosen Training
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowComingSoonModal(false)}
+                className="py-3 px-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-2xl font-bold text-xs transition-all cursor-pointer"
+              >
+                Schließen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
