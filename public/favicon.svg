@@ -1,3 +1,82 @@
-<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <image href="/pwa-192x192.png" x="0" y="0" width="64" height="64" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4F46E5" />
+      <stop offset="50%" stop-color="#4338CA" />
+      <stop offset="100%" stop-color="#6B21A8" />
+    </linearGradient>
+
+    <!-- Glass Glow Gradient -->
+    <linearGradient id="glassGlow" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.35" />
+      <stop offset="40%" stop-color="#FFFFFF" stop-opacity="0.05" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0.3" />
+    </linearGradient>
+
+    <!-- Gold Gradient for B and + and Crown -->
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFBEB" />
+      <stop offset="25%" stop-color="#FDE047" />
+      <stop offset="60%" stop-color="#F59E0B" />
+      <stop offset="100%" stop-color="#B45309" />
+    </linearGradient>
+
+    <!-- Silver/White 3D Gradient for '2' -->
+    <linearGradient id="silverGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="60%" stop-color="#F1F5F9" />
+      <stop offset="100%" stop-color="#CBD5E1" />
+    </linearGradient>
+
+    <!-- 3D Shadow Filter -->
+    <filter id="dropShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="10" flood-color="#0F172A" flood-opacity="0.5" />
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000000" flood-opacity="0.4" />
+    </filter>
+
+    <filter id="glowCrown" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="2" stdDeviation="6" flood-color="#FBBF24" flood-opacity="0.8" />
+    </filter>
+  </defs>
+
+  <!-- Squircle Base -->
+  <rect x="24" y="24" width="464" height="464" rx="120" fill="url(#bgGrad)" />
+  <rect x="24" y="24" width="464" height="464" rx="120" fill="url(#glassGlow)" stroke="#818CF8" stroke-width="4" stroke-opacity="0.4" />
+
+  <!-- Crown on Top -->
+  <g filter="url(#glowCrown)">
+    <path d="M 216 142 L 232 176 L 256 122 L 280 176 L 296 142 L 288 194 L 224 194 Z" fill="url(#goldGrad)" />
+    <!-- Sparkles -->
+    <circle cx="256" cy="108" r="5" fill="#FFFBEB" />
+    <circle cx="216" cy="132" r="3.5" fill="#FDE047" />
+    <circle cx="296" cy="132" r="3.5" fill="#FDE047" />
+  </g>
+
+  <!-- Text Group: B 2 + -->
+  <g filter="url(#dropShadow)" style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif; font-weight: 900;">
+    
+    <!-- Letter 'B' (Gold) -->
+    <text x="180" y="340" text-anchor="middle" font-size="180" fill="url(#goldGrad)" stroke="#78350F" stroke-width="6" stroke-linejoin="round" letter-spacing="-4">
+      B
+    </text>
+
+    <!-- Number '2' (Luminous White/Silver) -->
+    <text x="290" y="340" text-anchor="middle" font-size="180" fill="url(#silverGrad)" stroke="#475569" stroke-width="5" stroke-linejoin="round">
+      2
+    </text>
+
+    <!-- Plus '+' Symbol (Gold) -->
+    <text x="392" y="318" text-anchor="middle" font-size="130" fill="url(#goldGrad)" stroke="#78350F" stroke-width="5" stroke-linejoin="round">
+      +
+    </text>
+  </g>
+
+  <!-- Subtitle Pill: DTB -->
+  <g opacity="0.95">
+    <rect x="186" y="380" width="140" height="38" rx="19" fill="#0F172A" fill-opacity="0.6" stroke="#FDE047" stroke-width="2" stroke-opacity="0.8" />
+    <text x="256" y="405" text-anchor="middle" font-size="20" font-family="system-ui, sans-serif" font-weight="900" fill="#FDE047" letter-spacing="4">
+      DTB
+    </text>
+  </g>
 </svg>
