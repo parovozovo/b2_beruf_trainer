@@ -293,11 +293,11 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({
       <div className="glass-panel p-5 sm:p-6 rounded-2xl border border-slate-800 space-y-5">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-              <Mic className="w-5 h-5 text-emerald-400" /> Modul Sprechen
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Mic className="w-5 h-5 text-emerald-500" /> Modul Sprechen
             </h2>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Prüfungssimulation: Teil 1A (Qualifikation & Fragen), Teil 2 (Präsentation), Teil 3 (Planung).
+            <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+              Prüfungssimulation: Teil 1 (Über ein Thema sprechen), Teil 2 (Mit Kollegen sprechen), Teil 3 (Lösungswege aushandeln).
             </p>
           </div>
 
@@ -338,7 +338,7 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({
                 : 'bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
             }`}
           >
-            Teil 1A (Qualifikation)
+            Teil 1: Über ein Thema sprechen
           </button>
           <button
             onClick={initPart2}
@@ -348,7 +348,7 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({
                 : 'bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
             }`}
           >
-            Teil 2 (Präsentation)
+            Teil 2: Mit Kollegen sprechen
           </button>
           <button
             onClick={initPart3}
@@ -358,7 +358,7 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({
                 : 'bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
             }`}
           >
-            Teil 3 (Planung)
+            Teil 3: Lösungswege aushandeln
           </button>
         </div>
       </div>
@@ -675,29 +675,29 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({
           )}
 
           {/* Pager to next part */}
-          <div className="pt-2 border-t border-slate-800 flex justify-end">
+          <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex justify-end">
             {activePart === '1A' && (
               <button
                 onClick={initPart2}
-                className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-lg"
+                className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold rounded-xl text-xs flex items-center gap-2 shadow-lg transition-all cursor-pointer"
               >
-                Weiter zu Sprechen Teil 2 <ArrowRight className="w-4 h-4" />
+                Weiter zu Teil 2 (Mit Kollegen sprechen) <ArrowRight className="w-4 h-4" />
               </button>
             )}
             {activePart === '2' && (
               <button
                 onClick={initPart3}
-                className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-lg"
+                className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold rounded-xl text-xs flex items-center gap-2 shadow-lg transition-all cursor-pointer"
               >
-                Weiter zu Sprechen Teil 3 <ArrowRight className="w-4 h-4" />
+                Weiter zu Teil 3 (Lösungswege aushandeln) <ArrowRight className="w-4 h-4" />
               </button>
             )}
             {activePart === '3' && (
               <button
                 onClick={handleFinishAll}
-                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-lg"
+                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold rounded-xl text-xs flex items-center gap-2 shadow-lg transition-all cursor-pointer"
               >
-                Sprechen beenden <CheckCircle2 className="w-4 h-4" />
+                Mündliche Prüfung beenden <CheckCircle2 className="w-4 h-4" />
               </button>
             )}
           </div>

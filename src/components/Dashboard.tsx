@@ -56,22 +56,22 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const isPremium = currentUser ? currentUser.isPremium : false;
 
   return (
-    <div className="space-y-10 animate-fadeIn pb-12">
+    <div className="space-y-6 sm:space-y-8 animate-fadeIn pb-2 sm:pb-4">
       {/* ================= SECTION 1: HERO BANNER (ПОЧАТОК) ================= */}
-      <div className="relative overflow-hidden rounded-3xl glass-panel p-5 sm:p-10 border border-indigo-500/30 shadow-lg">
+      <div className="relative overflow-hidden rounded-3xl glass-panel p-5 sm:p-8 border border-indigo-500/30 shadow-lg">
         <div className="absolute right-0 bottom-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="relative z-10 space-y-4 max-w-3xl">
+        <div className="relative z-10 space-y-3.5 max-w-3xl">
           <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-500/20 text-indigo-900 dark:text-indigo-300 rounded-full text-xs font-extrabold border border-indigo-500/30">
             <Sparkles className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" /> Willkommen beim Deutsch B2 Beruf Trainer
           </div>
-          <h1 className="text-2xl sm:text-5xl font-black tracking-tight text-slate-900 dark:text-white">
+          <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tight text-slate-900 dark:text-white">
             Guten Tag, {userName}! 👋
           </h1>
-          <p className="text-sm sm:text-lg text-slate-800 dark:text-slate-200 leading-relaxed font-semibold">
+          <p className="text-xs sm:text-base text-slate-800 dark:text-slate-200 leading-relaxed font-semibold">
             Bereiten Sie sich gezielt auf die Prüfung Deutsch B2 Beruf vor. Wählen Sie Einzelteile zum Üben oder starten Sie eine vollständige Simulation mit Zeitmessung.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-1">
             <button
               onClick={() => onSelectMode('full_exam')}
               className="px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold rounded-2xl shadow-lg hover:shadow-indigo-600/30 transition-all text-xs sm:text-sm flex items-center justify-center gap-2 cursor-pointer"
@@ -89,7 +89,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       </div>
 
       {/* ================= SECTION 2: STATISTIK TEILE-TRAINING ================= */}
-      <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-slate-300 dark:border-slate-800 space-y-4 shadow-sm">
+      <div className="glass-panel p-5 sm:p-7 rounded-3xl border border-slate-300 dark:border-slate-800 space-y-4 shadow-sm">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-indigo-600 dark:text-indigo-400" /> Fortschritt im Teile-Training
@@ -250,32 +250,32 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
 
           {/* Card 4: Sprechen */}
-          <div className="glass-panel p-6 sm:p-7 rounded-3xl border border-emerald-500/30 hover:border-emerald-500/70 transition-all shadow-md flex flex-col md:flex-row md:items-center justify-between gap-6 group">
+          <div className="glass-panel p-5 sm:p-7 rounded-3xl border border-emerald-500/30 hover:border-emerald-500/70 transition-all shadow-md flex flex-col md:flex-row md:items-center justify-between gap-5 group">
             <div className="flex items-start sm:items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-500/30 shrink-0 group-hover:scale-105 transition-transform">
-                <Mic className="w-7 h-7" />
+              <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-2xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-500/30 shrink-0 group-hover:scale-105 transition-transform">
+                <Mic className="w-6 h-6 sm:w-7 sm:h-7" />
               </div>
-              <div className="space-y-1.5 max-w-2xl">
+              <div className="space-y-1 max-w-2xl">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="px-2.5 py-0.5 bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 rounded-full text-[11px] font-bold">
-                    🗣️ Mündliche Prüfung (Teil 1A, 2 & 3)
+                    🗣️ Mündliche DTB-Prüfung (Teil 1, 2 & 3)
                   </span>
                   <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                     Einzel- & Paarmodus mit Gong-Signal
                   </span>
                 </div>
-                <h3 className="text-xl font-extrabold text-slate-900 dark:text-white">
-                  Sprechtrainer: Vortrag, Kollegen-Gespräch & Diskussion
+                <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white">
+                  Sprechtrainer: Thema vorstellen, Gespräch & Lösungswege
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
-                  Simulation aller 3 Teile der mündlichen Prüfung. Mit Rundentimer, Glocken-Signal, Leitpunkten und themenspezifischen Redemitteln.
+                  Simulation aller 3 Teile der mündlichen Prüfung (Über ein Thema sprechen, Mit Kollegen sprechen, Lösungswege aushandeln). Mit Rundentimer und Signalton.
                 </p>
               </div>
             </div>
 
             <button
               onClick={() => onSelectMode('sprechen')}
-              className="w-full md:w-auto py-3.5 px-6 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg hover:shadow-emerald-600/30 transition-all shrink-0 cursor-pointer"
+              className="w-full md:w-auto py-3 px-5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold rounded-2xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg hover:shadow-emerald-600/30 transition-all shrink-0 cursor-pointer"
             >
               <span>Sprechtrainer öffnen</span>
               <ArrowRight className="w-4 h-4" />

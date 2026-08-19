@@ -389,7 +389,7 @@ export const TrainerApp: React.FC<TrainerAppProps> = ({ theme, onToggleTheme }) 
       />
 
       {/* Main Container Body */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-28 md:pb-8 pb-safe">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-5 pb-16 md:pb-6 pb-safe">
         {currentTab === 'dashboard' && (
           <ErrorBoundary fallbackTitle="Fehler auf der Startseite">
             <Dashboard

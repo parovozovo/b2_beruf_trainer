@@ -422,9 +422,9 @@ export const Navbar: React.FC<NavbarProps> = ({
         )}
       </header>
 
-      {/* Fixed Mobile Bottom Bar Navigation with iOS Safe Area: Start | Training | Prüfung | Schreiben | Wortschatz */}
+      {/* Fixed Mobile Bottom Bar Navigation with iOS Safe Area: Start | Training | Schreiben | Sprechen | Wörter */}
       <div
-        className={`md:hidden fixed bottom-0 left-0 right-0 z-30 px-1 pt-1.5 pb-[max(0.5rem,env(safe-area-inset-bottom))] flex items-center justify-around text-[10px] border-t backdrop-blur-xl transition-colors duration-200 shadow-2xl ${
+        className={`md:hidden fixed bottom-0 left-0 right-0 z-30 px-1 pt-1 pb-[max(0.4rem,env(safe-area-inset-bottom))] flex items-center justify-around text-[10px] border-t backdrop-blur-xl transition-colors duration-200 shadow-2xl ${
           isDark ? 'bg-slate-950/95 border-slate-800 text-slate-300' : 'bg-white/95 border-slate-200 text-slate-700'
         }`}
       >
@@ -449,16 +449,6 @@ export const Navbar: React.FC<NavbarProps> = ({
         </button>
 
         <button
-          onClick={() => handleTabClick('full_exam')}
-          className={`flex-1 flex flex-col items-center justify-center gap-1 py-1 px-1 rounded-xl font-bold min-h-[44px] transition-all cursor-pointer ${
-            currentTab === 'full_exam' ? 'text-amber-600 dark:text-amber-400 bg-amber-500/15 font-black scale-105' : 'opacity-70 hover:opacity-100'
-          }`}
-        >
-          <Award className="w-4 h-4 text-amber-500" />
-          <span className="text-[10px]">Prüfung</span>
-        </button>
-
-        <button
           onClick={() => handleTabClick('schreiben')}
           className={`flex-1 flex flex-col items-center justify-center gap-1 py-1 px-1 rounded-xl font-bold min-h-[44px] transition-all cursor-pointer ${
             currentTab === 'schreiben' ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-500/15 font-black scale-105' : 'opacity-70 hover:opacity-100'
@@ -466,6 +456,16 @@ export const Navbar: React.FC<NavbarProps> = ({
         >
           <Edit3 className="w-4 h-4" />
           <span className="text-[10px]">Schreiben</span>
+        </button>
+
+        <button
+          onClick={() => handleTabClick('sprechen')}
+          className={`flex-1 flex flex-col items-center justify-center gap-1 py-1 px-1 rounded-xl font-bold min-h-[44px] transition-all cursor-pointer ${
+            currentTab === 'sprechen' ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/15 font-black scale-105' : 'opacity-70 hover:opacity-100'
+          }`}
+        >
+          <Mic className="w-4 h-4 text-emerald-500" />
+          <span className="text-[10px]">Sprechen</span>
         </button>
 
         <button

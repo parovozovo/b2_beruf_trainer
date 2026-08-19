@@ -5,8 +5,8 @@ import { AppLogo } from './AppLogo';
 
 export const Footer: React.FC = () => {
   return (
-    <footer className="mt-16 border-t border-slate-200 dark:border-slate-800/80 bg-slate-50/60 dark:bg-slate-950/40 py-10 px-4 sm:px-6 transition-colors">
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-xs text-slate-500">
+    <footer className="mt-6 sm:mt-10 border-t border-slate-200 dark:border-slate-800/80 bg-slate-50/60 dark:bg-slate-950/40 py-6 sm:py-8 px-4 sm:px-6 transition-colors">
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-5 text-xs text-slate-500">
         
         {/* Brand & Info */}
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-3.5 text-center sm:text-left">
