@@ -40,7 +40,12 @@ CREATE TABLE IF NOT EXISTS public.promo_codes (
   used_count INT NOT NULL DEFAULT 0,
   created_date TEXT NOT NULL,
   used_by_emails TEXT[] DEFAULT '{}',
-  active BOOLEAN NOT NULL DEFAULT true
+  active BOOLEAN NOT NULL DEFAULT true,
+  partner_name TEXT,
+  partner_link TEXT,
+  partner_link_title TEXT,
+  description TEXT,
+  discount_percent INT DEFAULT 0
 );
 
 -- 4. FORUMSBEITRAG TOPICS TABLE

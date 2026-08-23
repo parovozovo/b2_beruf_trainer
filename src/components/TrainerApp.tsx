@@ -54,6 +54,7 @@ import { SubscriptionPage } from './SubscriptionPage';
 import { ErrorBoundary } from './ErrorBoundary';
 import { LoginModal } from './LoginModal';
 import { PromoModal } from './PromoModal';
+import { PartnerPromoBannerModal } from './PartnerPromoBannerModal';
 import { PremiumLockedModal } from './PremiumLockedModal';
 import { ResetPasswordModal } from './ResetPasswordModal';
 import { UserProfileModal } from './UserProfileModal';
@@ -118,11 +119,27 @@ export const TrainerApp: React.FC<TrainerAppProps> = ({ theme, onToggleTheme }) 
   // Modal States
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isPromoModalOpen, setIsPromoModalOpen] = useState(false);
+  const [isPartnerPromoModalOpen, setIsPartnerPromoModalOpen] = useState(false);
+  const [detectedPartnerPromo, setDetectedPartnerPromo] = useState<PromoCode | null>(null);
   const [isPremiumLockedModalOpen, setIsPremiumLockedModalOpen] = useState(false);
   const [isUserProfileModalOpen, setIsUserProfileModalOpen] = useState(false);
   const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
   const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
   const [legalModalTab, setLegalModalTab] = useState<LegalTab>('agb');
+
+  // Detect referral/partner promo in URL query params: ?promo=CODE or ?gutschein=CODE
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const promoParam = params.get('promo') || params.get('gutschein');
+    if (promoParam && promoCodes.length > 0) {
+      const clean = promoParam.trim().toUpperCase();
+      const found = promoCodes.find((c) => c.code.toUpperCase() === clean && c.active);
+      if (found) {
+        setDetectedPartnerPromo(found);
+        setIsPartnerPromoModalOpen(true);
+      }
+    }
+  }, [promoCodes]);
 
   useEffect(() => {
     const handleOpenLegal = (e: any) => {
@@ -637,6 +654,14 @@ export const TrainerApp: React.FC<TrainerAppProps> = ({ theme, onToggleTheme }) 
         currentUser={currentUser}
         promoCodes={promoCodes}
         onApplyPromo={(code) => handleRedeemPromoCode(code.code)}
+      />
+
+      <PartnerPromoBannerModal
+        isOpen={isPartnerPromoModalOpen}
+        onClose={() => setIsPartnerPromoModalOpen(false)}
+        promoCode={detectedPartnerPromo}
+        currentUser={currentUser}
+        onActivate={(code) => handleRedeemPromoCode(code.code)}
       />
 
       <PremiumLockedModal

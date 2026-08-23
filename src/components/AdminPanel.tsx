@@ -51,6 +51,9 @@ import {
   Gift,
   BookOpen,
   Layers,
+  Copy,
+  Check,
+  ExternalLink,
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../utils/supabase';
 import {
@@ -387,6 +390,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [promoCodeInput, setPromoCodeInput] = useState('');
   const [promoDurationDays, setPromoDurationDays] = useState(30);
   const [promoMaxUses, setPromoMaxUses] = useState(50);
+  const [promoPartnerName, setPromoPartnerName] = useState('');
+  const [promoPartnerLink, setPromoPartnerLink] = useState('');
+  const [promoDescription, setPromoDescription] = useState('');
+  const [copiedPromoId, setCopiedPromoId] = useState<string | null>(null);
 
   // Tile Variant Editor State
   const [selectedModelltestId, setSelectedModelltestId] = useState<string>(modelltests[0]?.id || '');
@@ -965,6 +972,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       createdDate: new Date().toISOString().split('T')[0],
       usedByEmails: [],
       active: true,
+      partnerName: promoPartnerName.trim() || undefined,
+      partnerLink: promoPartnerLink.trim() || undefined,
+      description: promoDescription.trim() || undefined,
     };
 
     const res = await onSavePromoCodes([...promoCodes, newCodeObj]);
@@ -972,8 +982,22 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       showToast(`Fehler beim Speichern in Supabase: ${res.error}`, 'error');
     } else {
       setPromoCodeInput('');
+      setPromoPartnerName('');
+      setPromoPartnerLink('');
+      setPromoDescription('');
       showToast('Gutscheincode erfolgreich erstellt & in Supabase gespeichert!');
     }
+  };
+
+  const handleCopyPromoLink = (code: string, promoId: string) => {
+    const origin = window.location.origin;
+    const url = `${origin}/?promo=${encodeURIComponent(code)}`;
+    navigator.clipboard.writeText(url);
+    setCopiedPromoId(promoId);
+    showToast(`📋 Partner-Link kopiert: ${url}`, 'success');
+    setTimeout(() => {
+      setCopiedPromoId((cur) => (cur === promoId ? null : cur));
+    }, 3000);
   };
 
   const handleTogglePromoActive = async (id: string) => {
@@ -2514,54 +2538,98 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             </form>
           </div>
         </div>
-      )}
-
-      {/* PROMO CODES TAB */}
+      )}      {/* PROMO CODES TAB */}
       {activeTab === 'promocodes' && (
         <div className="space-y-6">
           <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
             <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <Key className="w-4 h-4 text-amber-400" /> Gutscheincode-Generator
+              <Key className="w-4 h-4 text-amber-400" /> Gutschein- & Partner-Code Generator
             </h3>
 
-            <form onSubmit={handleGeneratePromoCode} className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-xs text-slate-400 mb-1">Code</label>
-                <input
-                  type="text"
-                  value={promoCodeInput}
-                  onChange={(e) => setPromoCodeInput(e.target.value)}
-                  placeholder="BETA2026"
-                  className="w-full px-3 py-2 glass-input rounded-xl text-xs uppercase font-mono font-bold"
-                />
+            <form onSubmit={handleGeneratePromoCode} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1">Code *</label>
+                  <input
+                    type="text"
+                    value={promoCodeInput}
+                    onChange={(e) => setPromoCodeInput(e.target.value)}
+                    placeholder="Z. B. MARIA14 oder INTENSIV2026"
+                    className="w-full px-3 py-2 glass-input rounded-xl text-xs uppercase font-mono font-bold placeholder:text-slate-600"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1">Dauer (Tage) *</label>
+                  <input
+                    type="number"
+                    value={promoDurationDays}
+                    onChange={(e) => setPromoDurationDays(Number(e.target.value))}
+                    className="w-full px-3 py-2 glass-input rounded-xl text-xs font-bold"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1">Max. Nutzungen *</label>
+                  <input
+                    type="number"
+                    value={promoMaxUses}
+                    onChange={(e) => setPromoMaxUses(Number(e.target.value))}
+                    className="w-full px-3 py-2 glass-input rounded-xl text-xs font-bold"
+                    required
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block text-xs text-slate-400 mb-1">Tage</label>
-                <input
-                  type="number"
-                  value={promoDurationDays}
-                  onChange={(e) => setPromoDurationDays(Number(e.target.value))}
-                  className="w-full px-3 py-2 glass-input rounded-xl text-xs font-bold"
-                />
+              {/* Partner & Influencer Details */}
+              <div className="p-4 bg-slate-900/60 rounded-xl border border-slate-800 space-y-3">
+                <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider block">
+                  🎁 Partner- / Influencer-Angaben (Optional)
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] text-slate-400 mb-1">Partner / Urheber Name</label>
+                    <input
+                      type="text"
+                      value={promoPartnerName}
+                      onChange={(e) => setPromoPartnerName(e.target.value)}
+                      placeholder="Z. B. Deutsch mit Maria / Anna Schmidt"
+                      className="w-full px-3 py-1.5 glass-input rounded-lg text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] text-slate-400 mb-1">Partner-Link (Telegram / Instagram / Web)</label>
+                    <input
+                      type="url"
+                      value={promoPartnerLink}
+                      onChange={(e) => setPromoPartnerLink(e.target.value)}
+                      placeholder="https://t.me/maria_deutsch oder https://instagram.com/..."
+                      className="w-full px-3 py-1.5 glass-input rounded-lg text-xs"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] text-slate-400 mb-1">Beschreibung / Begrüßung für Schüler</label>
+                  <input
+                    type="text"
+                    value={promoDescription}
+                    onChange={(e) => setPromoDescription(e.target.value)}
+                    placeholder="Z. B. Exklusiver 14-Tage-Zugang für die Teilnehmer meines DTB B2 Intensivkurses!"
+                    className="w-full px-3 py-1.5 glass-input rounded-lg text-xs"
+                  />
+                </div>
               </div>
 
-              <div>
-                <label className="block text-xs text-slate-400 mb-1">Max Nutzungen</label>
-                <input
-                  type="number"
-                  value={promoMaxUses}
-                  onChange={(e) => setPromoMaxUses(Number(e.target.value))}
-                  className="w-full px-3 py-2 glass-input rounded-xl text-xs font-bold"
-                />
-              </div>
-
-              <div className="pt-5">
+              <div className="flex justify-end pt-1">
                 <button
                   type="submit"
-                  className="w-full py-2.5 px-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs shadow-lg transition-colors flex items-center justify-center gap-1.5"
+                  className="py-2.5 px-6 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black rounded-xl text-xs shadow-lg shadow-amber-500/20 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                 >
-                  <Save className="w-3.5 h-3.5" /> Code erstellen & in БД speichern
+                  <Save className="w-4 h-4" /> Gutschein erstellen & in Cloud speichern
                 </button>
               </div>
             </form>
@@ -2573,9 +2641,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               <table className="w-full text-left text-xs text-slate-300">
                 <thead className="bg-slate-900/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
                   <tr>
-                    <th className="p-3">Code</th>
+                    <th className="p-3">Code & Partner</th>
                     <th className="p-3">Dauer</th>
                     <th className="p-3">Nutzungen</th>
+                    <th className="p-3">Partner-Link</th>
                     <th className="p-3">E-Mails</th>
                     <th className="p-3">Status</th>
                     <th className="p-3">Aktion</th>
@@ -2584,12 +2653,62 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 <tbody className="divide-y divide-slate-800/60">
                   {promoCodes.map((code) => (
                     <tr key={code.id} className="hover:bg-slate-900/40">
-                      <td className="p-3 font-mono font-bold text-amber-400">{code.code}</td>
-                      <td className="p-3">{code.durationDays} Tage</td>
-                      <td className="p-3 font-bold">{code.usedCount} / {code.maxUses}</td>
+                      <td className="p-3">
+                        <div className="font-mono font-black text-amber-400 text-sm">{code.code}</div>
+                        {code.partnerName && (
+                          <div className="text-[11px] font-semibold text-slate-300 mt-0.5 flex items-center gap-1">
+                            <span>🎓 {code.partnerName}</span>
+                          </div>
+                        )}
+                        {code.description && (
+                          <div className="text-[10px] text-slate-400 italic max-w-xs truncate" title={code.description}>
+                            «{code.description}»
+                          </div>
+                        )}
+                      </td>
+                      <td className="p-3 whitespace-nowrap font-bold">
+                        {code.durationDays >= 999 ? '∞ Dauerhaft' : `${code.durationDays} Tage`}
+                      </td>
+                      <td className="p-3 font-bold whitespace-nowrap">
+                        <span className={code.usedCount >= code.maxUses ? 'text-rose-400' : 'text-emerald-400'}>
+                          {code.usedCount}
+                        </span>{' '}
+                        / {code.maxUses}
+                      </td>
+                      <td className="p-3 whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={() => handleCopyPromoLink(code.code, code.id)}
+                          className="px-2.5 py-1 bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white rounded-lg border border-indigo-500/30 text-[11px] font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                          title="Direkten Empfehlungslink kopieren"
+                        >
+                          {copiedPromoId === code.id ? (
+                            <>
+                              <Check className="w-3.5 h-3.5 text-emerald-400" />
+                              <span className="text-emerald-300">Kopiert!</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-3.5 h-3.5" />
+                              <span>Link kopieren</span>
+                            </>
+                          )}
+                        </button>
+                        {code.partnerLink && (
+                          <a
+                            href={code.partnerLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[10px] text-sky-400 hover:underline inline-flex items-center gap-0.5 mt-1"
+                          >
+                            <span>Profil ansehen</span>
+                            <ExternalLink className="w-2.5 h-2.5" />
+                          </a>
+                        )}
+                      </td>
                       <td className="p-3 max-w-xs">
                         {code.usedByEmails && Array.isArray(code.usedByEmails) && code.usedByEmails.length > 0 ? (
-                          <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto pr-1">
+                          <div className="flex flex-wrap gap-1 max-h-16 overflow-y-auto pr-1">
                             {code.usedByEmails.map((emailItem, idx) => (
                               <span
                                 key={idx}
@@ -2603,18 +2722,22 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                           <span className="text-slate-600 italic">Noch keine</span>
                         )}
                       </td>
-                      <td className="p-3">
+                      <td className="p-3 whitespace-nowrap">
                         <button
                           onClick={() => handleTogglePromoActive(code.id)}
-                          className={`px-2 py-0.5 rounded font-bold text-[10px] ${
-                            code.active ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-500'
+                          className={`px-2 py-0.5 rounded font-bold text-[10px] cursor-pointer transition-colors ${
+                            code.active ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' : 'bg-slate-800 text-slate-500 hover:bg-slate-700'
                           }`}
                         >
                           {code.active ? 'AKTIV' : 'INAKTIV'}
                         </button>
                       </td>
-                      <td className="p-3">
-                        <button onClick={() => handleDeletePromoCode(code.id)} className="text-rose-400 hover:text-rose-300">
+                      <td className="p-3 whitespace-nowrap">
+                        <button
+                          onClick={() => handleDeletePromoCode(code.id)}
+                          className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
+                          title="Gutschein löschen"
+                        >
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </td>

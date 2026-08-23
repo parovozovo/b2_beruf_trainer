@@ -224,14 +224,39 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
             )}
           </div>
 
-          {currentUser.appliedPromoCode && (
-            <div className="flex justify-between items-center">
-              <span className="text-slate-400 font-semibold">Eingelöster Gutschein:</span>
-              <span className="font-mono font-bold text-indigo-300 bg-indigo-500/20 px-2 py-0.5 rounded border border-indigo-500/30">
-                {currentUser.appliedPromoCode}
-              </span>
-            </div>
-          )}
+          {currentUser.appliedPromoCode && (() => {
+            const activePromo = _promoCodes.find(
+              (p) => p.code.toUpperCase() === currentUser.appliedPromoCode?.toUpperCase()
+            );
+            return (
+              <div className="space-y-1 pt-1">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-400 font-semibold">Gutschein:</span>
+                  <span className="font-mono font-bold text-indigo-300 bg-indigo-500/20 px-2 py-0.5 rounded border border-indigo-500/30">
+                    {currentUser.appliedPromoCode}
+                  </span>
+                </div>
+                {activePromo?.partnerName && (
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-amber-400 font-semibold">Partner / Dozent:</span>
+                    <span className="font-bold text-slate-200">🎓 {activePromo.partnerName}</span>
+                  </div>
+                )}
+                {activePromo?.partnerLink && (
+                  <div className="text-right">
+                    <a
+                      href={activePromo.partnerLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[11px] text-sky-400 hover:text-sky-300 font-bold underline inline-flex items-center gap-1"
+                    >
+                      <span>{activePromo.partnerLinkTitle || 'Zum Kanal / Profil des Autors'} ↗</span>
+                    </a>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           <div className="flex justify-between items-center">
             <span className="text-slate-400 font-semibold">Rolle:</span>

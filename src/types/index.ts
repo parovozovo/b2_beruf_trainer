@@ -24,6 +24,11 @@ export interface PromoCode {
   createdDate: string;
   usedByEmails: string[];
   active: boolean;
+  partnerName?: string;
+  partnerLink?: string;
+  partnerLinkTitle?: string;
+  description?: string;
+  discountPercent?: number;
 }
 
 export type TileType = 
