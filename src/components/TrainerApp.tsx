@@ -34,6 +34,7 @@ import {
   fetchModelltestsAsync,
   fetchPromoCodesAsync,
   syncUserToRegisteredList,
+  getRegisteredUsersLocal,
   isAdminEmail,
   getWortschatzItemsLocal,
   saveWortschatzAsync,
@@ -158,13 +159,58 @@ export const TrainerApp: React.FC<TrainerAppProps> = ({ theme, onToggleTheme }) 
         const uEmail = (u.email || '').toLowerCase();
         const isAdmin = isAdminEmail(uEmail);
 
+        // Fetch user's persistent premium and promo data from database
+        let isPrem = isAdmin;
+        let expAt: string | null = null;
+        let promoCode: string | undefined = undefined;
+
+        try {
+          const { data: dbUser } = await supabase
+            .from('registered_users')
+            .select('is_premium, premium_expires_at, applied_promo_code, role')
+            .eq('email', uEmail)
+            .maybeSingle();
+
+          if (dbUser) {
+            if (dbUser.premium_expires_at) {
+              const isStillValid = new Date(dbUser.premium_expires_at).getTime() > Date.now();
+              if (isStillValid) {
+                isPrem = true;
+                expAt = dbUser.premium_expires_at;
+              }
+            } else if (dbUser.is_premium) {
+              isPrem = true;
+            }
+            promoCode = dbUser.applied_promo_code || undefined;
+          }
+        } catch (dbErr) {
+          console.warn('Could not load user profile from database:', dbErr);
+        }
+
+        // Fallback to local storage if DB query had no active record yet
+        if (!isPrem) {
+          const localUser = getRegisteredUsersLocal().find((usr) => usr.email.toLowerCase() === uEmail);
+          if (localUser?.isPremium) {
+            if (localUser.premiumExpiresAt) {
+              if (new Date(localUser.premiumExpiresAt).getTime() > Date.now()) {
+                isPrem = true;
+                expAt = localUser.premiumExpiresAt;
+              }
+            } else {
+              isPrem = true;
+            }
+            promoCode = localUser.appliedPromoCode;
+          }
+        }
+
         const loggedUser: User = {
           id: u.id,
           email: u.email || '',
           name: u.user_metadata?.name || u.email?.split('@')[0] || 'User',
           role: isAdmin ? 'admin' : 'user',
-          isPremium: isAdmin ? true : Boolean(u.user_metadata?.is_premium),
-          premiumExpiresAt: isAdmin ? null : u.user_metadata?.premium_until || null,
+          isPremium: isPrem,
+          premiumExpiresAt: isAdmin ? null : expAt,
+          appliedPromoCode: promoCode,
         };
 
         setCurrentUser(loggedUser);
@@ -319,24 +365,74 @@ export const TrainerApp: React.FC<TrainerAppProps> = ({ theme, onToggleTheme }) 
   };
 
   const handleRedeemPromoCode = (codeStr: string) => {
-    const code = promoCodes.find((p) => p.code.toLowerCase() === codeStr.trim().toLowerCase());
+    const cleanCode = codeStr.trim().toLowerCase();
+    const code = promoCodes.find((p) => p.code.toLowerCase() === cleanCode);
     if (!code) {
       showToast('Ungültiger Aktionscode', 'error');
       return { success: false, message: 'Ungültiger Aktionscode' };
     }
 
-    if (currentUser) {
-      const updatedUser: User = {
-        ...currentUser,
-        isPremium: true,
-        premiumExpiresAt: null,
-      };
-      setCurrentUser(updatedUser);
-      setCurrentUserTab(updatedUser);
-      syncUserToRegisteredList(updatedUser);
+    if (!code.active) {
+      showToast('Dieser Aktionscode ist abgelaufen oder inaktiv', 'error');
+      return { success: false, message: 'Aktionscode nicht mehr aktiv' };
     }
+
+    const durationDays = code.durationDays || null;
+    const expiresAt = durationDays
+      ? new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString()
+      : null;
+
+    const userToUpdate: User = currentUser || {
+      id: `anon-${Date.now()}`,
+      name: 'Gast',
+      email: 'gast@beruf-b2.com',
+      role: 'user',
+      isPremium: true,
+      premiumExpiresAt: expiresAt,
+      appliedPromoCode: code.code,
+    };
+
+    const updatedUser: User = {
+      ...userToUpdate,
+      isPremium: true,
+      premiumExpiresAt: expiresAt,
+      appliedPromoCode: code.code,
+    };
+
+    setCurrentUser(updatedUser);
+    setCurrentUserTab(updatedUser);
+    syncUserToRegisteredList(updatedUser);
+
+    // Sync redemption to Supabase Cloud in background
+    if (isSupabaseConfigured) {
+      (async () => {
+        try {
+          if (updatedUser.email && !updatedUser.email.startsWith('anon-')) {
+            await supabase
+              .from('registered_users')
+              .update({
+                is_premium: true,
+                premium_expires_at: expiresAt,
+                applied_promo_code: code.code,
+              })
+              .eq('email', updatedUser.email.toLowerCase());
+          }
+
+          // Increment promo code used count in DB
+          await supabase
+            .from('promo_codes')
+            .update({
+              used_count: (code.usedCount || 0) + 1,
+            })
+            .eq('code', code.code);
+        } catch (dbErr) {
+          console.warn('Could not sync promo redemption to Supabase:', dbErr);
+        }
+      })();
+    }
+
     confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-    showToast(`🎉 Code "${code.code}" erfolgreich eingelöst! Premium aktiviert.`, 'success');
+    showToast(`🎉 Code "${code.code}" erfolgreich eingelöst! Premium aktiviert (${durationDays ? durationDays + ' Tage' : 'Dauerhaft'}).`, 'success');
     return { success: true, message: 'Code erfolgreich eingelöst', durationDays: code.durationDays };
   };
 

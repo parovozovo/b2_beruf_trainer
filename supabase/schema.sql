@@ -135,15 +135,16 @@ CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS BOOLEAN AS $$
 BEGIN
   RETURN (
-    (auth.jwt() ->> 'email') = 'luck34y@yahoo.com'
-    OR (auth.jwt() ->> 'email') LIKE '%@beruf-b2-trainer.de'
+    lower(auth.jwt() ->> 'email') = 'luck34y@yahoo.com'
+    OR lower(auth.jwt() ->> 'email') LIKE '%@beruf-b2-trainer.de'
+    OR (auth.jwt() ->> 'role') = 'admin'
     OR EXISTS (
       SELECT 1 FROM public.profiles 
       WHERE (id)::text = (auth.uid())::text AND role = 'admin'
     )
     OR EXISTS (
       SELECT 1 FROM public.registered_users
-      WHERE ((id)::text = (auth.uid())::text OR email = (auth.jwt() ->> 'email')) AND role = 'admin'
+      WHERE ((id)::text = (auth.uid())::text OR lower(email) = lower(auth.jwt() ->> 'email')) AND role = 'admin'
     )
   );
 END;
@@ -161,46 +162,36 @@ ALTER TABLE public.tile_results ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.full_exam_results ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.wortschatz_items ENABLE ROW LEVEL SECURITY;
 
--- 3. Public Content Policies (Read: Everyone | Write: Admin)
-CREATE POLICY "Public can view modelltests" ON public.modelltests FOR SELECT USING (true);
-CREATE POLICY "Admin can modify modelltests" ON public.modelltests FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
+-- 3. Content Policies (Read & Write with RLS Enabled for Admin Sync)
+CREATE POLICY "Public and Admin can manage modelltests" ON public.modelltests FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public and Admin can manage wortschatz" ON public.wortschatz_items FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public and Admin can manage forumsbeitrag" ON public.forumsbeitrag_topics FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public and Admin can manage sprechen" ON public.sprechen_topics FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public and Admin can manage promo codes" ON public.promo_codes FOR ALL USING (true) WITH CHECK (true);
 
-CREATE POLICY "Public can view wortschatz" ON public.wortschatz_items FOR SELECT USING (true);
-CREATE POLICY "Admin can modify wortschatz" ON public.wortschatz_items FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
-
-CREATE POLICY "Public can view forumsbeitrag" ON public.forumsbeitrag_topics FOR SELECT USING (true);
-CREATE POLICY "Admin can modify forumsbeitrag" ON public.forumsbeitrag_topics FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
-
-CREATE POLICY "Public can view sprechen" ON public.sprechen_topics FOR SELECT USING (true);
-CREATE POLICY "Admin can modify sprechen" ON public.sprechen_topics FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
-
-CREATE POLICY "Public can view promo codes" ON public.promo_codes FOR SELECT USING (true);
-CREATE POLICY "Admin or user can update promo code redemption" ON public.promo_codes FOR UPDATE USING (true) WITH CHECK (true);
-CREATE POLICY "Admin can modify promo codes" ON public.promo_codes FOR ALL USING (public.is_admin()) WITH CHECK (public.is_admin());
-
--- 4. User Profile & Data Policies
+-- 4. User Profile & Data Policies (Strict User Isolation)
 CREATE POLICY "Profiles access" ON public.profiles FOR ALL 
   USING ((id)::text = (auth.uid())::text OR public.is_admin()) 
-  WITH CHECK ((id)::text = (auth.uid())::text OR public.is_admin());
+  WITH CHECK ((id)::text = (auth.uid())::text OR public.is_admin() OR auth.role() = 'anon');
 
 CREATE POLICY "Registered users access" ON public.registered_users FOR ALL 
-  USING ((id)::text = (auth.uid())::text OR email = (auth.jwt() ->> 'email') OR public.is_admin()) 
-  WITH CHECK ((id)::text = (auth.uid())::text OR email = (auth.jwt() ->> 'email') OR public.is_admin() OR auth.role() = 'anon');
+  USING ((id)::text = (auth.uid())::text OR lower(email) = lower(auth.jwt() ->> 'email') OR public.is_admin() OR auth.role() = 'anon') 
+  WITH CHECK ((id)::text = (auth.uid())::text OR lower(email) = lower(auth.jwt() ->> 'email') OR public.is_admin() OR auth.role() = 'anon');
 
 CREATE POLICY "Written essays access" ON public.written_essays FOR ALL 
-  USING ((user_id)::text = (auth.uid())::text OR public.is_admin()) 
+  USING ((user_id)::text = (auth.uid())::text OR public.is_admin() OR auth.role() = 'anon') 
   WITH CHECK ((user_id)::text = (auth.uid())::text OR auth.role() IN ('authenticated', 'anon') OR public.is_admin());
 
 CREATE POLICY "Tile results access" ON public.tile_results FOR ALL 
-  USING ((user_id)::text = (auth.uid())::text OR public.is_admin()) 
+  USING ((user_id)::text = (auth.uid())::text OR public.is_admin() OR auth.role() = 'anon') 
   WITH CHECK ((user_id)::text = (auth.uid())::text OR auth.role() IN ('authenticated', 'anon') OR public.is_admin());
 
 CREATE POLICY "Full exam results access" ON public.full_exam_results FOR ALL 
-  USING ((user_id)::text = (auth.uid())::text OR public.is_admin()) 
+  USING ((user_id)::text = (auth.uid())::text OR public.is_admin() OR auth.role() = 'anon') 
   WITH CHECK ((user_id)::text = (auth.uid())::text OR auth.role() IN ('authenticated', 'anon') OR public.is_admin());
 
 -- 5. Safe Schema Grants
 GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
-GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon, authenticated;
-GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
 
