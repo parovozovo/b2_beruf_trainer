@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Crown,
   CheckCircle2,
@@ -84,10 +84,26 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({
   onActivateSubscription: _onActivateSubscription,
   onNavigateToTab,
 }) => {
-  const [selectedPlanId, setSelectedPlanId] = useState<string>('standard_30d');
+  const [selectedPlanId, setSelectedPlanId] = useState<string>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const planParam = params.get('plan');
+    if (planParam && SUBSCRIPTION_PLANS.some((p) => p.id === planParam)) {
+      return planParam;
+    }
+    return 'standard_30d';
+  });
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [showComingSoonModal, setShowComingSoonModal] = useState<boolean>(false);
   const [justPurchasedPlan] = useState<SubscriptionPlan | null>(null);
+
+  // Also react to search param changes if navigation occurs
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const planParam = params.get('plan');
+    if (planParam && SUBSCRIPTION_PLANS.some((p) => p.id === planParam)) {
+      setSelectedPlanId(planParam);
+    }
+  }, []);
 
   const selectedPlan = SUBSCRIPTION_PLANS.find((p) => p.id === selectedPlanId) || SUBSCRIPTION_PLANS[1];
   const isAlreadyPremium = Boolean(currentUser?.isPremium);

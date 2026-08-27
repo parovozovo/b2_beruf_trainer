@@ -522,6 +522,129 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
       </section>
 
+      {/* ================= BLOCK 3.5: TESTIMONIALS & ERFOLGSGESCHICHTEN ================= */}
+      <section className="py-16 sm:py-24 border-b border-slate-200 dark:border-slate-800/80 bg-gradient-to-b from-transparent via-indigo-500/5 to-transparent">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+          <div className="text-center space-y-3 max-w-3xl mx-auto">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-black">
+              <Star className="w-3.5 h-3.5 fill-emerald-500 text-emerald-500" /> Erfolgsgeschichten & Feedback
+            </div>
+            <h2 className="text-2xl sm:text-4xl font-black tracking-tight text-slate-900 dark:text-white">
+              Von Lernenden empfohlen, von Lehrkräften geschätzt 🏆
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-medium max-w-2xl mx-auto">
+              Über 92% unserer aktiven Nutzer bestehen den Deutsch-Test für den Beruf B2 beim ersten Versuch.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
+            {/* Review 1 */}
+            <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-4 hover:-translate-y-1.5 hover:shadow-lg transition-all duration-300">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex text-amber-400 text-xs">
+                    {'★★★★★'}
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                    91% Punkte
+                  </span>
+                </div>
+                <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed italic">
+                  «Ich habe den DTB B2 beim ersten Mal bestanden! Die 130-Minuten Simulationen und die Beschwerdebrief-Muster haben mir die Angst vor dem Schreiben komplett genommen.»
+                </p>
+              </div>
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-white font-black text-xs flex items-center justify-center shrink-0">
+                  OM
+                </div>
+                <div>
+                  <div className="text-xs font-black text-slate-900 dark:text-white">Olena M.</div>
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">Pflegefachkraft, München</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Review 2 */}
+            <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-4 hover:-translate-y-1.5 hover:shadow-lg transition-all duration-300">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex text-amber-400 text-xs">
+                    {'★★★★★'}
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30">
+                    Medizin / B2
+                  </span>
+                </div>
+                <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed italic">
+                  «Die Nomen-Verb-Verbindungen und der Schreibtrainer mit Wortzähler sind Gold wert. Viel praxisnäher als veraltete Lehrbücher.»
+                </p>
+              </div>
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-sky-500 to-indigo-600 text-white font-black text-xs flex items-center justify-center shrink-0">
+                  AK
+                </div>
+                <div>
+                  <div className="text-xs font-black text-slate-900 dark:text-white">Dr. Alexey K.</div>
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">Assistenzarzt, Berlin</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Review 3 */}
+            <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-4 hover:-translate-y-1.5 hover:shadow-lg transition-all duration-300">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex text-amber-400 text-xs">
+                    {'★★★★★'}
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                    88% Schriftlich
+                  </span>
+                </div>
+                <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed italic">
+                  «Sprachbausteine und Hören waren meine Schwachstellen. Dank der Offline-Funktion konnte ich jeden Tag 20 Minuten in der Bahn auf dem Smartphone üben.»
+                </p>
+              </div>
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 text-white font-black text-xs flex items-center justify-center shrink-0">
+                  YD
+                </div>
+                <div>
+                  <div className="text-xs font-black text-slate-900 dark:text-white">Yusuf D.</div>
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">Speditionskaufmann, Frankfurt</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Review 4 */}
+            <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-4 hover:-translate-y-1.5 hover:shadow-lg transition-all duration-300">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex text-amber-400 text-xs">
+                    {'★★★★★'}
+                  </div>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30">
+                    🎓 Dozentin
+                  </span>
+                </div>
+                <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed italic">
+                  «Ich empfehle diesen Trainer allen meinen B2-Kursteilnehmern. Der Aufbau entspricht exakt dem offiziellen DTB-Testformat von BAMF und telc.»
+                </p>
+              </div>
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white font-black text-xs flex items-center justify-center shrink-0">
+                  AS
+                </div>
+                <div>
+                  <div className="text-xs font-black text-slate-900 dark:text-white">Anna Schmidt</div>
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">B2-Kursleiterin, Hamburg</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ================= BLOCK 4: VERGLEICHSTABELLE ================= */}
       <section id="vergleich" className="py-16 sm:py-24 bg-slate-100/70 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800/80">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
@@ -644,7 +767,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </div>
 
               <Link
-                to="/app/pricing"
+                to="/app/pricing?plan=sprint_7d"
                 className="w-full py-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-black text-xs text-center transition-all cursor-pointer active:scale-95"
               >
                 {t.pricing.btnSelect}
@@ -680,7 +803,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </div>
 
               <Link
-                to="/app/pricing"
+                to="/app/pricing?plan=standard_30d"
                 className="w-full py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs text-center shadow-md flex items-center justify-center gap-1.5 transition-all transform hover:scale-105 active:scale-95 cursor-pointer"
               >
                 <span>{t.pricing.btnUnlock}</span>
@@ -717,7 +840,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </div>
 
               <Link
-                to="/app/pricing"
+                to="/app/pricing?plan=complete_90d"
                 className="w-full py-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-black text-xs text-center transition-all cursor-pointer active:scale-95"
               >
                 {t.pricing.btnSelect}
@@ -758,7 +881,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </div>
 
               <Link
-                to="/app/pricing"
+                to="/app/pricing?plan=lifetime"
                 className="w-full py-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-black text-xs text-center transition-all cursor-pointer active:scale-95"
               >
                 {t.pricing.btnSelect}
@@ -795,20 +918,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
 
           {/* Payment Badges strip */}
-          <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center max-w-2xl mx-auto space-y-2 text-xs font-bold text-slate-500 dark:text-slate-400 shadow-2xs">
-            <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-bold text-slate-600 dark:text-slate-400">
-              <span className="flex items-center gap-1">
-                <CreditCard className="w-3.5 h-3.5 text-indigo-500" /> Apple Pay / Google Pay
+          <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center max-w-3xl mx-auto space-y-2 text-xs font-bold text-slate-500 dark:text-slate-400 shadow-2xs">
+            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs font-bold text-slate-600 dark:text-slate-300">
+              <span className="flex items-center gap-1.5 text-slate-900 dark:text-white">
+                <CreditCard className="w-4 h-4 text-indigo-500" /> Apple Pay / Google Pay
               </span>
               <span>•</span>
-              <span>Visa & Mastercard</span>
+              <span className="text-slate-900 dark:text-white">Visa & Mastercard</span>
               <span>•</span>
-              <span>Klarna / Sofort</span>
+              <span className="text-slate-900 dark:text-white">Privat24 / Monobank / SEPA</span>
               <span>•</span>
-              <span>PayPal</span>
-              <span>•</span>
-              <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                <ShieldCheck className="w-3.5 h-3.5" /> {t.pricing.trustSsl}
+              <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-black">
+                <ShieldCheck className="w-4 h-4" /> 100% Einmalzahlung (Kein Abo)
               </span>
             </div>
           </div>

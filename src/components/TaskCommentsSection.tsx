@@ -142,13 +142,28 @@ export const TaskCommentsSection: React.FC<TaskCommentsSectionProps> = ({
     };
   }, [testId, tileType, variantId]);
 
+  const [lastPostTime, setLastPostTime] = useState<number>(0);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
     const cleanText = commentText.trim();
-    if (!cleanText) {
-      setError('Bitte geben Sie einen Text ein.');
+    if (!cleanText || cleanText.length < 5) {
+      setError('Der Kommentar muss mindestens 5 Zeichen lang sein.');
+      return;
+    }
+
+    if (cleanText.length > 1200) {
+      setError('Der Kommentar darf maximal 1200 Zeichen lang sein.');
+      return;
+    }
+
+    // Rate limiting: 20 seconds cooldown (except admin)
+    const now = Date.now();
+    if (!isAdmin && now - lastPostTime < 20000) {
+      const remainingSecs = Math.ceil((20000 - (now - lastPostTime)) / 1000);
+      setError(`Bitte warten Sie noch ${remainingSecs} Sekunden vor dem nächsten Kommentar.`);
       return;
     }
 
@@ -168,6 +183,7 @@ export const TaskCommentsSection: React.FC<TaskCommentsSectionProps> = ({
       if (res.success && res.comment) {
         setComments((prev) => [...prev, res.comment!]);
         setCommentText('');
+        setLastPostTime(Date.now());
       } else {
         setError(res.error || 'Fehler beim Senden.');
       }

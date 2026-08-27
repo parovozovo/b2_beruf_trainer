@@ -1,3 +1,7 @@
 User-agent: *
 Allow: /
-Sitemap: https://beruf-b2-trainer.de/sitemap.xml
+Allow: /blog
+Allow: /blog/*
+Disallow: /app/admin
+
+Sitemap: https://beruf-b2.com/sitemap.xml
