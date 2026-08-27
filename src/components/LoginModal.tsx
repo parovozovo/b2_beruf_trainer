@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, UserCheck, Lock, Mail, LogIn, ShieldAlert, UserPlus } from 'lucide-react';
-import type { User, UserRole } from '../types';
-import { isAdminEmail, isFreeTrialEnabled, syncUserToRegisteredList, getRegisteredUsersLocal } from '../utils/storage';
+import type { User, UserRole, PromoCode } from '../types';
+import { isAdminEmail, isFreeTrialEnabled, syncUserToRegisteredList, getRegisteredUsersLocal, getPromoCodesLocal, savePromoCodesLocal } from '../utils/storage';
 import { supabase, isSupabaseConfigured } from '../utils/supabase';
 import { openLegalModal } from './legal/LegalModal';
 
@@ -9,21 +9,75 @@ interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
   currentUser: User | null;
+  initialMode?: 'signin' | 'signup' | 'forgot_password';
   onLoginSuccess: (user: User, navigateToAdmin?: boolean) => void;
 }
 
 export const LoginModal: React.FC<LoginModalProps> = ({
   isOpen,
   onClose,
+  initialMode = 'signin',
   onLoginSuccess,
 }) => {
-  const [mode, setMode] = useState<'signin' | 'signup' | 'forgot_password'>('signin');
+  const [mode, setMode] = useState<'signin' | 'signup' | 'forgot_password'>(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successInfo, setSuccessInfo] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (isOpen && initialMode) {
+      setMode(initialMode);
+    }
+  }, [isOpen, initialMode]);
+
+  // Check for active pending promo code
+  const pendingPromoCodeStr = typeof window !== 'undefined'
+    ? localStorage.getItem('b2_pending_promo') || new URLSearchParams(window.location.search).get('promo') || ''
+    : '';
+  const localPromoList = getPromoCodesLocal();
+  const activePromo = localPromoList.find(
+    (p: PromoCode) => p.code.toUpperCase() === pendingPromoCodeStr.trim().toUpperCase() && p.active
+  );
+
+  const applyPromoToNewUser = async (cleanEmail: string) => {
+    if (!activePromo) return { promoCode: undefined, isPremium: false, expiresAt: null };
+
+    const hasFreeDays = Boolean(activePromo.durationDays && activePromo.durationDays > 0);
+    const expiresAt = hasFreeDays
+      ? new Date(Date.now() + (activePromo.durationDays || 30) * 86400000).toISOString()
+      : null;
+
+    const updatedUsedBy = Array.from(new Set([...(activePromo.usedByEmails || []), cleanEmail]));
+    const updatedCount = (activePromo.usedCount || 0) + 1;
+    const updatedCodes = localPromoList.map((p: PromoCode) =>
+      p.id === activePromo.id ? { ...p, usedCount: updatedCount, usedByEmails: updatedUsedBy } : p
+    );
+
+    savePromoCodesLocal(updatedCodes);
+    if (isSupabaseConfigured) {
+      try {
+        await supabase
+          .from('promo_codes')
+          .update({
+            used_count: updatedCount,
+            used_by_emails: updatedUsedBy,
+          })
+          .eq('code', activePromo.code);
+      } catch (e) {
+        console.warn('Could not sync promo update to Supabase:', e);
+      }
+    }
+
+    localStorage.removeItem('b2_pending_promo');
+    return {
+      promoCode: activePromo.code,
+      isPremium: hasFreeDays,
+      expiresAt: expiresAt,
+    };
+  };
 
   if (!isOpen) return null;
 
@@ -125,17 +179,22 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               setLoading(false);
               return;
             }
+
+            const promoInfo = await applyPromoToNewUser(cleanEmail);
             const freeTrialOn = isFreeTrialEnabled();
             const trialExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-            const givePremium = isAdmin || freeTrialOn;
+            const givePremium = isAdmin || promoInfo.isPremium || freeTrialOn;
+            const finalExpiresAt = isAdmin ? null : (promoInfo.isPremium ? promoInfo.expiresAt : (freeTrialOn ? trialExpiresAt : null));
+            const finalPromoCode = isAdmin ? undefined : (promoInfo.promoCode || (freeTrialOn ? 'FREE-TRIAL-24H' : undefined));
+
             const newUser: User = {
               id: data.user.id,
               name: fullName.trim() || cleanEmail.split('@')[0],
               email: cleanEmail,
               role: isAdmin ? 'admin' : 'user',
               isPremium: givePremium,
-              premiumExpiresAt: isAdmin ? null : (freeTrialOn ? trialExpiresAt : null),
-              appliedPromoCode: isAdmin ? undefined : (freeTrialOn ? 'FREE-TRIAL-24H' : undefined),
+              premiumExpiresAt: finalExpiresAt,
+              appliedPromoCode: finalPromoCode,
               createdAt: new Date().toISOString(),
               lastLoginAt: new Date().toISOString(),
             };
@@ -176,7 +235,15 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             const isExpValid = exp ? new Date(exp).getTime() > Date.now() : false;
 
             const isPrem = isAdmin ? true : (isExpValid || Boolean(existingInDb?.is_premium) || Boolean(existingLocal?.isPremium));
-            const promo = (existingInDb?.applied_promo_code ? String(existingInDb.applied_promo_code) : undefined) || existingLocal?.appliedPromoCode;
+            let promo = (existingInDb?.applied_promo_code ? String(existingInDb.applied_promo_code) : undefined) || existingLocal?.appliedPromoCode;
+
+            // If user did not have a promo attached, but has a pending promo from URL
+            if (!promo && activePromo) {
+              const promoInfo = await applyPromoToNewUser(cleanEmail);
+              if (promoInfo.promoCode) {
+                promo = promoInfo.promoCode;
+              }
+            }
 
             const loggedInUser: User = {
               id: data.user.id,
@@ -196,17 +263,21 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         }
       } else {
         // Direct Local Auth fallback
+        const promoInfo = await applyPromoToNewUser(cleanEmail);
         const freeTrialOn = isFreeTrialEnabled();
         const trialExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-        const givePremium = isAdmin || freeTrialOn;
+        const givePremium = isAdmin || promoInfo.isPremium || freeTrialOn;
+        const finalExpiresAt = isAdmin ? null : (promoInfo.isPremium ? promoInfo.expiresAt : (freeTrialOn ? trialExpiresAt : null));
+        const finalPromoCode = isAdmin ? undefined : (promoInfo.promoCode || (freeTrialOn ? 'FREE-TRIAL-24H' : undefined));
+
         const loggedUser: User = {
           id: `user-${Date.now()}`,
           name: fullName.trim() || cleanEmail.split('@')[0],
           email: cleanEmail,
           role: isAdmin ? 'admin' : 'user',
           isPremium: givePremium,
-          premiumExpiresAt: isAdmin ? null : (freeTrialOn ? trialExpiresAt : null),
-          appliedPromoCode: isAdmin ? undefined : (freeTrialOn ? 'FREE-TRIAL-24H' : undefined),
+          premiumExpiresAt: finalExpiresAt,
+          appliedPromoCode: finalPromoCode,
           createdAt: new Date().toISOString(),
           lastLoginAt: new Date().toISOString(),
         };
@@ -265,6 +336,25 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center gap-2 text-xs text-emerald-300 font-bold">
             <Mail className="w-4 h-4 shrink-0 text-emerald-400" />
             <span>{successInfo}</span>
+          </div>
+        )}
+
+        {activePromo && mode === 'signup' && (
+          <div className="p-3 bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-indigo-500/15 border border-amber-500/30 rounded-2xl flex items-center gap-3 text-xs text-amber-200">
+            <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0 text-base font-bold">
+              🎉
+            </div>
+            <div>
+              <div className="font-bold text-amber-300 flex items-center gap-1.5">
+                <span>Vorteilscode aktiv:</span>
+                <span className="font-mono bg-amber-500/20 px-1.5 py-0.5 rounded text-amber-200">{activePromo.code}</span>
+              </div>
+              <div className="text-[11px] text-slate-300 mt-0.5">
+                {activePromo.durationDays > 0
+                  ? `${activePromo.durationDays} Tage VIP-Zugang werden bei Registrierung sofort freigeschaltet!`
+                  : `-${activePromo.discountPercent}% Rabatt werden auf alle Tarife im Shop gutgeschrieben!`}
+              </div>
+            </div>
           </div>
         )}
 

@@ -5,12 +5,13 @@ import { PricingPage } from './components/landing/PricingPage';
 import { BlogPage } from './components/blog/BlogPage';
 import { BlogPostReader } from './components/blog/BlogPostReader';
 import { TrainerApp } from './components/TrainerApp';
-import { getCurrentUser, setCurrentUser, getPromoCodesLocal, syncUserToRegisteredList } from './utils/storage';
+import { getCurrentUser, setCurrentUser, getPromoCodesLocal, syncUserToRegisteredList, fetchPromoCodesAsync } from './utils/storage';
 import { supabase, isSupabaseConfigured } from './utils/supabase';
 import { LoginModal } from './components/LoginModal';
 import { PromoModal } from './components/PromoModal';
 import { ResetPasswordModal } from './components/ResetPasswordModal';
-import type { User } from './types';
+import { PartnerPromoBannerModal } from './components/PartnerPromoBannerModal';
+import type { User, PromoCode } from './types';
 
 export function App() {
   // Theme State
@@ -41,9 +42,44 @@ export function App() {
   // Shared User & Modal States
   const [currentUser, setCurrentUserState] = useState<User | null>(getCurrentUser());
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [loginModalMode, setLoginModalMode] = useState<'signin' | 'signup' | 'forgot_password'>('signin');
   const [isPromoModalOpen, setIsPromoModalOpen] = useState(false);
   const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
+  const [isPartnerPromoModalOpen, setIsPartnerPromoModalOpen] = useState(false);
+  const [detectedPartnerPromo, setDetectedPartnerPromo] = useState<PromoCode | null>(null);
   const [promoCodes] = useState(getPromoCodesLocal());
+
+  // Listen to URL referral/promo codes globally (?promo=CODE or ?gutschein=CODE)
+  useEffect(() => {
+    const checkPromoParam = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const urlPromo = params.get('promo') || params.get('gutschein');
+      const promoParam = urlPromo || localStorage.getItem('b2_pending_promo');
+
+      if (promoParam) {
+        const clean = promoParam.trim().toUpperCase();
+        localStorage.setItem('b2_pending_promo', clean);
+
+        let list = getPromoCodesLocal();
+        if (isSupabaseConfigured) {
+          try {
+            const cloudList = await fetchPromoCodesAsync();
+            if (cloudList && cloudList.length > 0) list = cloudList;
+          } catch (e) {
+            console.warn('Could not fetch cloud promo list on app load:', e);
+          }
+        }
+        const found = list.find((c) => c.code.toUpperCase() === clean && c.active);
+        if (found) {
+          setDetectedPartnerPromo(found);
+          if (urlPromo) {
+            setIsPartnerPromoModalOpen(true);
+          }
+        }
+      }
+    };
+    checkPromoParam();
+  }, []);
 
   // Listen to global hash events (password reset, email verification, admin redirect)
   useEffect(() => {
@@ -84,6 +120,12 @@ export function App() {
             <LandingPage
               theme={theme}
               onToggleTheme={handleToggleTheme}
+              pendingPromo={detectedPartnerPromo}
+              onOpenLoginModal={(mode) => {
+                setLoginModalMode(mode || 'signin');
+                setIsLoginModalOpen(true);
+              }}
+              onOpenPromoBanner={() => setIsPartnerPromoModalOpen(true)}
             />
           }
         />
@@ -118,6 +160,7 @@ export function App() {
       {/* Global Modals accessible across public pages */}
       <LoginModal
         isOpen={isLoginModalOpen}
+        initialMode={loginModalMode}
         onClose={() => setIsLoginModalOpen(false)}
         currentUser={currentUser}
         onLoginSuccess={(user) => {
@@ -150,6 +193,36 @@ export function App() {
             setCurrentUserState(updatedUser);
             syncUserToRegisteredList(updatedUser);
           }
+        }}
+      />
+
+      <PartnerPromoBannerModal
+        isOpen={isPartnerPromoModalOpen}
+        onClose={() => setIsPartnerPromoModalOpen(false)}
+        promoCode={detectedPartnerPromo}
+        currentUser={currentUser}
+        onActivate={(code) => {
+          if (currentUser) {
+            const hasFreeDays = Boolean(code.durationDays && code.durationDays > 0);
+            const durationDays = hasFreeDays ? code.durationDays : null;
+            const expiresAt = hasFreeDays && durationDays
+              ? new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString()
+              : (currentUser.premiumExpiresAt || null);
+
+            const updatedUser: User = {
+              ...currentUser,
+              isPremium: hasFreeDays ? true : currentUser.isPremium,
+              premiumExpiresAt: expiresAt,
+              appliedPromoCode: code.code,
+            };
+            setCurrentUser(updatedUser);
+            setCurrentUserState(updatedUser);
+            syncUserToRegisteredList(updatedUser);
+          }
+        }}
+        onOpenRegister={() => {
+          setLoginModalMode('signup');
+          setIsLoginModalOpen(true);
         }}
       />
 

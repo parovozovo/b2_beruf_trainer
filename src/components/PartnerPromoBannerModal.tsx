@@ -9,6 +9,7 @@ interface PartnerPromoBannerModalProps {
   promoCode: PromoCode | null;
   currentUser: User | null;
   onActivate: (code: PromoCode) => void;
+  onOpenRegister?: (promoCode: PromoCode) => void;
 }
 
 export const PartnerPromoBannerModal: React.FC<PartnerPromoBannerModalProps> = ({
@@ -17,10 +18,14 @@ export const PartnerPromoBannerModal: React.FC<PartnerPromoBannerModalProps> = (
   promoCode,
   currentUser,
   onActivate,
+  onOpenRegister,
 }) => {
   const [activated, setActivated] = useState(false);
 
   if (!isOpen || !promoCode) return null;
+
+  const hasFreeDays = Boolean(promoCode.durationDays && promoCode.durationDays > 0);
+  const hasDiscount = Boolean(promoCode.discountPercent && promoCode.discountPercent > 0);
 
   const getPartnerIcon = (url?: string) => {
     if (!url) return <ExternalLink className="w-4 h-4" />;
@@ -47,6 +52,13 @@ export const PartnerPromoBannerModal: React.FC<PartnerPromoBannerModalProps> = (
   };
 
   const handleActivateClick = () => {
+    if (!currentUser && onOpenRegister) {
+      localStorage.setItem('b2_pending_promo', promoCode.code);
+      onClose();
+      onOpenRegister(promoCode);
+      return;
+    }
+
     onActivate(promoCode);
     setActivated(true);
     confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
@@ -56,7 +68,7 @@ export const PartnerPromoBannerModal: React.FC<PartnerPromoBannerModalProps> = (
     }, 2400);
   };
 
-  const isAlreadyClaimed = currentUser?.appliedPromoCode === promoCode.code;
+  const isAlreadyClaimed = currentUser?.appliedPromoCode?.toUpperCase() === promoCode.code.toUpperCase();
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fadeIn">
@@ -82,10 +94,10 @@ export const PartnerPromoBannerModal: React.FC<PartnerPromoBannerModalProps> = (
           </div>
           <div>
             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wide bg-amber-500/10 text-amber-400 border border-amber-500/30">
-              <Sparkles className="w-3 h-3" /> EXKLUSIVER PARTNER-GUTSCHEIN
+              <Sparkles className="w-3 h-3" /> EXKLUSIVER AKTIONSCODE: {promoCode.code}
             </div>
-            <h3 className="text-xl sm:text-2xl font-black text-white leading-tight">
-              {promoCode.partnerName ? `Empfehlung von ${promoCode.partnerName}` : 'Exklusiver Aktionscode'}
+            <h3 className="text-xl sm:text-2xl font-black text-white leading-tight mt-1">
+              {promoCode.partnerName ? `Empfehlung von ${promoCode.partnerName}` : 'Ihr persönlicher Vorteilscode'}
             </h3>
           </div>
         </div>
@@ -98,7 +110,11 @@ export const PartnerPromoBannerModal: React.FC<PartnerPromoBannerModalProps> = (
             </p>
           ) : (
             <p className="text-sm text-slate-300 leading-relaxed">
-              Sie haben einen Aktionscode erhalten! Schalten Sie jetzt alle 12 Module für die Prüfungsvorbereitung frei.
+              {hasFreeDays && hasDiscount
+                ? `Mit diesem Code erhalten Sie ${promoCode.durationDays} Tage kostenlosen VIP-Vollzugriff sowie ${promoCode.discountPercent}% Rabatt auf alle Tarife!`
+                : hasFreeDays
+                ? `Mit diesem Aktionscode schalten Sie sofort ${promoCode.durationDays} Tage kostenlosen VIP-Vollzugriff für alle Prüfungsteile frei.`
+                : `Mit diesem Aktionscode erhalten Sie exklusiv -${promoCode.discountPercent}% Rabatt auf alle Prüfungspakete.`}
             </p>
           )}
 
@@ -121,41 +137,85 @@ export const PartnerPromoBannerModal: React.FC<PartnerPromoBannerModalProps> = (
 
         {/* Benefits Card */}
         <div className="grid grid-cols-2 gap-3 mb-6">
-          <div className="p-3 bg-indigo-950/40 border border-indigo-500/30 rounded-xl text-center">
-            <span className="block text-2xl font-black text-indigo-400">
-              {promoCode.durationDays >= 999 ? '∞' : `${promoCode.durationDays} Tage`}
-            </span>
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Kostenloser Premium</span>
-          </div>
-          <div className="p-3 bg-emerald-950/40 border border-emerald-500/30 rounded-xl text-center">
-            <span className="block text-2xl font-black text-emerald-400">100%</span>
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Alle DTB B2 Module</span>
-          </div>
+          {hasFreeDays && hasDiscount ? (
+            <>
+              <div className="p-3 bg-indigo-950/40 border border-indigo-500/30 rounded-xl text-center">
+                <span className="block text-2xl font-black text-indigo-400">
+                  {promoCode.durationDays >= 999 ? '∞' : `${promoCode.durationDays} Tage`}
+                </span>
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Kostenlos VIP</span>
+              </div>
+              <div className="p-3 bg-amber-950/40 border border-amber-500/30 rounded-xl text-center">
+                <span className="block text-2xl font-black text-amber-400">-{promoCode.discountPercent}%</span>
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Rabatt im Shop</span>
+              </div>
+            </>
+          ) : hasDiscount ? (
+            <>
+              <div className="p-3 bg-amber-950/40 border border-amber-500/30 rounded-xl text-center">
+                <span className="block text-2xl font-black text-amber-400">-{promoCode.discountPercent}%</span>
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Exklusiv-Rabatt</span>
+              </div>
+              <div className="p-3 bg-emerald-950/40 border border-emerald-500/30 rounded-xl text-center">
+                <span className="block text-2xl font-black text-emerald-400">100%</span>
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Alle DTB B2 Module</span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="p-3 bg-indigo-950/40 border border-indigo-500/30 rounded-xl text-center">
+                <span className="block text-2xl font-black text-indigo-400">
+                  {promoCode.durationDays >= 999 ? '∞' : `${promoCode.durationDays} Tage`}
+                </span>
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Kostenloser VIP</span>
+              </div>
+              <div className="p-3 bg-emerald-950/40 border border-emerald-500/30 rounded-xl text-center">
+                <span className="block text-2xl font-black text-emerald-400">100%</span>
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Alle DTB B2 Module</span>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Action Button */}
         {activated ? (
           <div className="p-4 bg-emerald-500/20 border border-emerald-500/40 rounded-2xl flex items-center justify-center gap-2 text-emerald-300 font-bold text-sm">
             <CheckCircle className="w-5 h-5 text-emerald-400" />
-            <span>Premium-Zugang erfolgreich aktiviert! 🎉</span>
+            <span>Aktionscode erfolgreich aktiviert! 🎉</span>
           </div>
         ) : isAlreadyClaimed ? (
           <div className="p-4 bg-slate-800/80 border border-slate-700 rounded-2xl text-center">
-            <p className="text-xs text-slate-400 mb-2">Sie nutzen diesen Aktionscode bereits auf Ihrem Konto.</p>
+            <p className="text-xs text-slate-400 mb-2">Dieser Code ist bereits mit Ihrem Konto verknüpft.</p>
             <button
               onClick={onClose}
-              className="w-full py-2.5 px-4 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl text-xs transition-colors"
+              className="w-full py-2.5 px-4 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl text-xs transition-colors cursor-pointer"
             >
-              Weiter zum Training
+              Weiter zur App
             </button>
           </div>
+        ) : !currentUser ? (
+          <button
+            onClick={handleActivateClick}
+            className="w-full py-3.5 px-6 bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 hover:from-amber-400 hover:via-orange-400 hover:to-pink-400 text-slate-950 font-black rounded-2xl text-sm shadow-xl shadow-amber-500/20 transition-all transform hover:scale-[1.02] active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
+          >
+            <Sparkles className="w-5 h-5" />
+            <span>
+              {hasFreeDays
+                ? `🚀 Kostenlos registrieren & ${promoCode.durationDays} Tage VIP sichern`
+                : `🏷️ Jetzt registrieren & -${promoCode.discountPercent}% Rabatt aktivieren`}
+            </span>
+          </button>
         ) : (
           <button
             onClick={handleActivateClick}
             className="w-full py-3.5 px-6 bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 hover:from-amber-400 hover:via-orange-400 hover:to-pink-400 text-slate-950 font-black rounded-2xl text-sm shadow-xl shadow-amber-500/20 transition-all transform hover:scale-[1.02] active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
           >
             <Sparkles className="w-5 h-5" />
-            <span>Jetzt {promoCode.durationDays >= 999 ? 'dauerhaft' : `${promoCode.durationDays} Tage`} gratis aktivieren</span>
+            <span>
+              {hasFreeDays
+                ? `Jetzt ${promoCode.durationDays >= 999 ? 'dauerhaft' : `${promoCode.durationDays} Tage`} gratis aktivieren`
+                : `Jetzt Code "${promoCode.code}" anwenden (-${promoCode.discountPercent}% Rabatt)`}
+            </span>
           </button>
         )}
       </div>

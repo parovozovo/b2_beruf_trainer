@@ -32,14 +32,22 @@ import {
 } from './landingContent';
 import { LegalModal, type LegalTab } from '../legal/LegalModal';
 
+import type { PromoCode } from '../../types';
+
 interface LandingPageProps {
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
+  pendingPromo?: PromoCode | null;
+  onOpenLoginModal?: (mode?: 'signin' | 'signup') => void;
+  onOpenPromoBanner?: () => void;
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({
   theme,
   onToggleTheme,
+  pendingPromo,
+  onOpenLoginModal,
+  onOpenPromoBanner,
 }) => {
   // Mobile Menu Drawer state
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -77,8 +85,34 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 selection:bg-indigo-600 selection:text-white transition-colors overflow-x-hidden w-full max-w-full">
       
+      {/* Top Sticky Promo Announcement Bar if promo is detected */}
+      {pendingPromo && (
+        <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 text-slate-950 px-3 sm:px-4 py-2 text-xs sm:text-sm font-black shadow-md flex items-center justify-center gap-2 sm:gap-4 flex-wrap z-50 sticky top-0">
+          <span className="flex items-center gap-1.5 text-center">
+            <Sparkles className="w-4 h-4 shrink-0 animate-pulse text-slate-950" />
+            <span>Aktionscode <strong>{pendingPromo.code}</strong> aktiv:</span>
+            <span className="underline decoration-slate-950/40 font-extrabold">
+              {pendingPromo.durationDays > 0
+                ? `${pendingPromo.durationDays} Tage VIP-Premium geschenkt`
+                : `-${pendingPromo.discountPercent}% Rabatt auf alle Tarife`}
+            </span>
+            {pendingPromo.partnerName && (
+              <span className="opacity-80 font-semibold text-[11px] hidden md:inline">
+                (Empfohlen von {pendingPromo.partnerName})
+              </span>
+            )}
+          </span>
+          <button
+            onClick={() => onOpenPromoBanner ? onOpenPromoBanner() : onOpenLoginModal?.('signup')}
+            className="px-3 py-1 bg-slate-950 text-white rounded-lg font-bold text-xs hover:bg-slate-800 transition-transform active:scale-95 shrink-0 shadow-sm cursor-pointer"
+          >
+            Jetzt einlösen ➔
+          </button>
+        </div>
+      )}
+
       {/* ================= HEADER / NAVBAR ================= */}
-      <header className="sticky top-0 z-40 pt-safe bg-white/90 dark:bg-slate-950/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 transition-colors w-full">
+      <header className={`sticky ${pendingPromo ? 'top-8 sm:top-9' : 'top-0'} z-40 pt-safe bg-white/90 dark:bg-slate-950/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 transition-colors w-full`}>
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 min-h-16 flex items-center justify-between gap-2 sm:gap-4">
           
           {/* App Brand with Logo */}
