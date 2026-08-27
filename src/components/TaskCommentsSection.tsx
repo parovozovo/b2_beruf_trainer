@@ -55,11 +55,23 @@ const ANONYMOUS_PERSONAS = [
 function getDisplayAuthor(cmt: TaskComment, currentUserId?: string | null) {
   if (cmt.userRole === 'admin') {
     return {
-      displayName: currentUserId === cmt.userId ? 'Dozent / Admin (Du)' : 'Dozent / Admin',
+      displayName: currentUserId === cmt.userId ? 'Administrator (Du)' : 'Administrator',
       avatarEmoji: '👑',
       avatarGradient: 'from-amber-500 to-orange-500',
       isYou: currentUserId === cmt.userId,
       isAdmin: true,
+      isTeacher: false,
+    };
+  }
+
+  if (cmt.userRole === 'teacher') {
+    return {
+      displayName: currentUserId === cmt.userId ? 'Lehrkraft / Dozent (Du)' : 'Lehrkraft / Dozent',
+      avatarEmoji: '🎓',
+      avatarGradient: 'from-purple-600 to-indigo-600',
+      isYou: currentUserId === cmt.userId,
+      isAdmin: false,
+      isTeacher: true,
     };
   }
 
@@ -174,8 +186,8 @@ export const TaskCommentsSection: React.FC<TaskCommentsSectionProps> = ({
         tileType,
         variantId,
         userId: effectiveUserId,
-        userName: isAdmin ? 'Dozent / Admin' : myPersona.name,
-        userRole: isAdmin ? 'admin' : 'user',
+        userName: isAdmin ? 'Administrator' : currentUser?.role === 'teacher' ? 'Lehrkraft / Dozent' : myPersona.name,
+        userRole: isAdmin ? 'admin' : currentUser?.role === 'teacher' ? 'teacher' : 'user',
         userEmail: currentUser?.email,
         content: cleanText,
       });

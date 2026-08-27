@@ -185,11 +185,15 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-lg font-black text-white">{currentUser.name}</h3>
-              {currentUser.role === 'admin' && (
+              {currentUser.role === 'admin' ? (
                 <span className="px-2 py-0.5 bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded text-[10px] font-bold">
-                  ADMIN
+                  👑 ADMIN
                 </span>
-              )}
+              ) : currentUser.role === 'teacher' ? (
+                <span className="px-2.5 py-0.5 bg-purple-500/20 text-purple-300 border border-purple-500/40 rounded-lg text-[10px] font-black flex items-center gap-1 shadow-xs ring-1 ring-purple-500/20">
+                  🎓 LEHRKRAFT / DOZENT
+                </span>
+              ) : null}
             </div>
             <p className="text-xs text-slate-400 font-mono flex items-center gap-1.5 mt-0.5">
               {currentUser.email}

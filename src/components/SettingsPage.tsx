@@ -291,6 +291,10 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 <span className="px-2.5 py-0.5 bg-rose-500/15 text-rose-800 dark:text-rose-300 border border-rose-500/30 rounded-full text-xs font-bold flex items-center gap-1">
                   <Shield className="w-3 h-3" /> Admin
                 </span>
+              ) : currentUser.role === 'teacher' ? (
+                <span className="px-2.5 py-0.5 bg-purple-500/15 text-purple-800 dark:text-purple-300 border border-purple-500/30 rounded-full text-xs font-bold flex items-center gap-1">
+                  🎓 Lehrkraft / Dozent
+                </span>
               ) : currentUser.isPremium ? (
                 <span className="px-2.5 py-0.5 bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30 rounded-full text-xs font-bold flex items-center gap-1">
                   <Sparkles className="w-3 h-3 text-amber-500" /> Premium

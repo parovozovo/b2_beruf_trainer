@@ -1,4 +1,4 @@
-import type { TaskComment } from '../types';
+import type { TaskComment, UserRole } from '../types';
 import { supabase, isSupabaseConfigured } from './supabase';
 
 const COMMENTS_CACHE_PREFIX = 'b2_task_comments_';
@@ -40,34 +40,32 @@ export async function fetchCommentsForTask(
         .from('task_comments')
         .select('*')
         .eq('target_key', targetKey)
-        .order('is_pinned', { ascending: false })
-        .order('upvotes', { ascending: false })
         .order('created_at', { ascending: true });
 
       if (!error && data) {
-        const comments: TaskComment[] = data.map((item: Record<string, unknown>) => ({
-          id: String(item.id),
-          testId: String(item.test_id),
-          tileType: String(item.tile_type),
-          variantId: String(item.variant_id),
-          targetKey: String(item.target_key),
-          userId: String(item.user_id),
-          userName: String(item.user_name),
-          userRole: (item.user_role as 'user' | 'admin') || 'user',
-          userEmail: item.user_email ? String(item.user_email) : undefined,
-          content: String(item.content),
-          upvotes: Number(item.upvotes || 0),
-          upvotedBy: Array.isArray(item.upvoted_by) ? (item.upvoted_by as string[]) : [],
-          isVerified: Boolean(item.is_verified),
-          isPinned: Boolean(item.is_pinned),
-          createdAt: String(item.created_at),
+        const mapped: TaskComment[] = data.map((row: Record<string, unknown>) => ({
+          id: String(row.id),
+          testId: String(row.test_id),
+          tileType: String(row.tile_type),
+          variantId: String(row.variant_id),
+          targetKey: String(row.target_key),
+          userId: String(row.user_id),
+          userName: String(row.user_name || 'Gast'),
+          userRole: (row.user_role as UserRole) || 'user',
+          userEmail: row.user_email ? String(row.user_email) : undefined,
+          content: String(row.content || ''),
+          upvotes: Number(row.upvotes || 0),
+          upvotedBy: Array.isArray(row.upvoted_by) ? (row.upvoted_by as string[]) : [],
+          isVerified: Boolean(row.is_verified),
+          isPinned: Boolean(row.is_pinned),
+          createdAt: String(row.created_at),
         }));
 
-        setLocalCache(targetKey, comments);
-        return comments;
+        setLocalCache(targetKey, mapped);
+        return mapped;
       }
-    } catch (e) {
-      console.warn('Supabase fetch error for comments:', e);
+    } catch (err) {
+      console.warn('Supabase fetchComments error, falling back to localStorage:', err);
     }
   }
 
@@ -83,7 +81,7 @@ export async function createTaskComment(params: {
   variantId: string;
   userId: string;
   userName: string;
-  userRole?: 'user' | 'admin';
+  userRole?: UserRole;
   userEmail?: string;
   content: string;
 }): Promise<{ success: boolean; comment?: TaskComment; error?: string }> {

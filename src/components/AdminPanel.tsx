@@ -6,6 +6,7 @@ import type {
   PromoCode,
   ForumsbeitragTopic,
   User,
+  UserRole,
   QuestionABC,
   Hoeren1Question,
   Lesen1Variant,
@@ -207,7 +208,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [newUserName, setNewUserName] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
-  const [newUserRole, setNewUserRole] = useState<'user' | 'admin'>('user');
+  const [newUserRole, setNewUserRole] = useState<UserRole>('user');
   const [newUserPremiumDays, setNewUserPremiumDays] = useState<number>(30);
   const [freeTrialActive, setFreeTrialActive] = useState<boolean>(() => isFreeTrialEnabled());
 
@@ -310,6 +311,43 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
     setUsersList((prev) => prev.map((u) => (u.id === target.id || u.email.toLowerCase() === target.email.toLowerCase() ? updatedUser : u)));
     setAdjustingUser(null);
+  };
+
+  const handleUpdateUserRole = async (userId: string, newRole: UserRole) => {
+    const target = usersList.find((u) => u.id === userId);
+    if (!target) return;
+    const updatedUser: User = { ...target, role: newRole };
+    syncUserToRegisteredList(updatedUser);
+
+    if (isSupabaseConfigured) {
+      try {
+        await supabase.from('registered_users').upsert(
+          {
+            id: updatedUser.id,
+            name: updatedUser.name,
+            email: updatedUser.email.toLowerCase(),
+            role: updatedUser.role,
+            is_premium: updatedUser.isPremium,
+            premium_expires_at: updatedUser.premiumExpiresAt,
+            is_banned: Boolean(updatedUser.isBanned),
+            applied_promo_code: updatedUser.appliedPromoCode || null,
+            created_at: updatedUser.createdAt || new Date().toISOString(),
+            last_login_at: updatedUser.lastLoginAt || new Date().toISOString(),
+          },
+          { onConflict: 'email' }
+        );
+      } catch (e) {
+        console.warn('Direct upsert role in AdminPanel error:', e);
+      }
+    }
+
+    setUsersList((prev) => prev.map((u) => (u.id === target.id || u.email.toLowerCase() === target.email.toLowerCase() ? updatedUser : u)));
+    const roleLabels: Record<UserRole, string> = {
+      user: 'BENUTZER',
+      teacher: 'LEHRKRAFT / DOZENT 🎓',
+      admin: 'ADMINISTRATOR 👑',
+    };
+    showToast(`Rolle für "${target.name}" zu ${roleLabels[newRole]} geändert!`);
   };
 
   const handleToggleBanUser = (userId: string) => {
@@ -3235,15 +3273,22 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
                           {/* Role */}
                           <td className="py-3 px-3">
-                            {u.role === 'admin' ? (
-                              <span className="px-2 py-0.5 bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded text-[10px] font-bold">
-                                ADMIN
-                              </span>
-                            ) : (
-                              <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded text-[10px] font-bold">
-                                BENUTZER
-                              </span>
-                            )}
+                            <select
+                              value={u.role || 'user'}
+                              disabled={isSelfOrAdmin && isAdminEmail(u.email)}
+                              onChange={(e) => handleUpdateUserRole(u.id, e.target.value as UserRole)}
+                              className={`px-2.5 py-1 rounded-lg text-[11px] font-black border transition-all cursor-pointer focus:outline-none ${
+                                u.role === 'admin'
+                                  ? 'bg-rose-500/20 text-rose-300 border-rose-500/40 hover:bg-rose-500/30'
+                                  : u.role === 'teacher'
+                                  ? 'bg-purple-500/20 text-purple-300 border-purple-500/40 hover:bg-purple-500/30 shadow-xs ring-1 ring-purple-500/20'
+                                  : 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30 hover:bg-indigo-500/30'
+                              }`}
+                            >
+                              <option value="user" className="bg-slate-900 text-white font-bold">👤 Benutzer</option>
+                              <option value="teacher" className="bg-slate-900 text-purple-300 font-black">🎓 Lehrkraft / Dozent</option>
+                              <option value="admin" className="bg-slate-900 text-rose-300 font-black">👑 Administrator</option>
+                            </select>
                           </td>
 
                           {/* Premium Status & Days */}
@@ -3410,11 +3455,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       <label className="block text-slate-300 font-bold mb-1">Rolle</label>
                       <select
                         value={newUserRole}
-                        onChange={(e) => setNewUserRole(e.target.value as 'user' | 'admin')}
-                        className="w-full px-3 py-2.5 glass-input rounded-xl text-xs font-bold bg-slate-900"
+                        onChange={(e) => setNewUserRole(e.target.value as UserRole)}
+                        className="w-full px-3 py-2.5 glass-input rounded-xl text-xs font-bold bg-slate-900 text-white"
                       >
-                        <option value="user">Benutzer (Standard)</option>
-                        <option value="admin">Administrator</option>
+                        <option value="user">👤 Benutzer (Standard)</option>
+                        <option value="teacher">🎓 Lehrkraft / Dozent</option>
+                        <option value="admin">👑 Administrator</option>
                       </select>
                     </div>
 

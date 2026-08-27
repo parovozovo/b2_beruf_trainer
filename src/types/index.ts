@@ -1,4 +1,4 @@
-export type UserRole = 'user' | 'admin';
+export type UserRole = 'user' | 'teacher' | 'admin';
 
 export interface User {
   id: string;
@@ -39,7 +39,7 @@ export interface TaskComment {
   targetKey: string; // "testId_tileType_variantId"
   userId: string;
   userName: string;
-  userRole?: 'user' | 'admin';
+  userRole?: UserRole;
   userEmail?: string;
   content: string;
   upvotes: number;
