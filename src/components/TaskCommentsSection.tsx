@@ -12,6 +12,7 @@ import {
   AlertCircle,
   HelpCircle,
   Lightbulb,
+  Lock,
 } from 'lucide-react';
 import type { TaskComment, User } from '../types';
 import {
@@ -31,23 +32,92 @@ interface TaskCommentsSectionProps {
   onOpenLogin?: () => void;
 }
 
+// 16 Deterministic German Learning Animal & Persona Aliases
+const ANONYMOUS_PERSONAS = [
+  { name: 'Fleißiger Fuchs', icon: '🦊', color: 'from-orange-500 to-amber-600' },
+  { name: 'Kluge Eule', icon: '🦉', color: 'from-indigo-500 to-purple-600' },
+  { name: 'Schneller Igel', icon: '🦔', color: 'from-amber-600 to-yellow-600' },
+  { name: 'Ruhiger Bär', icon: '🐻', color: 'from-amber-700 to-stone-700' },
+  { name: 'B2 Adler', icon: '🦅', color: 'from-sky-500 to-blue-600' },
+  { name: 'Kluger Delphin', icon: '🐬', color: 'from-cyan-500 to-blue-500' },
+  { name: 'Motivierter Wolf', icon: '🐺', color: 'from-slate-500 to-zinc-600' },
+  { name: 'Mutiger Löwe', icon: '🦁', color: 'from-yellow-500 to-amber-600' },
+  { name: 'Geduldiger Panda', icon: '🐼', color: 'from-slate-700 to-slate-900' },
+  { name: 'Freundlicher Koala', icon: '🐨', color: 'from-zinc-500 to-slate-600' },
+  { name: 'Schnelles Hörnchen', icon: '🐿️', color: 'from-orange-600 to-amber-700' },
+  { name: 'Flinker Gepard', icon: '🐆', color: 'from-amber-500 to-yellow-600' },
+  { name: 'B2 Forscher', icon: '🔍', color: 'from-emerald-500 to-teal-600' },
+  { name: 'Grammatik Meister', icon: '📚', color: 'from-blue-600 to-indigo-700' },
+  { name: 'Wortschatz Profi', icon: '🧠', color: 'from-purple-500 to-pink-600' },
+  { name: 'Stiller Denker', icon: '💡', color: 'from-yellow-400 to-orange-500' },
+];
+
+function getDisplayAuthor(cmt: TaskComment, currentUserId?: string | null) {
+  if (cmt.userRole === 'admin') {
+    return {
+      displayName: currentUserId === cmt.userId ? 'Dozent / Admin (Du)' : 'Dozent / Admin',
+      avatarEmoji: '👑',
+      avatarGradient: 'from-amber-500 to-orange-500',
+      isYou: currentUserId === cmt.userId,
+      isAdmin: true,
+    };
+  }
+
+  const isYou = Boolean(currentUserId && cmt.userId === currentUserId);
+
+  let hash = 0;
+  for (let i = 0; i < cmt.userId.length; i++) {
+    hash = (hash << 5) - hash + cmt.userId.charCodeAt(i);
+    hash |= 0;
+  }
+  const personaIndex = Math.abs(hash) % ANONYMOUS_PERSONAS.length;
+  const persona = ANONYMOUS_PERSONAS[personaIndex];
+
+  return {
+    displayName: isYou ? `${persona.name} (Du)` : persona.name,
+    avatarEmoji: persona.icon,
+    avatarGradient: persona.color,
+    isYou,
+    isAdmin: false,
+  };
+}
+
+function getCurrentUserPersona(userId: string) {
+  let hash = 0;
+  for (let i = 0; i < userId.length; i++) {
+    hash = (hash << 5) - hash + userId.charCodeAt(i);
+    hash |= 0;
+  }
+  const personaIndex = Math.abs(hash) % ANONYMOUS_PERSONAS.length;
+  return ANONYMOUS_PERSONAS[personaIndex];
+}
+
 export const TaskCommentsSection: React.FC<TaskCommentsSectionProps> = ({
   testId,
   tileType,
   variantId,
   currentUser,
-  onOpenLogin,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [comments, setComments] = useState<TaskComment[]>([]);
   const [loading, setLoading] = useState(false);
   const [commentText, setCommentText] = useState('');
-  const [guestName, setGuestName] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const effectiveUserId = currentUser?.id || `guest-${guestName.trim().toLowerCase() || 'anon'}`;
+  // Consistent anonymous client ID for guest users stored locally
+  const [anonClientId] = useState<string>(() => {
+    let stored = localStorage.getItem('b2_anon_client_id');
+    if (!stored) {
+      stored = `anon-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+      localStorage.setItem('b2_anon_client_id', stored);
+    }
+    return stored;
+  });
+
+  const effectiveUserId = currentUser?.id || anonClientId;
   const isAdmin = currentUser?.role === 'admin';
+  const myPersona = getCurrentUserPersona(effectiveUserId);
 
   // Load comments whenever target variant changes
   useEffect(() => {
@@ -82,20 +152,14 @@ export const TaskCommentsSection: React.FC<TaskCommentsSectionProps> = ({
       return;
     }
 
-    const authorName = currentUser?.name || guestName.trim() || 'Gast';
-    if (!currentUser && !guestName.trim()) {
-      setError('Bitte geben Sie Ihren Namen oder ein Pseudonym ein.');
-      return;
-    }
-
     setSubmitting(true);
     try {
       const res = await createTaskComment({
         testId,
         tileType,
         variantId,
-        userId: currentUser?.id || `anon-${Date.now()}`,
-        userName: authorName,
+        userId: effectiveUserId,
+        userName: isAdmin ? 'Dozent / Admin' : myPersona.name,
         userRole: isAdmin ? 'admin' : 'user',
         userEmail: currentUser?.email,
         content: cleanText,
@@ -141,7 +205,7 @@ export const TaskCommentsSection: React.FC<TaskCommentsSectionProps> = ({
   };
 
   const handleDelete = async (commentId: string, targetKey: string) => {
-    if (!window.confirm('Möchten Sie diesen Kommentar wirklich löschen?')) return;
+    if (!window.confirm('Möchten Sie Ihren Kommentar wirklich löschen?')) return;
     try {
       const res = await deleteTaskComment(commentId, targetKey);
       if (res.success) {
@@ -199,7 +263,7 @@ export const TaskCommentsSection: React.FC<TaskCommentsSectionProps> = ({
           </div>
           <div>
             <span className="font-extrabold text-sm text-white flex items-center gap-2">
-              Diskussion & Erklärungen
+              Anonyme Diskussion & Erklärungen
               {comments.length > 0 && (
                 <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/40">
                   {comments.length}
@@ -207,7 +271,7 @@ export const TaskCommentsSection: React.FC<TaskCommentsSectionProps> = ({
               )}
             </span>
             <p className="text-[11px] text-slate-400">
-              Fragen stellen, Tipps austauschen oder Grammatik-Erklärungen lesen
+              Fragen stellen, Tipps austauschen oder Grammatik-Erklärungen lesen (100% anonym)
             </p>
           </div>
         </div>
@@ -222,21 +286,31 @@ export const TaskCommentsSection: React.FC<TaskCommentsSectionProps> = ({
       {isOpen && (
         <div className="p-5 space-y-5 animate-fadeIn">
           {/* Quick Helper Badges */}
-          <div className="flex flex-wrap gap-2 text-[11px]">
-            <button
-              type="button"
-              onClick={() => setCommentText((prev) => (prev ? prev : '💡 **Tipp zur Aufgabe:** '))}
-              className="px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-300 border border-amber-500/30 hover:bg-amber-500/20 transition-colors flex items-center gap-1 font-semibold cursor-pointer"
-            >
-              <Lightbulb className="w-3 h-3 text-amber-400" /> Tipp teilen
-            </button>
-            <button
-              type="button"
-              onClick={() => setCommentText((prev) => (prev ? prev : '❓ **Frage:** Warum ist hier die Antwort... ?'))}
-              className="px-2.5 py-1 rounded-lg bg-sky-500/10 text-sky-300 border border-sky-500/30 hover:bg-sky-500/20 transition-colors flex items-center gap-1 font-semibold cursor-pointer"
-            >
-              <HelpCircle className="w-3 h-3 text-sky-400" /> Frage stellen
-            </button>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex flex-wrap gap-2 text-[11px]">
+              <button
+                type="button"
+                onClick={() => setCommentText((prev) => (prev ? prev : '💡 **Tipp zur Aufgabe:** '))}
+                className="px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-300 border border-amber-500/30 hover:bg-amber-500/20 transition-colors flex items-center gap-1 font-semibold cursor-pointer"
+              >
+                <Lightbulb className="w-3 h-3 text-amber-400" /> Tipp teilen
+              </button>
+              <button
+                type="button"
+                onClick={() => setCommentText((prev) => (prev ? prev : '❓ **Frage:** Warum ist hier die Antwort... ?'))}
+                className="px-2.5 py-1 rounded-lg bg-sky-500/10 text-sky-300 border border-sky-500/30 hover:bg-sky-500/20 transition-colors flex items-center gap-1 font-semibold cursor-pointer"
+              >
+                <HelpCircle className="w-3 h-3 text-sky-400" /> Frage stellen
+              </button>
+            </div>
+
+            {/* Privacy indicator */}
+            <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
+              <Lock className="w-3 h-3 text-emerald-400" />
+              <span>
+                Ihr Pseudonym: <b className="text-slate-200">{isAdmin ? '👑 Dozent / Admin' : `${myPersona.icon} ${myPersona.name}`}</b>
+              </span>
+            </div>
           </div>
 
           {/* New Comment Input Form */}
@@ -245,21 +319,6 @@ export const TaskCommentsSection: React.FC<TaskCommentsSectionProps> = ({
               <div className="p-2.5 bg-rose-500/10 border border-rose-500/30 rounded-lg flex items-center gap-2 text-xs text-rose-300">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>{error}</span>
-              </div>
-            )}
-
-            {!currentUser && (
-              <div>
-                <label className="block text-[11px] font-bold text-slate-300 mb-1">
-                  Ihr Name oder Pseudonym *
-                </label>
-                <input
-                  type="text"
-                  value={guestName}
-                  onChange={(e) => setGuestName(e.target.value)}
-                  placeholder="Z. B. Alex B. oder Deutschlerner..."
-                  className="w-full sm:w-64 px-3 py-1.5 glass-input rounded-lg text-xs"
-                />
               </div>
             )}
 
@@ -274,23 +333,8 @@ export const TaskCommentsSection: React.FC<TaskCommentsSectionProps> = ({
             </div>
 
             <div className="flex items-center justify-between pt-1">
-              <span className="text-[11px] text-slate-500">
-                {currentUser ? (
-                  <span>
-                    Angemeldet als: <b className="text-slate-300">{currentUser.name}</b>
-                  </span>
-                ) : (
-                  <span>
-                    Tipp: Sie können sich auch{' '}
-                    <button
-                      type="button"
-                      onClick={onOpenLogin}
-                      className="text-indigo-400 hover:underline font-bold"
-                    >
-                      anmelden
-                    </button>
-                  </span>
-                )}
+              <span className="text-[11px] text-slate-400 flex items-center gap-1">
+                <span>Ihre Identität bleibt für andere Nutzer vollständig geschützt.</span>
               </span>
 
               <button
@@ -299,7 +343,7 @@ export const TaskCommentsSection: React.FC<TaskCommentsSectionProps> = ({
                 className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
               >
                 <Send className="w-3.5 h-3.5" />
-                <span>{submitting ? 'Wird gesendet...' : 'Kommentar posten'}</span>
+                <span>{submitting ? 'Wird gesendet...' : 'Anonym posten'}</span>
               </button>
             </div>
           </form>
@@ -317,9 +361,9 @@ export const TaskCommentsSection: React.FC<TaskCommentsSectionProps> = ({
           ) : (
             <div className="space-y-3">
               {comments.map((cmt) => {
+                const authorInfo = getDisplayAuthor(cmt, effectiveUserId);
                 const hasUpvoted = cmt.upvotedBy.includes(effectiveUserId);
-                const isAuthor = currentUser && cmt.userId === currentUser.id;
-                const canDelete = isAuthor || isAdmin;
+                const canDelete = authorInfo.isYou || isAdmin;
 
                 return (
                   <div
@@ -329,20 +373,24 @@ export const TaskCommentsSection: React.FC<TaskCommentsSectionProps> = ({
                         ? 'bg-amber-950/20 border-amber-500/40 shadow-md shadow-amber-500/5'
                         : cmt.isVerified
                         ? 'bg-emerald-950/20 border-emerald-500/40'
+                        : authorInfo.isYou
+                        ? 'bg-slate-900/90 border-indigo-500/30'
                         : 'bg-slate-950/60 border-slate-800/80 hover:border-slate-700'
                     }`}
                   >
                     {/* Header row */}
                     <div className="flex items-center justify-between gap-2 mb-2">
                       <div className="flex items-center gap-2 flex-wrap">
-                        {/* Author initial avatar */}
-                        <div className="w-6 h-6 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px] font-black text-indigo-300">
-                          {cmt.userName.charAt(0).toUpperCase()}
+                        {/* Animal / Persona Avatar */}
+                        <div className="w-6 h-6 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs shadow-inner">
+                          {authorInfo.avatarEmoji}
                         </div>
-                        <span className="font-bold text-xs text-slate-200">{cmt.userName}</span>
+                        <span className={`font-bold text-xs ${authorInfo.isYou ? 'text-indigo-300 font-black' : 'text-slate-200'}`}>
+                          {authorInfo.displayName}
+                        </span>
 
                         {/* Badges */}
-                        {cmt.userRole === 'admin' && (
+                        {authorInfo.isAdmin && (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
                             <Sparkles className="w-2.5 h-2.5" /> Dozent / Admin
                           </span>
@@ -396,7 +444,7 @@ export const TaskCommentsSection: React.FC<TaskCommentsSectionProps> = ({
                             type="button"
                             onClick={() => handleDelete(cmt.id, cmt.targetKey)}
                             className="p-1 rounded hover:bg-rose-500/20 text-slate-500 hover:text-rose-400 transition-colors"
-                            title="Kommentar löschen"
+                            title="Meinen Kommentar löschen"
                           >
                             <Trash2 className="w-3 h-3" />
                           </button>
