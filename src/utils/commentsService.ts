@@ -117,6 +117,38 @@ export async function fetchCommentsForTask(
           createdAt: String(row.created_at),
         }));
 
+        // Auto-sync any unsynced local comments from this device to Supabase
+        const localList = getLocalCache(targetKey);
+        const serverIds = new Set(mapped.map((m) => m.id));
+        const unsynced = localList.filter((c) => !serverIds.has(c.id));
+        if (unsynced.length > 0) {
+          for (const c of unsynced) {
+            supabase
+              .from('task_comments')
+              .insert({
+                id: c.id,
+                test_id: c.testId,
+                tile_type: c.tileType,
+                variant_id: c.variantId,
+                target_key: c.targetKey,
+                user_id: c.userId,
+                user_name: c.userName,
+                user_role: c.userRole,
+                user_email: c.userEmail || null,
+                content: c.content,
+                upvotes: c.upvotes || 0,
+                upvoted_by: c.upvotedBy || [],
+                is_verified: c.isVerified || false,
+                is_pinned: c.isPinned || false,
+                created_at: c.createdAt,
+              })
+              .then(({ error: syncErr }) => {
+                if (syncErr) console.warn('Sync unsynced comment error:', syncErr);
+              });
+            mapped.push(c);
+          }
+        }
+
         setLocalCache(targetKey, mapped);
         return mapped;
       }

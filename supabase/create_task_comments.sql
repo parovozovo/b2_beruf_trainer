@@ -1,9 +1,9 @@
 -- ==============================================================================
--- TASK COMMENTS TABLE & RLS POLICIES FOR SUPABASE
--- Run this in your Supabase SQL Editor to enable public community comments
+-- TASK COMMENTS TABLE, PERMISSIONS & RLS POLICIES FOR SUPABASE
+-- Run this in your Supabase SQL Editor
 -- ==============================================================================
 
--- 1. Create task_comments table
+-- 1. Create task_comments table if not exists
 CREATE TABLE IF NOT EXISTS public.task_comments (
   id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
   test_id TEXT NOT NULL,
@@ -26,7 +26,11 @@ CREATE TABLE IF NOT EXISTS public.task_comments (
 CREATE INDEX IF NOT EXISTS idx_task_comments_target ON public.task_comments(target_key);
 CREATE INDEX IF NOT EXISTS idx_task_comments_created ON public.task_comments(created_at DESC);
 
--- 3. Enable RLS and public access policy
+-- 3. GRANT TABLE PERMISSIONS (Crucial for anon & authenticated Supabase clients)
+GRANT ALL ON TABLE public.task_comments TO anon, authenticated, service_role;
+GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
+
+-- 4. Enable RLS and public access policy
 ALTER TABLE public.task_comments ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Public and Admin can manage task comments" ON public.task_comments;
 CREATE POLICY "Public and Admin can manage task comments"
@@ -34,5 +38,5 @@ CREATE POLICY "Public and Admin can manage task comments"
   USING (true)
   WITH CHECK (true);
 
--- 4. Reload PostgREST schema cache
+-- 5. Reload PostgREST schema cache
 NOTIFY pgrst, 'reload schema';
