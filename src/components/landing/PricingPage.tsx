@@ -21,13 +21,15 @@ export const PricingPage: React.FC<PricingPageProps> = ({
   const calculatePrice = (originalStr: string) => {
     const numeric = parseFloat(originalStr.replace(',', '.').replace(' €', ''));
     if (!discountPercent || isNaN(numeric)) {
-      return { display: originalStr, isDiscounted: false, original: originalStr };
+      return { display: originalStr, isDiscounted: false, original: originalStr, savedAmount: '0,00 €' };
     }
     const discounted = Math.round(numeric * (1 - discountPercent / 100) * 100) / 100;
+    const saved = Math.round((numeric - discounted) * 100) / 100;
     return {
       display: `${discounted.toFixed(2).replace('.', ',')} €`,
       isDiscounted: true,
       original: originalStr,
+      savedAmount: `${saved.toFixed(2).replace('.', ',')} €`,
     };
   };
 
@@ -105,30 +107,49 @@ export const PricingPage: React.FC<PricingPageProps> = ({
         {/* Pricing Cards Grid (4 Packages) */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto items-stretch">
           {/* Plan 1: 7 Tage Sprint */}
-          <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-5 flex flex-col justify-between">
+          <div className={`p-6 sm:p-7 rounded-3xl bg-white dark:bg-slate-900 border ${plan1P.isDiscounted ? 'border-amber-500/50 shadow-md ring-2 ring-amber-500/20' : 'border-slate-200 dark:border-slate-800 shadow-sm'} space-y-5 flex flex-col justify-between relative`}>
+            {plan1P.isDiscounted && (
+              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                <span className="px-3.5 py-1 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 text-[10px] font-black uppercase rounded-full tracking-wider shadow-sm">
+                  -{discountPercent}% Rabatt
+                </span>
+              </div>
+            )}
+
             <div className="space-y-4">
               <div>
                 <h3 className="text-lg font-black text-slate-900 dark:text-white">7 Tage Sprint-Pass</h3>
                 <p className="text-xs text-slate-500 mt-1">Ideal für den schnellen Endspurt vor dem Prüfungstermin.</p>
               </div>
 
-              <div className="flex items-baseline gap-1.5 flex-wrap">
-                {plan1P.isDiscounted ? (
-                  <>
-                    <span className="text-sm font-bold text-slate-400 line-through whitespace-nowrap">
+              {plan1P.isDiscounted ? (
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm sm:text-base font-extrabold text-slate-400 dark:text-slate-500 line-through decoration-rose-500 decoration-[2.5px]">
                       {plan1P.original}
                     </span>
-                    <span className="text-3xl sm:text-4xl font-black text-amber-600 dark:text-amber-400 whitespace-nowrap">
+                    <span className="px-2 py-0.5 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-[10px] font-black uppercase tracking-wide">
+                      -{discountPercent}% Rabatt
+                    </span>
+                  </div>
+                  <div className="flex items-baseline gap-1.5 flex-wrap">
+                    <span className="text-3xl sm:text-4xl font-black text-amber-500 dark:text-amber-400 tracking-tight">
                       {plan1P.display}
                     </span>
-                  </>
-                ) : (
-                  <span className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white whitespace-nowrap">
-                    {plan1P.display}
-                  </span>
-                )}
-                <span className="text-[11px] text-slate-500 font-bold">/ für 7 Tage</span>
-              </div>
+                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                      / für 7 Tage
+                    </span>
+                  </div>
+                  <div className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                    <span>⚡ Du sparst {plan1P.savedAmount}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">{plan1P.display}</span>
+                  <span className="text-[11px] text-slate-500 font-bold">/ für 7 Tage</span>
+                </div>
+              )}
             </div>
 
             <Link
@@ -141,9 +162,9 @@ export const PricingPage: React.FC<PricingPageProps> = ({
 
           {/* Plan 2: 30 Tage Standard (Featured) */}
           <div className="p-6 sm:p-7 rounded-3xl bg-gradient-to-b from-indigo-900 via-slate-900 to-slate-950 border-2 border-amber-500 text-white shadow-2xl space-y-5 flex flex-col justify-between relative transform md:-translate-y-2">
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap">
               <span className="px-3.5 py-1 bg-amber-500 text-slate-950 text-[10px] font-black uppercase rounded-full tracking-wider shadow">
-                {plan2P.isDiscounted ? `-${discountPercent}% Rabatt` : '🔥 Beliebteste Wahl'}
+                {plan2P.isDiscounted ? `🔥 -${discountPercent}% Rabatt` : '🔥 Beliebteste Wahl'}
               </span>
             </div>
 
@@ -156,23 +177,34 @@ export const PricingPage: React.FC<PricingPageProps> = ({
                 <p className="text-xs text-slate-300 mt-1">Gründliche und stressfreie Vorbereitung auf alle Prüfungsteile.</p>
               </div>
 
-              <div className="flex items-baseline gap-1.5 flex-wrap">
-                {plan2P.isDiscounted ? (
-                  <>
-                    <span className="text-sm font-bold text-slate-400 line-through whitespace-nowrap">
+              {plan2P.isDiscounted ? (
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm sm:text-base font-extrabold text-slate-400 dark:text-slate-500 line-through decoration-rose-500 decoration-[2.5px]">
                       {plan2P.original}
                     </span>
-                    <span className="text-3xl sm:text-4xl font-black text-amber-400 whitespace-nowrap">
+                    <span className="px-2 py-0.5 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-300 text-[10px] font-black uppercase tracking-wide">
+                      -{discountPercent}% Rabatt
+                    </span>
+                  </div>
+                  <div className="flex items-baseline gap-1.5 flex-wrap">
+                    <span className="text-3xl sm:text-4xl font-black text-amber-400 tracking-tight">
                       {plan2P.display}
                     </span>
-                  </>
-                ) : (
-                  <span className="text-3xl sm:text-4xl font-black text-white whitespace-nowrap">
-                    {plan2P.display}
-                  </span>
-                )}
-                <span className="text-[11px] text-emerald-400 font-bold">/ für 30 Tage</span>
-              </div>
+                    <span className="text-xs font-bold text-slate-300 whitespace-nowrap">
+                      / für 30 Tage
+                    </span>
+                  </div>
+                  <div className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/15 px-2 py-0.5 rounded-md border border-emerald-500/30">
+                    <span>⚡ Du sparst {plan2P.savedAmount}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl sm:text-4xl font-black text-white">{plan2P.display}</span>
+                  <span className="text-[11px] text-emerald-400 font-bold">/ für 30 Tage</span>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -196,9 +228,9 @@ export const PricingPage: React.FC<PricingPageProps> = ({
           </div>
 
           {/* Plan 3: 90 Tage Kursbegleiter */}
-          <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-slate-900 border border-indigo-500/30 shadow-sm space-y-5 flex flex-col justify-between relative">
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-              <span className="px-3 py-0.5 bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 text-[10px] font-black uppercase rounded-full tracking-wider">
+          <div className={`p-6 sm:p-7 rounded-3xl bg-white dark:bg-slate-900 border ${plan3P.isDiscounted ? 'border-amber-500/50 shadow-md ring-2 ring-amber-500/20' : 'border-indigo-500/30 shadow-sm'} space-y-5 flex flex-col justify-between relative`}>
+            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap">
+              <span className="px-3.5 py-1 bg-indigo-600 text-white text-[10px] font-black uppercase rounded-full tracking-wider shadow-sm">
                 {plan3P.isDiscounted ? `-${discountPercent}% Rabatt` : 'Spart 38%'}
               </span>
             </div>
@@ -209,23 +241,34 @@ export const PricingPage: React.FC<PricingPageProps> = ({
                 <p className="text-xs text-slate-500 mt-1">Begleitet Sie zuverlässig durch den gesamten B2-Berufssprachkurs.</p>
               </div>
 
-              <div className="flex items-baseline gap-1.5 flex-wrap">
-                {plan3P.isDiscounted ? (
-                  <>
-                    <span className="text-sm font-bold text-slate-400 line-through whitespace-nowrap">
+              {plan3P.isDiscounted ? (
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm sm:text-base font-extrabold text-slate-400 dark:text-slate-500 line-through decoration-rose-500 decoration-[2.5px]">
                       {plan3P.original}
                     </span>
-                    <span className="text-3xl sm:text-4xl font-black text-amber-600 dark:text-amber-400 whitespace-nowrap">
+                    <span className="px-2 py-0.5 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-[10px] font-black uppercase tracking-wide">
+                      -{discountPercent}% Rabatt
+                    </span>
+                  </div>
+                  <div className="flex items-baseline gap-1.5 flex-wrap">
+                    <span className="text-3xl sm:text-4xl font-black text-amber-500 dark:text-amber-400 tracking-tight">
                       {plan3P.display}
                     </span>
-                  </>
-                ) : (
-                  <span className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white whitespace-nowrap">
-                    {plan3P.display}
-                  </span>
-                )}
-                <span className="text-[11px] text-slate-500 font-bold">/ für 90 Tage</span>
-              </div>
+                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                      / für 90 Tage
+                    </span>
+                  </div>
+                  <div className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                    <span>⚡ Du sparst {plan3P.savedAmount}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white">{plan3P.display}</span>
+                  <span className="text-[11px] text-slate-500 font-bold">/ für 90 Tage</span>
+                </div>
+              )}
             </div>
 
             <Link
@@ -237,9 +280,9 @@ export const PricingPage: React.FC<PricingPageProps> = ({
           </div>
 
           {/* Plan 4: Lifetime Pass */}
-          <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-5 flex flex-col justify-between relative">
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-              <span className="px-3 py-0.5 bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-[10px] font-black uppercase rounded-full tracking-wider">
+          <div className={`p-6 sm:p-7 rounded-3xl bg-white dark:bg-slate-900 border ${plan4P.isDiscounted ? 'border-amber-500/50 shadow-md ring-2 ring-amber-500/20' : 'border-slate-200 dark:border-slate-800 shadow-sm'} space-y-5 flex flex-col justify-between relative`}>
+            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap">
+              <span className="px-3.5 py-1 bg-rose-600 text-white text-[10px] font-black uppercase rounded-full tracking-wider shadow-sm">
                 {plan4P.isDiscounted ? `-${discountPercent}% Rabatt` : 'Aktion: -20%'}
               </span>
             </div>
@@ -250,24 +293,37 @@ export const PricingPage: React.FC<PricingPageProps> = ({
                 <p className="text-xs text-slate-500 mt-1">Einmal zahlen, unbegrenzt üben ohne zeitliche Begrenzung.</p>
               </div>
 
-              <div className="flex items-baseline gap-2 flex-wrap">
-                {plan4P.isDiscounted ? (
-                  <>
-                    <span className="text-xs text-slate-400 line-through font-bold">39,99 €</span>
-                    <span className="text-3xl sm:text-4xl font-black text-amber-600 dark:text-amber-400">
-                      {plan4P.display}
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <span className="text-xs text-slate-400 line-through font-bold">49,99 €</span>
-                    <span className="text-3xl sm:text-4xl font-black text-emerald-600 dark:text-emerald-400">
+              {plan4P.isDiscounted ? (
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm sm:text-base font-extrabold text-slate-400 dark:text-slate-500 line-through decoration-rose-500 decoration-[2.5px]">
                       39,99 €
                     </span>
-                  </>
-                )}
-                <span className="text-[11px] text-slate-500 font-bold">/ dauerhaft</span>
-              </div>
+                    <span className="px-2 py-0.5 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-[10px] font-black uppercase tracking-wide">
+                      -{discountPercent}% Rabatt
+                    </span>
+                  </div>
+                  <div className="flex items-baseline gap-1.5 flex-wrap">
+                    <span className="text-3xl sm:text-4xl font-black text-amber-500 dark:text-amber-400 tracking-tight">
+                      {plan4P.display}
+                    </span>
+                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                      / dauerhaft
+                    </span>
+                  </div>
+                  <div className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                    <span>⚡ Du sparst {plan4P.savedAmount}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-baseline gap-2 flex-wrap">
+                  <span className="text-xs text-slate-400 line-through font-bold">49,99 €</span>
+                  <span className="text-3xl sm:text-4xl font-black text-emerald-600 dark:text-emerald-400">
+                    39,99 €
+                  </span>
+                  <span className="text-[11px] text-slate-500 font-bold">/ dauerhaft</span>
+                </div>
+              )}
             </div>
 
             <Link

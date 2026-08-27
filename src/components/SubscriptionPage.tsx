@@ -157,14 +157,17 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({
         originalPrice: plan.originalPrice,
         numericPrice: baseNum,
         isDiscounted: false,
+        savedAmount: '0,00 €',
       };
     }
     const discountedNum = Math.round(baseNum * (1 - discountPercent / 100) * 100) / 100;
+    const savedNum = Math.round((baseNum - discountedNum) * 100) / 100;
     return {
       displayPrice: `${discountedNum.toFixed(2).replace('.', ',')} €`,
       originalPrice: plan.price,
       numericPrice: discountedNum,
       isDiscounted: true,
+      savedAmount: `${savedNum.toFixed(2).replace('.', ',')} €`,
     };
   };
 
@@ -414,30 +417,43 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({
 
                 {/* Price Display */}
                 <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80">
-                  <div className="flex items-baseline gap-1.5 flex-wrap">
-                    {planPrices.isDiscounted ? (
-                      <>
-                        <span className="text-sm sm:text-base font-bold text-slate-400 line-through whitespace-nowrap">
+                  {planPrices.isDiscounted ? (
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm sm:text-base font-extrabold text-slate-400 dark:text-slate-500 line-through decoration-rose-500 decoration-[2.5px]">
                           {plan.price}
                         </span>
-                        <span className="text-2xl sm:text-3xl font-black text-amber-600 dark:text-amber-400 tracking-tight whitespace-nowrap">
+                        <span className="px-2 py-0.5 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-[10px] font-black uppercase tracking-wide">
+                          -{discountPercent}% Rabatt
+                        </span>
+                      </div>
+                      <div className="flex items-baseline gap-1.5 flex-wrap">
+                        <span className="text-3xl sm:text-4xl font-black text-amber-500 dark:text-amber-400 tracking-tight">
                           {planPrices.displayPrice}
                         </span>
-                      </>
-                    ) : (
-                      <>
-                        {plan.originalPrice && (
-                          <span className="text-sm sm:text-base font-bold text-slate-400 line-through whitespace-nowrap">
-                            {plan.originalPrice}
-                          </span>
-                        )}
-                        <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight whitespace-nowrap">
-                          {plan.price}
+                        <span className="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                          / {plan.period || plan.billingPeriod}
                         </span>
-                      </>
-                    )}
-                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">/ {plan.period || plan.billingPeriod}</span>
-                  </div>
+                      </div>
+                      <div className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                        <span>⚡ Du sparst {planPrices.savedAmount}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-baseline gap-1.5 flex-wrap">
+                      {plan.originalPrice && (
+                        <span className="text-sm sm:text-base font-bold text-slate-400 line-through whitespace-nowrap">
+                          {plan.originalPrice}
+                        </span>
+                      )}
+                      <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight whitespace-nowrap">
+                        {plan.price}
+                      </span>
+                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                        / {plan.period || plan.billingPeriod}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 

@@ -89,13 +89,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const calculatePrice = (originalStr: string) => {
     const numeric = parseFloat(originalStr.replace(',', '.').replace(' €', ''));
     if (!discountPercent || isNaN(numeric)) {
-      return { display: originalStr, isDiscounted: false, original: originalStr };
+      return { display: originalStr, isDiscounted: false, original: originalStr, savedAmount: '0,00 €' };
     }
     const discounted = Math.round(numeric * (1 - discountPercent / 100) * 100) / 100;
+    const saved = Math.round((numeric - discounted) * 100) / 100;
     return {
       display: `${discounted.toFixed(2).replace('.', ',')} €`,
       isDiscounted: true,
       original: originalStr,
+      savedAmount: `${saved.toFixed(2).replace('.', ',')} €`,
     };
   };
 
@@ -801,7 +803,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto items-stretch">
             
             {/* Plan 1: 7 Days */}
-            <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-6 hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
+            <div className={`p-6 sm:p-7 rounded-3xl bg-white dark:bg-slate-900 border ${plan1P.isDiscounted ? 'border-amber-500/50 shadow-md ring-2 ring-amber-500/20' : 'border-slate-200 dark:border-slate-800 shadow-xs'} flex flex-col justify-between space-y-6 hover:-translate-y-1 hover:shadow-lg transition-all duration-300 relative`}>
+              {plan1P.isDiscounted && (
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                  <span className="px-3.5 py-1 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 text-[10px] font-black uppercase rounded-full tracking-wider shadow-sm">
+                    -{discountPercent}% Rabatt
+                  </span>
+                </div>
+              )}
+
               <div className="space-y-4">
                 <div>
                   <h3 className="text-base font-black text-slate-900 dark:text-white">{t.pricing.plan1Name}</h3>
@@ -811,25 +821,38 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 </div>
 
                 <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-                  <div className="flex items-baseline gap-1.5 flex-wrap">
-                    {plan1P.isDiscounted ? (
-                      <>
-                        <span className="text-sm font-bold text-slate-400 line-through whitespace-nowrap">
+                  {plan1P.isDiscounted ? (
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm sm:text-base font-extrabold text-slate-400 dark:text-slate-500 line-through decoration-rose-500 decoration-[2.5px]">
                           {plan1P.original}
                         </span>
-                        <span className="text-2xl sm:text-3xl font-black text-amber-600 dark:text-amber-400 whitespace-nowrap">
+                        <span className="px-2 py-0.5 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-[10px] font-black uppercase tracking-wide">
+                          -{discountPercent}% Rabatt
+                        </span>
+                      </div>
+                      <div className="flex items-baseline gap-1.5 flex-wrap">
+                        <span className="text-3xl sm:text-4xl font-black text-amber-500 dark:text-amber-400 tracking-tight">
                           {plan1P.display}
                         </span>
-                      </>
-                    ) : (
+                        <span className="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                          / {t.pricing.plan1Period}
+                        </span>
+                      </div>
+                      <div className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                        <span>⚡ Du sparst {plan1P.savedAmount}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-baseline gap-1.5 flex-wrap">
                       <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white whitespace-nowrap">
                         {plan1P.display}
                       </span>
-                    )}
-                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                      / {t.pricing.plan1Period}
-                    </span>
-                  </div>
+                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                        / {t.pricing.plan1Period}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -845,7 +868,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-slate-900 border-2 border-indigo-600 shadow-xl ring-4 ring-indigo-500/15 flex flex-col justify-between space-y-6 relative transform md:-translate-y-1 hover:-translate-y-2 transition-all duration-300">
               <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap">
                 <span className="px-3.5 py-1 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 text-[10px] font-black uppercase rounded-full tracking-wider shadow-sm">
-                  {plan2P.isDiscounted ? `-${discountPercent}% Rabatt` : t.pricing.plan2Badge}
+                  {plan2P.isDiscounted ? `🔥 -${discountPercent}% Rabatt` : t.pricing.plan2Badge}
                 </span>
               </div>
 
@@ -858,25 +881,38 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 </div>
 
                 <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-                  <div className="flex items-baseline gap-1.5 flex-wrap">
-                    {plan2P.isDiscounted ? (
-                      <>
-                        <span className="text-sm font-bold text-slate-400 line-through whitespace-nowrap">
+                  {plan2P.isDiscounted ? (
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm sm:text-base font-extrabold text-slate-400 dark:text-slate-500 line-through decoration-rose-500 decoration-[2.5px]">
                           {plan2P.original}
                         </span>
-                        <span className="text-2xl sm:text-3xl font-black text-amber-600 dark:text-amber-400 whitespace-nowrap">
+                        <span className="px-2 py-0.5 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-[10px] font-black uppercase tracking-wide">
+                          -{discountPercent}% Rabatt
+                        </span>
+                      </div>
+                      <div className="flex items-baseline gap-1.5 flex-wrap">
+                        <span className="text-3xl sm:text-4xl font-black text-amber-500 dark:text-amber-400 tracking-tight">
                           {plan2P.display}
                         </span>
-                      </>
-                    ) : (
+                        <span className="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                          / {t.pricing.plan2Period}
+                        </span>
+                      </div>
+                      <div className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                        <span>⚡ Du sparst {plan2P.savedAmount}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-baseline gap-1.5 flex-wrap">
                       <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white whitespace-nowrap">
                         {plan2P.display}
                       </span>
-                    )}
-                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                      / {t.pricing.plan2Period}
-                    </span>
-                  </div>
+                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                        / {t.pricing.plan2Period}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -890,7 +926,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
 
             {/* Plan 3: 90 Days */}
-            <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-6 relative hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
+            <div className={`p-6 sm:p-7 rounded-3xl bg-white dark:bg-slate-900 border ${plan3P.isDiscounted ? 'border-amber-500/50 shadow-md ring-2 ring-amber-500/20' : 'border-slate-200 dark:border-slate-800 shadow-xs'} flex flex-col justify-between space-y-6 relative hover:-translate-y-1 hover:shadow-lg transition-all duration-300`}>
               <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap">
                 <span className="px-3.5 py-1 bg-indigo-600 text-white text-[10px] font-black uppercase rounded-full tracking-wider shadow-sm">
                   {plan3P.isDiscounted ? `-${discountPercent}% Rabatt` : t.pricing.plan3Badge}
@@ -906,25 +942,38 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 </div>
 
                 <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-                  <div className="flex items-baseline gap-1.5 flex-wrap">
-                    {plan3P.isDiscounted ? (
-                      <>
-                        <span className="text-sm font-bold text-slate-400 line-through whitespace-nowrap">
+                  {plan3P.isDiscounted ? (
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm sm:text-base font-extrabold text-slate-400 dark:text-slate-500 line-through decoration-rose-500 decoration-[2.5px]">
                           {plan3P.original}
                         </span>
-                        <span className="text-2xl sm:text-3xl font-black text-amber-600 dark:text-amber-400 whitespace-nowrap">
+                        <span className="px-2 py-0.5 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-[10px] font-black uppercase tracking-wide">
+                          -{discountPercent}% Rabatt
+                        </span>
+                      </div>
+                      <div className="flex items-baseline gap-1.5 flex-wrap">
+                        <span className="text-3xl sm:text-4xl font-black text-amber-500 dark:text-amber-400 tracking-tight">
                           {plan3P.display}
                         </span>
-                      </>
-                    ) : (
+                        <span className="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                          / {t.pricing.plan3Period}
+                        </span>
+                      </div>
+                      <div className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                        <span>⚡ Du sparst {plan3P.savedAmount}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-baseline gap-1.5 flex-wrap">
                       <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white whitespace-nowrap">
                         {plan3P.display}
                       </span>
-                    )}
-                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                      / {t.pricing.plan3Period}
-                    </span>
-                  </div>
+                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                        / {t.pricing.plan3Period}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -937,7 +986,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
 
             {/* Plan 4: Lifetime */}
-            <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-6 relative hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
+            <div className={`p-6 sm:p-7 rounded-3xl bg-white dark:bg-slate-900 border ${plan4P.isDiscounted ? 'border-amber-500/50 shadow-md ring-2 ring-amber-500/20' : 'border-slate-200 dark:border-slate-800 shadow-xs'} flex flex-col justify-between space-y-6 relative hover:-translate-y-1 hover:shadow-lg transition-all duration-300`}>
               <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap">
                 <span className="px-3.5 py-1 bg-rose-600 text-white text-[10px] font-black uppercase rounded-full tracking-wider shadow-sm">
                   {plan4P.isDiscounted ? `-${discountPercent}% Rabatt` : t.pricing.plan4Badge}
@@ -953,32 +1002,43 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 </div>
 
                 <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
-                  <div className="flex items-baseline gap-1.5 flex-wrap">
-                    {plan4P.isDiscounted ? (
-                      <>
-                        <span className="text-sm sm:text-base font-bold text-slate-400 line-through whitespace-nowrap">
+                  {plan4P.isDiscounted ? (
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm sm:text-base font-extrabold text-slate-400 dark:text-slate-500 line-through decoration-rose-500 decoration-[2.5px]">
                           {t.pricing.plan4Price}
                         </span>
-                        <span className="text-2xl sm:text-3xl font-black text-amber-600 dark:text-amber-400 whitespace-nowrap">
+                        <span className="px-2 py-0.5 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-600 dark:text-rose-400 text-[10px] font-black uppercase tracking-wide">
+                          -{discountPercent}% Rabatt
+                        </span>
+                      </div>
+                      <div className="flex items-baseline gap-1.5 flex-wrap">
+                        <span className="text-3xl sm:text-4xl font-black text-amber-500 dark:text-amber-400 tracking-tight">
                           {plan4P.display}
                         </span>
-                      </>
-                    ) : (
-                      <>
-                        {t.pricing.plan4OldPrice && (
-                          <span className="text-sm sm:text-base font-bold text-slate-400 line-through whitespace-nowrap">
-                            {t.pricing.plan4OldPrice}
-                          </span>
-                        )}
-                        <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white whitespace-nowrap">
-                          {plan4P.display}
+                        <span className="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                          / {t.pricing.plan4Period}
                         </span>
-                      </>
-                    )}
-                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                      / {t.pricing.plan4Period}
-                    </span>
-                  </div>
+                      </div>
+                      <div className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                        <span>⚡ Du sparst {plan4P.savedAmount}</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-baseline gap-1.5 flex-wrap">
+                      {t.pricing.plan4OldPrice && (
+                        <span className="text-sm sm:text-base font-bold text-slate-400 line-through whitespace-nowrap">
+                          {t.pricing.plan4OldPrice}
+                        </span>
+                      )}
+                      <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white whitespace-nowrap">
+                        {plan4P.display}
+                      </span>
+                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                        / {t.pricing.plan4Period}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
