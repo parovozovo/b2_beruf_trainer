@@ -31,6 +31,24 @@ export interface PromoCode {
   discountPercent?: number;
 }
 
+export interface TaskComment {
+  id: string;
+  testId: string;
+  tileType: string;
+  variantId: string;
+  targetKey: string; // "testId_tileType_variantId"
+  userId: string;
+  userName: string;
+  userRole?: 'user' | 'admin';
+  userEmail?: string;
+  content: string;
+  upvotes: number;
+  upvotedBy: string[];
+  isVerified?: boolean;
+  isPinned?: boolean;
+  createdAt: string;
+}
+
 export type TileType = 
   | 'lesen_1'
   | 'lesen_2'

@@ -56,6 +56,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../utils/supabase';
+import { deleteCommentsForVariant, buildTargetKey } from '../utils/commentsService';
 import {
   isAdminEmail,
   getRegisteredUsersLocal,
@@ -689,8 +690,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     if (res && res.success === false) {
       showToast(`Fehler beim Löschen: ${res.error}`, 'error');
     } else {
+      const targetKey = buildTargetKey(selectedModelltestId, selectedTileType, vId);
+      void deleteCommentsForVariant(targetKey);
       setSelectedVariantId('new');
-      showToast('Variante gelöscht.');
+      showToast('Variante und zugehörige Kommentare gelöscht.');
     }
   };
 

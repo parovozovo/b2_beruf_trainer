@@ -98,7 +98,35 @@ CREATE POLICY "Public and Admin can manage promo codes"
   USING (true)
   WITH CHECK (true);
 
--- 6. BLOG POSTS (Optional / if table exists)
+-- 6. TASK COMMENTS (Discussions & Explanations)
+CREATE TABLE IF NOT EXISTS public.task_comments (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  test_id TEXT NOT NULL,
+  tile_type TEXT NOT NULL,
+  variant_id TEXT NOT NULL,
+  target_key TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  user_name TEXT NOT NULL,
+  user_role TEXT DEFAULT 'user',
+  user_email TEXT,
+  content TEXT NOT NULL,
+  upvotes INT DEFAULT 0,
+  upvoted_by TEXT[] DEFAULT '{}',
+  is_verified BOOLEAN DEFAULT false,
+  is_pinned BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_task_comments_target ON public.task_comments(target_key);
+CREATE INDEX IF NOT EXISTS idx_task_comments_created ON public.task_comments(created_at DESC);
+ALTER TABLE IF EXISTS public.task_comments ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public and Admin can manage task comments"
+  ON public.task_comments FOR ALL
+  USING (true)
+  WITH CHECK (true);
+
+-- 7. BLOG POSTS (Optional / if table exists)
 DO $$
 BEGIN
   IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'blog_posts') THEN

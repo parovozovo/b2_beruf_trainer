@@ -9,6 +9,7 @@ import {
   clearSingleTilePracticeAttempt,
   type TileAttemptState,
 } from '../utils/storage';
+import { TaskCommentsSection } from './TaskCommentsSection';
 
 interface TilePracticeProps {
   modelltests: Modelltest[];
@@ -502,6 +503,16 @@ export const TilePractice: React.FC<TilePracticeProps> = ({
               </button>
             )}
           </div>
+
+          {/* Task Peer-to-Peer Discussions & Explanations */}
+          {activeVariant && (
+            <TaskCommentsSection
+              testId={selectedModelltestId}
+              tileType={selectedTileType}
+              variantId={activeVariant.id || `var-${selectedVariantIndex}`}
+              currentUser={currentUser}
+            />
+          )}
         </div>
       )}
     </div>

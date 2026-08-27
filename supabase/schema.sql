@@ -131,6 +131,28 @@ CREATE TABLE IF NOT EXISTS public.wortschatz_items (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 11. TASK COMMENTS (Discussions & Explanations)
+CREATE TABLE IF NOT EXISTS public.task_comments (
+  id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+  test_id TEXT NOT NULL,
+  tile_type TEXT NOT NULL,
+  variant_id TEXT NOT NULL,
+  target_key TEXT NOT NULL,
+  user_id TEXT NOT NULL,
+  user_name TEXT NOT NULL,
+  user_role TEXT DEFAULT 'user',
+  user_email TEXT,
+  content TEXT NOT NULL,
+  upvotes INT DEFAULT 0,
+  upvoted_by TEXT[] DEFAULT '{}',
+  is_verified BOOLEAN DEFAULT false,
+  is_pinned BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_task_comments_target ON public.task_comments(target_key);
+CREATE INDEX IF NOT EXISTS idx_task_comments_created ON public.task_comments(created_at DESC);
+
 -- ==============================================================================
 -- ROW LEVEL SECURITY (RLS) POLICIES & PRODUCTION ACCESS CONTROL
 -- ==============================================================================
@@ -156,16 +178,17 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
 
 -- 2. Enable RLS on all tables
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.registered_users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.modelltests ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.promo_codes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.forumsbeitrag_topics ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.sprechen_topics ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.written_essays ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.tile_results ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.full_exam_results ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.wortschatz_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.registered_users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.modelltests ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.promo_codes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.forumsbeitrag_topics ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.sprechen_topics ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.written_essays ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.tile_results ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.full_exam_results ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.wortschatz_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE IF EXISTS public.task_comments ENABLE ROW LEVEL SECURITY;
 
 -- 3. Content Policies (Read & Write with RLS Enabled for Admin Sync)
 CREATE POLICY "Public and Admin can manage modelltests" ON public.modelltests FOR ALL USING (true) WITH CHECK (true);
@@ -173,6 +196,7 @@ CREATE POLICY "Public and Admin can manage wortschatz" ON public.wortschatz_item
 CREATE POLICY "Public and Admin can manage forumsbeitrag" ON public.forumsbeitrag_topics FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Public and Admin can manage sprechen" ON public.sprechen_topics FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Public and Admin can manage promo codes" ON public.promo_codes FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Public and Admin can manage task comments" ON public.task_comments FOR ALL USING (true) WITH CHECK (true);
 
 -- 4. User Profile & Data Policies (Strict User Isolation)
 CREATE POLICY "Profiles access" ON public.profiles FOR ALL 
