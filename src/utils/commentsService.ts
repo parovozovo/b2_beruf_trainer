@@ -25,6 +25,62 @@ export function buildTargetKey(testId: string, tileType: string, variantId: stri
 }
 
 /**
+ * Fetch ALL comments across all tasks for the Admin moderation tab
+ */
+export async function fetchAllCommentsAdmin(): Promise<TaskComment[]> {
+  if (isSupabaseConfigured) {
+    try {
+      const { data, error } = await supabase
+        .from('task_comments')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        return data.map((row: Record<string, unknown>) => ({
+          id: String(row.id),
+          testId: String(row.test_id),
+          tileType: String(row.tile_type),
+          variantId: String(row.variant_id),
+          targetKey: String(row.target_key),
+          userId: String(row.user_id),
+          userName: String(row.user_name || 'Gast'),
+          userRole: (row.user_role as UserRole) || 'user',
+          userEmail: row.user_email ? String(row.user_email) : undefined,
+          content: String(row.content || ''),
+          upvotes: Number(row.upvotes || 0),
+          upvotedBy: Array.isArray(row.upvoted_by) ? (row.upvoted_by as string[]) : [],
+          isVerified: Boolean(row.is_verified),
+          isPinned: Boolean(row.is_pinned),
+          createdAt: String(row.created_at),
+        }));
+      }
+    } catch (err) {
+      console.warn('Supabase fetchAllCommentsAdmin error:', err);
+    }
+  }
+
+  // Fallback to searching all localStorage keys with prefix
+  const all: TaskComment[] = [];
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(COMMENTS_CACHE_PREFIX)) {
+        const raw = localStorage.getItem(key);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            all.push(...parsed);
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.warn(e);
+  }
+  return all.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}
+
+/**
  * Fetch comments for a specific task variant
  */
 export async function fetchCommentsForTask(

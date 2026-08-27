@@ -24,6 +24,7 @@ import type {
   Sprachbausteine2Variant,
   WortschatzItem,
   WortschatzCategory,
+  TaskComment,
 } from '../types';
 import { AudioPlayerBlock } from './TilePractice';
 import {
@@ -56,9 +57,18 @@ import {
   Copy,
   Check,
   ExternalLink,
+  Pin,
+  ThumbsUp,
 } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../utils/supabase';
-import { deleteCommentsForVariant, buildTargetKey } from '../utils/commentsService';
+import {
+  deleteCommentsForVariant,
+  buildTargetKey,
+  fetchAllCommentsAdmin,
+  deleteTaskComment,
+  togglePinComment,
+  toggleVerifyComment,
+} from '../utils/commentsService';
 import {
   isAdminEmail,
   getRegisteredUsersLocal,
@@ -143,7 +153,30 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   onSaveWortschatz,
 }) => {
   const [adminHub, setAdminHub] = useState<'content' | 'users_system'>('content');
-  const [activeTab, setActiveTab] = useState<'modelltests' | 'promocodes' | 'forumsbeitrag' | 'sprechen' | 'wortschatz' | 'blog' | 'users' | 'system'>('modelltests');
+  const [activeTab, setActiveTab] = useState<'modelltests' | 'promocodes' | 'forumsbeitrag' | 'sprechen' | 'wortschatz' | 'blog' | 'users' | 'comments' | 'system'>('modelltests');
+
+  // Comments Admin State
+  const [adminComments, setAdminComments] = useState<TaskComment[]>([]);
+  const [loadingComments, setLoadingComments] = useState(false);
+  const [commentsSearch, setCommentsSearch] = useState('');
+  const [commentsFilterRole, setCommentsFilterRole] = useState<'all' | 'user' | 'teacher' | 'admin'>('all');
+  const [commentsFilterTile, setCommentsFilterTile] = useState<string>('all');
+
+  const loadAdminComments = async () => {
+    setLoadingComments(true);
+    try {
+      const data = await fetchAllCommentsAdmin();
+      setAdminComments(data);
+    } catch (e) {
+      console.warn('Failed to load admin comments:', e);
+    } finally {
+      setLoadingComments(false);
+    }
+  };
+
+  useEffect(() => {
+    loadAdminComments();
+  }, []);
 
   // Wortschatz Admin State
   const [wortschatzList, setWortschatzList] = useState<WortschatzItem[]>(wortschatzItems);
@@ -1642,6 +1675,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           >
             <BookOpen className="w-4 h-4" /> 📝 Blog & SEO CMS
           </button>
+          <button
+            onClick={() => {
+              setActiveTab('comments');
+              loadAdminComments();
+            }}
+            className={`px-3.5 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'comments'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
+            }`}
+          >
+            <MessageSquare className="w-4 h-4" /> 💬 Kommentare ({adminComments.length})
+          </button>
         </div>
       ) : (
         <div className="flex flex-wrap bg-slate-100 dark:bg-slate-900 p-1.5 rounded-xl border border-slate-300 dark:border-slate-800 text-xs gap-1.5 shadow-sm">
@@ -1654,6 +1700,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             }`}
           >
             <Users className="w-4 h-4" /> Benutzer-Verwaltung ({usersList.length})
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab('comments');
+              loadAdminComments();
+            }}
+            className={`px-3.5 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'comments'
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
+            }`}
+          >
+            <MessageSquare className="w-4 h-4" /> 💬 Kommentare ({adminComments.length})
           </button>
           <button
             onClick={() => setActiveTab('promocodes')}
@@ -3913,6 +3972,271 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           )}
         </div>
       )}
+
+      {/* TASK & COMMUNITY COMMENTS MODERATION TAB */}
+      {activeTab === 'comments' && (() => {
+        const filteredComments = adminComments.filter((c) => {
+          if (commentsFilterRole !== 'all' && c.userRole !== commentsFilterRole) return false;
+          if (commentsFilterTile !== 'all' && c.tileType !== commentsFilterTile) return false;
+          if (commentsSearch.trim()) {
+            const q = commentsSearch.toLowerCase();
+            const matchesText = c.content.toLowerCase().includes(q);
+            const matchesUser = c.userName.toLowerCase().includes(q);
+            const matchesEmail = (c.userEmail || '').toLowerCase().includes(q);
+            const matchesKey = c.targetKey.toLowerCase().includes(q);
+            if (!matchesText && !matchesUser && !matchesEmail && !matchesKey) return false;
+          }
+          return true;
+        });
+
+        const handlePin = async (c: TaskComment) => {
+          const newPinned = !c.isPinned;
+          await togglePinComment(c.id, c.targetKey, newPinned);
+          setAdminComments((prev) =>
+            prev.map((item) => (item.id === c.id ? { ...item, isPinned: newPinned } : item))
+          );
+          showToast(newPinned ? 'Kommentar angepinnt 📌' : 'Kommentar nicht mehr angepinnt');
+        };
+
+        const handleVerify = async (c: TaskComment) => {
+          const newVerified = !c.isVerified;
+          await toggleVerifyComment(c.id, c.targetKey, newVerified);
+          setAdminComments((prev) =>
+            prev.map((item) => (item.id === c.id ? { ...item, isVerified: newVerified } : item))
+          );
+          showToast(newVerified ? 'Als Experten-Lösung verifiziert ✅' : 'Verifizierung aufgehoben');
+        };
+
+        const handleDelete = async (c: TaskComment) => {
+          if (!window.confirm(`Möchten Sie diesen Kommentar von "${c.userName}" wirklich löschen?`)) return;
+          const res = await deleteTaskComment(c.id, c.targetKey);
+          if (res.success) {
+            setAdminComments((prev) => prev.filter((item) => item.id !== c.id));
+            showToast('Kommentar erfolgreich gelöscht 🗑️');
+          } else {
+            showToast(res.error || 'Fehler beim Löschen', 'error');
+          }
+        };
+
+        return (
+          <div className="space-y-6 animate-fadeIn">
+            {/* Header & Stats Banner */}
+            <div className="glass-panel p-6 rounded-3xl border border-slate-800 space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-indigo-500/20 text-indigo-300 rounded-2xl border border-indigo-500/40">
+                    <MessageSquare className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-white">Community & Aufgaben-Kommentare</h3>
+                    <p className="text-xs text-slate-400">
+                      Verwalten, pinnen und verifizieren Sie Erklärungen und Fragen der Teilnehmer zu den Prüfungsaufgaben.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={loadAdminComments}
+                  disabled={loadingComments}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 border border-slate-700 shadow-sm self-start sm:self-auto cursor-pointer"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${loadingComments ? 'animate-spin' : ''}`} />
+                  <span>Aktualisieren</span>
+                </button>
+              </div>
+
+              {/* Stats Counters */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800 flex items-center justify-between">
+                  <span className="text-xs text-slate-400 font-bold">Gesamt-Kommentare:</span>
+                  <span className="text-sm font-black text-white">{adminComments.length}</span>
+                </div>
+                <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800 flex items-center justify-between">
+                  <span className="text-xs text-slate-400 font-bold">Geprüfte Dozenten-Erklärungen:</span>
+                  <span className="text-sm font-black text-emerald-400">
+                    {adminComments.filter((c) => c.isVerified).length}
+                  </span>
+                </div>
+                <div className="p-3 bg-slate-900/60 rounded-xl border border-slate-800 flex items-center justify-between">
+                  <span className="text-xs text-slate-400 font-bold">Angepinnte Beiträge:</span>
+                  <span className="text-sm font-black text-amber-400">
+                    {adminComments.filter((c) => c.isPinned).length}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Filter Toolbar */}
+            <div className="glass-panel p-4 rounded-2xl border border-slate-800 flex flex-wrap items-center justify-between gap-3">
+              <div className="relative flex-1 min-w-[240px]">
+                <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+                <input
+                  type="text"
+                  value={commentsSearch}
+                  onChange={(e) => setCommentsSearch(e.target.value)}
+                  placeholder="Kommentare durchsuchen (Text, Autor, E-Mail, Aufgabe)..."
+                  className="w-full pl-9 pr-4 py-2 glass-input rounded-xl text-xs"
+                />
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2">
+                <select
+                  value={commentsFilterRole}
+                  onChange={(e) => setCommentsFilterRole(e.target.value as 'all' | 'user' | 'teacher' | 'admin')}
+                  className="px-3 py-2 glass-input rounded-xl text-xs font-bold bg-slate-900 text-white"
+                >
+                  <option value="all">Alle Rollen</option>
+                  <option value="user">👤 Benutzer</option>
+                  <option value="teacher">🎓 Lehrkraft</option>
+                  <option value="admin">👑 Admin</option>
+                </select>
+
+                <select
+                  value={commentsFilterTile}
+                  onChange={(e) => setCommentsFilterTile(e.target.value)}
+                  className="px-3 py-2 glass-input rounded-xl text-xs font-bold bg-slate-900 text-white"
+                >
+                  <option value="all">Alle Module</option>
+                  <option value="lesen_1">Lesen 1</option>
+                  <option value="lesen_2">Lesen 2</option>
+                  <option value="lesen_3">Lesen 3</option>
+                  <option value="lesen_4">Lesen 4</option>
+                  <option value="sprachbausteine_1">Sprachbausteine 1</option>
+                  <option value="sprachbausteine_2">Sprachbausteine 2</option>
+                  <option value="hoeren_1">Hören 1</option>
+                  <option value="hoeren_2">Hören 2</option>
+                  <option value="hoeren_3">Hören 3</option>
+                  <option value="hoeren_4">Hören 4</option>
+                  <option value="schreiben">Schreiben</option>
+                  <option value="sprechen_1">Sprechen 1</option>
+                  <option value="sprechen_2">Sprechen 2</option>
+                  <option value="sprechen_3">Sprechen 3</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Comments Stream / Cards */}
+            {filteredComments.length === 0 ? (
+              <div className="p-12 glass-panel rounded-3xl border border-slate-800 text-center space-y-3">
+                <MessageSquare className="w-12 h-12 mx-auto text-slate-600" />
+                <h4 className="text-base font-bold text-white">Keine Kommentare gefunden</h4>
+                <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                  {commentsSearch || commentsFilterRole !== 'all' || commentsFilterTile !== 'all'
+                    ? 'Versuchen Sie, die Suchfilter anzupassen.'
+                    : 'Es wurden bisher noch keine Aufgaben-Kommentare von Teilnehmern hinterlassen.'}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {filteredComments.map((c) => {
+                  const isTeacher = c.userRole === 'teacher';
+                  const isAdmin = c.userRole === 'admin';
+
+                  return (
+                    <div
+                      key={c.id}
+                      className={`p-5 glass-panel rounded-2xl border transition-all ${
+                        c.isPinned
+                          ? 'border-amber-500/50 bg-amber-500/5 ring-1 ring-amber-500/20'
+                          : c.isVerified
+                          ? 'border-emerald-500/40 bg-emerald-500/5'
+                          : 'border-slate-800'
+                      }`}
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                        {/* Author Info & Badges */}
+                        <div className="space-y-1.5 flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-black text-sm text-white">{c.userName}</span>
+
+                            {isAdmin ? (
+                              <span className="px-2 py-0.5 rounded-md bg-rose-500/20 border border-rose-500/40 text-rose-300 text-[10px] font-black uppercase">
+                                👑 Admin
+                              </span>
+                            ) : isTeacher ? (
+                              <span className="px-2 py-0.5 rounded-md bg-purple-500/20 border border-purple-500/40 text-purple-300 text-[10px] font-black uppercase">
+                                🎓 Lehrkraft
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-md bg-slate-800 border border-slate-700 text-slate-400 text-[10px] font-bold">
+                                👤 Benutzer
+                              </span>
+                            )}
+
+                            {c.isPinned && (
+                              <span className="px-2 py-0.5 rounded-md bg-amber-500/20 border border-amber-500/40 text-amber-300 text-[10px] font-black flex items-center gap-1">
+                                📌 Angepinnt
+                              </span>
+                            )}
+
+                            {c.isVerified && (
+                              <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-[10px] font-black flex items-center gap-1">
+                                <CheckCircle className="w-3 h-3 text-emerald-400" /> Geprüfte Erklärung
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Email & Date & Target Key */}
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-400 font-mono">
+                            {c.userEmail && <span>✉️ {c.userEmail}</span>}
+                            <span>🕒 {new Date(c.createdAt).toLocaleString('de-DE')}</span>
+                            <span className="px-2 py-0.5 bg-slate-900 text-indigo-300 rounded border border-indigo-500/20 font-mono text-[10px]">
+                              Aufgabe: {c.targetKey}
+                            </span>
+                            <span className="flex items-center gap-1 text-slate-300">
+                              <ThumbsUp className="w-3 h-3 text-indigo-400" /> {c.upvotes} Upvotes
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
+                          <button
+                            onClick={() => handlePin(c)}
+                            title={c.isPinned ? 'Pin entfernen' : 'Oben anpinnen'}
+                            className={`p-2 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                              c.isPinned
+                                ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                                : 'glass-card text-slate-400 hover:text-white'
+                            }`}
+                          >
+                            <Pin className="w-4 h-4" />
+                          </button>
+
+                          <button
+                            onClick={() => handleVerify(c)}
+                            title={c.isVerified ? 'Verifizierung entfernen' : 'Als Dozenten-Erklärung verifizieren'}
+                            className={`p-2 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                              c.isVerified
+                                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                                : 'glass-card text-slate-400 hover:text-white'
+                            }`}
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                          </button>
+
+                          <button
+                            onClick={() => handleDelete(c)}
+                            title="Kommentar löschen"
+                            className="p-2 rounded-xl glass-card text-rose-400 hover:bg-rose-500/20 border border-rose-500/30 transition-all cursor-pointer"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Comment text body */}
+                      <div className="mt-3 p-3.5 bg-slate-950/60 rounded-xl border border-slate-800/80 text-sm text-slate-200 whitespace-pre-wrap leading-relaxed">
+                        {c.content}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* WORTSCHATZ DATABASE ADMIN TAB (VOLLSTÄNDIGER CRUD-EDITOR) */}
       {activeTab === 'wortschatz' && (() => {
