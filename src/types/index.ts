@@ -24,11 +24,15 @@ export interface PromoPaidStudent {
   date: string; // ISO date or YYYY-MM-DD
 }
 
+export type PromoCodeCategory = 'free_days' | 'discount' | 'combined';
+
 export interface PromoCode {
   id: string;
   code: string;
+  category?: PromoCodeCategory;
   durationDays: number;
   maxUses: number;
+  isUnlimited?: boolean;
   usedCount: number;
   createdDate: string;
   usedByEmails: string[];

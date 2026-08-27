@@ -4,6 +4,7 @@ import type {
   Modelltest,
   TileType,
   PromoCode,
+  PromoCodeCategory,
   ForumsbeitragTopic,
   User,
   UserRole,
@@ -426,16 +427,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   };
 
   // New Promo Code form state
+  const [editingPromoId, setEditingPromoId] = useState<string | null>(null);
+  const [promoCategory, setPromoCategory] = useState<PromoCodeCategory>('free_days');
+  const [promoIsUnlimited, setPromoIsUnlimited] = useState<boolean>(false);
   const [promoCodeInput, setPromoCodeInput] = useState('');
   const [promoDurationDays, setPromoDurationDays] = useState(30);
-  const [promoMaxUses, setPromoMaxUses] = useState(50);
+  const [promoMaxUses, setPromoMaxUses] = useState(1);
   const [promoPartnerName, setPromoPartnerName] = useState('');
   const [promoPartnerLink, setPromoPartnerLink] = useState('');
   const [promoDescription, setPromoDescription] = useState('');
   const [promoOwnerEmail, setPromoOwnerEmail] = useState('');
   const [promoOwnerUserId, setPromoOwnerUserId] = useState('');
-  const [promoDiscountPercent, setPromoDiscountPercent] = useState<number>(15);
-  const [promoCommissionPercent, setPromoCommissionPercent] = useState<number>(20);
+  const [promoDiscountPercent, setPromoDiscountPercent] = useState<number>(0);
+  const [promoCommissionPercent, setPromoCommissionPercent] = useState<number>(0);
   const [copiedPromoId, setCopiedPromoId] = useState<string | null>(null);
 
   // Tile Variant Editor State
@@ -1003,43 +1007,108 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     }
   };
 
+  const handleStartEditPromo = (code: PromoCode) => {
+    setEditingPromoId(code.id);
+    setPromoCodeInput(code.code);
+    setPromoCategory(code.category || (code.discountPercent && code.discountPercent > 0 ? (code.durationDays > 0 ? 'combined' : 'discount') : 'free_days'));
+    setPromoDurationDays(code.durationDays || 0);
+    setPromoIsUnlimited(Boolean(code.isUnlimited || code.maxUses >= 999999));
+    setPromoMaxUses(code.maxUses >= 999999 ? 50 : (code.maxUses || 1));
+    setPromoDiscountPercent(code.discountPercent || 0);
+    setPromoCommissionPercent(code.commissionPercent ?? (code.ownerEmail ? 20 : 0));
+    setPromoOwnerEmail(code.ownerEmail || '');
+    setPromoOwnerUserId(code.ownerUserId || '');
+    setPromoPartnerName(code.partnerName || '');
+    setPromoPartnerLink(code.partnerLink || '');
+    setPromoDescription(code.description || '');
+
+    const formEl = document.getElementById('promo-code-generator-card');
+    if (formEl) formEl.scrollIntoView({ behavior: 'smooth' });
+    showToast(`Gutschein "${code.code}" wird bearbeitet.`, 'success');
+  };
+
+  const handleCancelEditPromo = () => {
+    setEditingPromoId(null);
+    setPromoCodeInput('');
+    setPromoCategory('free_days');
+    setPromoDurationDays(30);
+    setPromoIsUnlimited(false);
+    setPromoMaxUses(1);
+    setPromoDiscountPercent(0);
+    setPromoCommissionPercent(0);
+    setPromoOwnerEmail('');
+    setPromoOwnerUserId('');
+    setPromoPartnerName('');
+    setPromoPartnerLink('');
+    setPromoDescription('');
+  };
+
   // Promo Code Handlers
   const handleGeneratePromoCode = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!promoCodeInput.trim()) return;
 
-    const newCodeObj: PromoCode = {
-      id: `promo-${Date.now()}`,
-      code: promoCodeInput.trim().toUpperCase(),
-      durationDays: promoDurationDays,
-      maxUses: promoMaxUses,
-      usedCount: 0,
-      createdDate: new Date().toISOString().split('T')[0],
-      usedByEmails: [],
-      active: true,
-      partnerName: promoPartnerName.trim() || undefined,
-      partnerLink: promoPartnerLink.trim() || undefined,
-      description: promoDescription.trim() || undefined,
-      discountPercent: promoDiscountPercent,
-      commissionPercent: promoCommissionPercent,
-      ownerUserId: promoOwnerUserId.trim() || undefined,
-      ownerEmail: promoOwnerEmail.trim().toLowerCase() || undefined,
-      paidStudents: [],
-    };
+    const codeKey = promoCodeInput.trim().toUpperCase();
+    const effectiveDays = promoCategory === 'discount' ? 0 : promoDurationDays;
+    const effectiveDiscount = promoCategory === 'free_days' ? 0 : promoDiscountPercent;
+    const effectiveCommission = promoOwnerEmail ? promoCommissionPercent : 0;
+    const effectiveMaxUses = promoIsUnlimited ? 999999 : promoMaxUses;
 
-    const res = await onSavePromoCodes([...promoCodes, newCodeObj]);
+    let updatedCodesList: PromoCode[];
+
+    if (editingPromoId) {
+      const existing = promoCodes.find((c) => c.id === editingPromoId);
+      const updatedItem: PromoCode = {
+        id: editingPromoId,
+        code: codeKey,
+        category: promoCategory,
+        durationDays: effectiveDays,
+        discountPercent: effectiveDiscount,
+        commissionPercent: effectiveCommission,
+        maxUses: effectiveMaxUses,
+        isUnlimited: promoIsUnlimited,
+        usedCount: existing?.usedCount || 0,
+        createdDate: existing?.createdDate || new Date().toISOString().split('T')[0],
+        usedByEmails: existing?.usedByEmails || [],
+        active: existing ? existing.active : true,
+        partnerName: promoPartnerName.trim() || undefined,
+        partnerLink: promoPartnerLink.trim() || undefined,
+        description: promoDescription.trim() || undefined,
+        ownerUserId: promoOwnerUserId.trim() || undefined,
+        ownerEmail: promoOwnerEmail.trim().toLowerCase() || undefined,
+        paidStudents: existing?.paidStudents || [],
+      };
+      updatedCodesList = promoCodes.map((c) => (c.id === editingPromoId ? updatedItem : c));
+    } else {
+      const newCodeObj: PromoCode = {
+        id: `promo-${Date.now()}`,
+        code: codeKey,
+        category: promoCategory,
+        durationDays: effectiveDays,
+        discountPercent: effectiveDiscount,
+        commissionPercent: effectiveCommission,
+        maxUses: effectiveMaxUses,
+        isUnlimited: promoIsUnlimited,
+        usedCount: 0,
+        createdDate: new Date().toISOString().split('T')[0],
+        usedByEmails: [],
+        active: true,
+        partnerName: promoPartnerName.trim() || undefined,
+        partnerLink: promoPartnerLink.trim() || undefined,
+        description: promoDescription.trim() || undefined,
+        ownerUserId: promoOwnerUserId.trim() || undefined,
+        ownerEmail: promoOwnerEmail.trim().toLowerCase() || undefined,
+        paidStudents: [],
+      };
+      updatedCodesList = [...promoCodes, newCodeObj];
+    }
+
+    const res = await onSavePromoCodes(updatedCodesList);
     if (res && res.success === false) {
       showToast(`Fehler beim Speichern in Supabase: ${res.error}`, 'error');
     } else {
-      setPromoCodeInput('');
-      setPromoPartnerName('');
-      setPromoPartnerLink('');
-      setPromoDescription('');
-      setPromoOwnerEmail('');
-      setPromoOwnerUserId('');
-      setPromoDiscountPercent(15);
-      setPromoCommissionPercent(20);
-      showToast('Gutscheincode erfolgreich erstellt & in Supabase gespeichert!');
+      showToast(editingPromoId ? `Gutschein "${codeKey}" erfolgreich aktualisiert!` : `Gutschein "${codeKey}" erfolgreich erstellt & in Cloud gespeichert!`);
+      handleCancelEditPromo();
     }
   };
 
@@ -2595,324 +2664,527 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       )}      {/* PROMO CODES TAB */}
       {activeTab === 'promocodes' && (
         <div className="space-y-6">
-          <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <Key className="w-4 h-4 text-amber-400" /> Gutschein- & Partner-Code Generator
-            </h3>
+          {/* Creator / Editor Card */}
+          <div id="promo-code-generator-card" className="glass-panel p-6 sm:p-7 rounded-3xl border border-slate-800 space-y-6 shadow-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+              <div>
+                <h3 className="text-lg font-black text-white flex items-center gap-2">
+                  {editingPromoId ? (
+                    <>
+                      <Edit3 className="w-5 h-5 text-amber-400" />
+                      <span>Gutschein bearbeiten</span>
+                    </>
+                  ) : (
+                    <>
+                      <Key className="w-5 h-5 text-amber-400" />
+                      <span>Gutschein- & Rabattcode Manager</span>
+                    </>
+                  )}
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  {editingPromoId
+                    ? `Sie bearbeiten den bestehenden Code "${promoCodeInput}".`
+                    : 'Erstellen Sie kostenlose Test-Gutscheine oder unbegrenzte Rabattcodes für Marketing & Dozenten.'}
+                </p>
+              </div>
+
+              {editingPromoId && (
+                <button
+                  type="button"
+                  onClick={handleCancelEditPromo}
+                  className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer self-start sm:self-auto"
+                >
+                  <X className="w-4 h-4" /> Bearbeitung abbrechen
+                </button>
+              )}
+            </div>
+
+            {/* Type / Category Selector Tabs */}
+            <div className="space-y-2">
+              <label className="block text-xs font-bold text-slate-300">
+                Gutschein-Typ auswählen:
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPromoCategory('free_days');
+                    setPromoDurationDays(30);
+                    setPromoDiscountPercent(0);
+                    setPromoIsUnlimited(false);
+                    setPromoMaxUses(1);
+                  }}
+                  className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
+                    promoCategory === 'free_days'
+                      ? 'bg-amber-500/15 border-amber-500 text-white shadow-md ring-2 ring-amber-500/20'
+                      : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                  }`}
+                >
+                  <div className="text-xs font-black flex items-center gap-1.5 text-amber-400">
+                    🎁 Kostenloser VIP-Zugang (Tage)
+                  </div>
+                  <div className="text-[11px] text-slate-400 mt-1 leading-snug">
+                    Schaltet X Tage Premium kostenlos frei. Ideal für Einzelschüler oder Direktzahler.
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPromoCategory('discount');
+                    setPromoDurationDays(0);
+                    setPromoDiscountPercent(15);
+                    setPromoIsUnlimited(true);
+                  }}
+                  className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
+                    promoCategory === 'discount'
+                      ? 'bg-purple-500/15 border-purple-500 text-white shadow-md ring-2 ring-purple-500/20'
+                      : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                  }`}
+                >
+                  <div className="text-xs font-black flex items-center gap-1.5 text-purple-400">
+                    🏷️ Rabattcode für Ads & Kampagnen (%)
+                  </div>
+                  <div className="text-[11px] text-slate-400 mt-1 leading-snug">
+                    Gibt -% Rabatt bei der Bestellung im Shop. Ideal für TikTok/Insta & Dozenten.
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPromoCategory('combined');
+                    setPromoDurationDays(7);
+                    setPromoDiscountPercent(15);
+                    setPromoIsUnlimited(true);
+                  }}
+                  className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${
+                    promoCategory === 'combined'
+                      ? 'bg-indigo-500/15 border-indigo-500 text-white shadow-md ring-2 ring-indigo-500/20'
+                      : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                  }`}
+                >
+                  <div className="text-xs font-black flex items-center gap-1.5 text-indigo-400">
+                    ⭐ Kombiniert (Tage + Rabatt)
+                  </div>
+                  <div className="text-[11px] text-slate-400 mt-1 leading-snug">
+                    Z. B. 7 Tage kostenlos testen + 15% Rabatt beim späteren Kauf.
+                  </div>
+                </button>
+              </div>
+            </div>
 
             <form onSubmit={handleGeneratePromoCode} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {/* Code Name */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">Code *</label>
+                  <label className="block text-xs font-bold text-slate-300 mb-1">Gutscheincode *</label>
                   <input
                     type="text"
                     value={promoCodeInput}
                     onChange={(e) => setPromoCodeInput(e.target.value)}
-                    placeholder="Z. B. MARIA14 oder INTENSIV2026"
-                    className="w-full px-3 py-2 glass-input rounded-xl text-xs uppercase font-mono font-bold placeholder:text-slate-600"
+                    placeholder="Z. B. TIKTOK20, MARIA-B2 oder VIP30"
+                    className="w-full px-3 py-2.5 glass-input rounded-xl text-xs uppercase font-mono font-bold placeholder:text-slate-600"
                     required
                   />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">Dauer (Tage) *</label>
-                  <input
-                    type="number"
-                    value={promoDurationDays}
-                    onChange={(e) => setPromoDurationDays(Number(e.target.value))}
-                    className="w-full px-3 py-2 glass-input rounded-xl text-xs font-bold"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1">Max. Nutzungen *</label>
-                  <input
-                    type="number"
-                    value={promoMaxUses}
-                    onChange={(e) => setPromoMaxUses(Number(e.target.value))}
-                    className="w-full px-3 py-2 glass-input rounded-xl text-xs font-bold"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Partner & Influencer Details */}
-              <div className="p-4 bg-slate-900/60 rounded-xl border border-slate-800 space-y-3">
-                <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider block">
-                  🎁 Partner- / Lehrkraft-Zuweisung (Optional)
-                </span>
-
-                <div>
-                  <label className="block text-[11px] text-slate-400 mb-1">
-                    👤 Zugeordnete registrierte Lehrkraft / Partner
-                  </label>
-                  <select
-                    value={promoOwnerEmail}
-                    onChange={(e) => {
-                      const selectedEmail = e.target.value;
-                      setPromoOwnerEmail(selectedEmail);
-                      const foundUser = usersList.find((u) => u.email.toLowerCase() === selectedEmail.toLowerCase());
-                      if (foundUser) {
-                        setPromoOwnerUserId(foundUser.id);
-                        if (!promoPartnerName) {
-                          setPromoPartnerName(foundUser.name);
-                        }
-                      } else {
-                        setPromoOwnerUserId('');
-                      }
-                    }}
-                    className="w-full px-3 py-2 glass-input rounded-lg text-xs bg-slate-900 font-bold text-white cursor-pointer"
-                  >
-                    <option value="">-- Nicht zugeordnet (Manueller externer Partner) --</option>
-                    {usersList
-                      .filter((u) => u.role === 'teacher')
-                      .map((u) => (
-                        <option key={u.id} value={u.email}>
-                          🎓 {u.name} ({u.email}) [Lehrkraft]
-                        </option>
-                      ))}
-                    {usersList
-                      .filter((u) => u.role === 'admin')
-                      .map((u) => (
-                        <option key={u.id} value={u.email}>
-                          👑 {u.name} ({u.email}) [Admin]
-                        </option>
-                      ))}
-                    <optgroup label="Andere registrierte Benutzer">
-                      {usersList
-                        .filter((u) => u.role === 'user')
-                        .map((u) => (
-                          <option key={u.id} value={u.email}>
-                            👤 {u.name} ({u.email})
-                          </option>
-                        ))}
-                    </optgroup>
-                  </select>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Free Days (if applicable) */}
+                {(promoCategory === 'free_days' || promoCategory === 'combined') && (
                   <div>
-                    <label className="block text-[11px] text-slate-400 mb-1">Öffentlicher Partner-Name</label>
-                    <input
-                      type="text"
-                      value={promoPartnerName}
-                      onChange={(e) => setPromoPartnerName(e.target.value)}
-                      placeholder="Z. B. Deutsch mit Maria / Anna Schmidt"
-                      className="w-full px-3 py-1.5 glass-input rounded-lg text-xs font-bold"
-                    />
+                    <label className="block text-xs font-bold text-amber-400 mb-1">
+                      Kostenlose Premium-Dauer *
+                    </label>
+                    <select
+                      value={promoDurationDays}
+                      onChange={(e) => setPromoDurationDays(Number(e.target.value))}
+                      className="w-full px-3 py-2.5 glass-input rounded-xl text-xs font-bold bg-slate-900 text-white"
+                    >
+                      <option value={7}>7 Tage (Sprint)</option>
+                      <option value={14}>14 Tage (2 Wochen)</option>
+                      <option value={30}>30 Tage (1 Monat)</option>
+                      <option value={60}>60 Tage (2 Monate)</option>
+                      <option value={90}>90 Tage (3 Monate)</option>
+                      <option value={180}>180 Tage (6 Monate)</option>
+                      <option value={365}>365 Tage (1 Jahr)</option>
+                      <option value={999}>∞ Dauerhaft (Unbegrenzt)</option>
+                    </select>
                   </div>
+                )}
 
+                {/* Discount % (if applicable) */}
+                {(promoCategory === 'discount' || promoCategory === 'combined') && (
                   <div>
-                    <label className="block text-[11px] text-slate-400 mb-1">Partner-Link (Telegram / Instagram / Web)</label>
-                    <input
-                      type="url"
-                      value={promoPartnerLink}
-                      onChange={(e) => setPromoPartnerLink(e.target.value)}
-                      placeholder="https://t.me/maria_deutsch oder https://instagram.com/..."
-                      className="w-full px-3 py-1.5 glass-input rounded-lg text-xs font-mono"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[11px] text-slate-400 mb-1">Beschreibung / Begrüßung für Schüler</label>
-                  <input
-                    type="text"
-                    value={promoDescription}
-                    onChange={(e) => setPromoDescription(e.target.value)}
-                    placeholder="Z. B. Exklusiver 14-Tage-Zugang für die Teilnehmer meines DTB B2 Intensivkurses!"
-                    className="w-full px-3 py-1.5 glass-input rounded-lg text-xs"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-800/80">
-                  <div>
-                    <label className="block text-[11px] text-amber-400 font-bold mb-1">
-                      🏷️ Schüler-Rabatt (% Rabatt auf alle Tarife)
+                    <label className="block text-xs font-bold text-purple-400 mb-1">
+                      Schüler-Rabatt auf Tarife *
                     </label>
                     <select
                       value={promoDiscountPercent}
                       onChange={(e) => setPromoDiscountPercent(Number(e.target.value))}
-                      className="w-full px-3 py-2 glass-input rounded-lg text-xs font-bold bg-slate-900 text-white cursor-pointer"
+                      className="w-full px-3 py-2.5 glass-input rounded-xl text-xs font-bold bg-slate-900 text-white"
                     >
-                      <option value={0}>0% (Kein Rabatt)</option>
                       <option value={10}>-10% Rabatt</option>
                       <option value={15}>-15% Rabatt (Empfohlen)</option>
                       <option value={20}>-20% Rabatt</option>
                       <option value={25}>-25% Rabatt</option>
                       <option value={30}>-30% Rabatt</option>
-                      <option value={50}>-50% Rabatt</option>
+                      <option value={40}>-40% Rabatt</option>
+                      <option value={50}>-50% Rabatt (Halber Preis)</option>
+                    </select>
+                  </div>
+                )}
+
+                {/* Usage Limit & Unlimited Toggle */}
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-bold text-slate-300">Nutzungslimit</label>
+                    <label className="flex items-center gap-1.5 text-[11px] text-amber-400 font-bold cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={promoIsUnlimited}
+                        onChange={(e) => setPromoIsUnlimited(e.target.checked)}
+                        className="accent-amber-500 rounded"
+                      />
+                      <span>∞ Unbegrenzt</span>
+                    </label>
+                  </div>
+                  {promoIsUnlimited ? (
+                    <div className="w-full px-3 py-2.5 bg-slate-900/80 rounded-xl text-xs font-mono font-bold text-amber-400 border border-slate-800 flex items-center gap-1.5">
+                      <span>∞ Unbegrenzt viele Aktivierungen (Werbung / Ads)</span>
+                    </div>
+                  ) : (
+                    <input
+                      type="number"
+                      min={1}
+                      value={promoMaxUses}
+                      onChange={(e) => setPromoMaxUses(Number(e.target.value))}
+                      placeholder="Z. B. 1 oder 50 Personen"
+                      className="w-full px-3 py-2.5 glass-input rounded-xl text-xs font-bold"
+                      required
+                    />
+                  )}
+                </div>
+              </div>
+
+              {/* Owner, Commission & Partner Linking */}
+              <div className="p-4 sm:p-5 bg-slate-900/70 rounded-2xl border border-slate-800 space-y-3.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                    👤 Inhaber & Auszahlungs-Provision
+                  </span>
+                  <span className="text-[11px] text-slate-400">
+                    Standard: Eigene Kampagne (100% für Sie)
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div>
+                    <label className="block text-[11px] text-slate-400 mb-1">
+                      Zugeordneter Partner / Lehrkraft
+                    </label>
+                    <select
+                      value={promoOwnerEmail}
+                      onChange={(e) => {
+                        const selectedEmail = e.target.value;
+                        setPromoOwnerEmail(selectedEmail);
+                        const foundUser = usersList.find((u) => u.email.toLowerCase() === selectedEmail.toLowerCase());
+                        if (foundUser) {
+                          setPromoOwnerUserId(foundUser.id);
+                          if (!promoPartnerName) setPromoPartnerName(foundUser.name);
+                          if (promoCommissionPercent === 0) setPromoCommissionPercent(20);
+                        } else {
+                          setPromoOwnerUserId('');
+                          setPromoCommissionPercent(0);
+                        }
+                      }}
+                      className="w-full px-3 py-2.5 glass-input rounded-xl text-xs bg-slate-900 font-bold text-white cursor-pointer"
+                    >
+                      <option value="">👑 Eigene Kampagne / Admin (100% für mich • 0% Provision)</option>
+                      {usersList
+                        .filter((u) => u.role === 'teacher')
+                        .map((u) => (
+                          <option key={u.id} value={u.email}>
+                            🎓 {u.name} ({u.email}) [Lehrkraft]
+                          </option>
+                        ))}
+                      {usersList
+                        .filter((u) => u.role === 'admin' && !isAdminEmail(u.email))
+                        .map((u) => (
+                          <option key={u.id} value={u.email}>
+                            👑 {u.name} ({u.email}) [Admin]
+                          </option>
+                        ))}
+                      <optgroup label="Andere registrierte Benutzer">
+                        {usersList
+                          .filter((u) => u.role === 'user')
+                          .map((u) => (
+                            <option key={u.id} value={u.email}>
+                              👤 {u.name} ({u.email})
+                            </option>
+                          ))}
+                      </optgroup>
                     </select>
                   </div>
 
+                  {promoOwnerEmail ? (
+                    <div>
+                      <label className="block text-[11px] text-purple-400 font-bold mb-1">
+                        💰 Dozenten-Provision (% Verdienst für die Lehrkraft)
+                      </label>
+                      <select
+                        value={promoCommissionPercent}
+                        onChange={(e) => setPromoCommissionPercent(Number(e.target.value))}
+                        className="w-full px-3 py-2.5 glass-input rounded-xl text-xs font-bold bg-slate-900 text-white cursor-pointer"
+                      >
+                        <option value={0}>0% (Keine Provision)</option>
+                        <option value={15}>15% Provision</option>
+                        <option value={20}>20% Provision (Standard)</option>
+                        <option value={25}>25% Provision</option>
+                        <option value={30}>30% Provision</option>
+                        <option value={40}>40% Provision</option>
+                        <option value={50}>50% Provision (Hälfte)</option>
+                      </select>
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="block text-[11px] text-slate-400 mb-1">Öffentlicher Name / Kampagnen-Titel</label>
+                      <input
+                        type="text"
+                        value={promoPartnerName}
+                        onChange={(e) => setPromoPartnerName(e.target.value)}
+                        placeholder="Z. B. Sommer-Aktion 2026 / TikTok Promo"
+                        className="w-full px-3 py-2 glass-input rounded-xl text-xs font-bold"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   <div>
-                    <label className="block text-[11px] text-purple-400 font-bold mb-1">
-                      💰 Dozenten-Provision (% Verdienst für die Lehrkraft)
-                    </label>
-                    <select
-                      value={promoCommissionPercent}
-                      onChange={(e) => setPromoCommissionPercent(Number(e.target.value))}
-                      className="w-full px-3 py-2 glass-input rounded-lg text-xs font-bold bg-slate-900 text-white cursor-pointer"
-                    >
-                      <option value={0}>0% (Keine Provision)</option>
-                      <option value={15}>15% Provision</option>
-                      <option value={20}>20% Provision (Standard)</option>
-                      <option value={25}>25% Provision</option>
-                      <option value={30}>30% Provision</option>
-                      <option value={40}>40% Provision</option>
-                      <option value={50}>50% Provision</option>
-                    </select>
+                    <label className="block text-[11px] text-slate-400 mb-1">Begrüßung / Beschreibung für Schüler</label>
+                    <input
+                      type="text"
+                      value={promoDescription}
+                      onChange={(e) => setPromoDescription(e.target.value)}
+                      placeholder="Z. B. Exklusiver 20% Rabatt für die Community von TikTok!"
+                      className="w-full px-3 py-2 glass-input rounded-xl text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] text-slate-400 mb-1">Externer Link (Telegram / Instagram)</label>
+                    <input
+                      type="url"
+                      value={promoPartnerLink}
+                      onChange={(e) => setPromoPartnerLink(e.target.value)}
+                      placeholder="https://t.me/... oder https://instagram.com/..."
+                      className="w-full px-3 py-2 glass-input rounded-xl text-xs font-mono"
+                    />
                   </div>
                 </div>
               </div>
 
-              <div className="flex justify-end pt-1">
+              <div className="flex justify-end gap-3 pt-1">
+                {editingPromoId && (
+                  <button
+                    type="button"
+                    onClick={handleCancelEditPromo}
+                    className="py-2.5 px-5 glass-card text-slate-400 hover:text-white font-bold rounded-xl text-xs transition-all cursor-pointer"
+                  >
+                    Abbrechen
+                  </button>
+                )}
                 <button
                   type="submit"
                   className="py-2.5 px-6 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black rounded-xl text-xs shadow-lg shadow-amber-500/20 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                 >
-                  <Save className="w-4 h-4" /> Gutschein erstellen & in Cloud speichern
+                  <Save className="w-4 h-4" />
+                  <span>{editingPromoId ? 'Gutschein aktualisieren' : 'Gutschein erstellen & in Cloud speichern'}</span>
                 </button>
               </div>
             </form>
           </div>
 
-          <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
-            <h3 className="text-base font-bold text-white">Generierte Gutscheincodes ({promoCodes.length})</h3>
+          {/* Generated Codes Table */}
+          <div className="glass-panel p-6 rounded-3xl border border-slate-800 space-y-4 shadow-xl">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-white flex items-center gap-2">
+                <span>Alle Gutscheincodes ({promoCodes.length})</span>
+              </h3>
+              <span className="text-xs text-slate-400">
+                Klicken Sie auf ✏️, um beliebige Codes nachträglich anzupassen.
+              </span>
+            </div>
+
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs text-slate-300">
                 <thead className="bg-slate-900/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
                   <tr>
                     <th className="p-3">Code & Partner</th>
-                    <th className="p-3">Rabatt & Provision</th>
-                    <th className="p-3">Dauer</th>
+                    <th className="p-3">Typ & Leistung</th>
                     <th className="p-3">Nutzungen</th>
+                    <th className="p-3">Inhaber / Provision</th>
                     <th className="p-3">Partner-Link</th>
-                    <th className="p-3">E-Mails</th>
+                    <th className="p-3">Aktivierte E-Mails</th>
                     <th className="p-3">Status</th>
-                    <th className="p-3">Aktion</th>
+                    <th className="p-3 text-right">Aktionen</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60">
                   {promoCodes.map((code) => {
                     const totalEarnings = (code.paidStudents || []).reduce((acc, s) => acc + s.teacherEarnings, 0);
+                    const isUnlim = Boolean(code.isUnlimited || code.maxUses >= 999999);
 
                     return (
-                    <tr key={code.id} className="hover:bg-slate-900/40">
-                      <td className="p-3">
-                        <div className="font-mono font-black text-amber-400 text-sm">{code.code}</div>
-                        {code.partnerName && (
-                          <div className="text-[11px] font-semibold text-slate-300 mt-0.5 flex items-center gap-1">
-                            <span>🎓 {code.partnerName}</span>
-                          </div>
-                        )}
-                        {code.ownerEmail && (
-                          <div className="text-[10px] text-purple-400 font-mono mt-0.5">
-                            👤 Inhaber: {code.ownerEmail}
-                          </div>
-                        )}
-                        {code.description && (
-                          <div className="text-[10px] text-slate-400 italic max-w-xs truncate" title={code.description}>
-                            «{code.description}»
-                          </div>
-                        )}
-                      </td>
-                      <td className="p-3 whitespace-nowrap space-y-1">
-                        <div className="flex flex-wrap gap-1">
+                      <tr key={code.id} className="hover:bg-slate-900/40 transition-colors">
+                        {/* Code & Partner */}
+                        <td className="p-3">
+                          <div className="font-mono font-black text-amber-400 text-sm">{code.code}</div>
+                          {code.partnerName && (
+                            <div className="text-[11px] font-semibold text-slate-300 mt-0.5 flex items-center gap-1">
+                              <span>🎓 {code.partnerName}</span>
+                            </div>
+                          )}
+                          {code.description && (
+                            <div className="text-[10px] text-slate-400 italic max-w-xs truncate" title={code.description}>
+                              «{code.description}»
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Type & Benefit */}
+                        <td className="p-3 whitespace-nowrap space-y-1">
+                          {code.durationDays > 0 && (
+                            <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded text-[10px] font-black mr-1">
+                              🎁 {code.durationDays >= 999 ? '∞ Dauerhaft' : `${code.durationDays} Tage frei`}
+                            </div>
+                          )}
                           {Boolean(code.discountPercent && code.discountPercent > 0) && (
-                            <span className="px-1.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded text-[9px] font-bold">
+                            <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded text-[10px] font-black">
                               🏷️ -{code.discountPercent}% Rabatt
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Usages */}
+                        <td className="p-3 font-bold whitespace-nowrap">
+                          {isUnlim ? (
+                            <span className="text-emerald-400 font-mono">
+                              {code.usedCount} / ∞
+                            </span>
+                          ) : (
+                            <span className={code.usedCount >= code.maxUses ? 'text-rose-400' : 'text-emerald-400'}>
+                              {code.usedCount} / {code.maxUses}
                             </span>
                           )}
-                          <span className="px-1.5 py-0.5 bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded text-[9px] font-bold">
-                            💰 {code.commissionPercent ?? 20}% Provision
-                          </span>
-                        </div>
-                        {totalEarnings > 0 && (
-                          <div className="text-[10px] text-emerald-400 font-black">
-                            💶 {totalEarnings.toFixed(2)} € verdient ({code.paidStudents?.length || 0} Abos)
-                          </div>
-                        )}
-                      </td>
-                      <td className="p-3 whitespace-nowrap font-bold">
-                        {code.durationDays >= 999 ? '∞ Dauerhaft' : `${code.durationDays} Tage`}
-                      </td>
-                      <td className="p-3 font-bold whitespace-nowrap">
-                        <span className={code.usedCount >= code.maxUses ? 'text-rose-400' : 'text-emerald-400'}>
-                          {code.usedCount}
-                        </span>{' '}
-                        / {code.maxUses}
-                      </td>
-                      <td className="p-3 whitespace-nowrap">
-                        <button
-                          type="button"
-                          onClick={() => handleCopyPromoLink(code.code, code.id)}
-                          className="px-2.5 py-1 bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white rounded-lg border border-indigo-500/30 text-[11px] font-bold transition-all flex items-center gap-1.5 cursor-pointer"
-                          title="Direkten Empfehlungslink kopieren"
-                        >
-                          {copiedPromoId === code.id ? (
-                            <>
-                              <Check className="w-3.5 h-3.5 text-emerald-400" />
-                              <span className="text-emerald-300">Kopiert!</span>
-                            </>
+                        </td>
+
+                        {/* Owner & Commission */}
+                        <td className="p-3 whitespace-nowrap text-[11px]">
+                          {code.ownerEmail ? (
+                            <div className="space-y-0.5">
+                              <div className="text-purple-300 font-mono font-bold">👤 {code.ownerEmail}</div>
+                              <div className="text-[10px] text-purple-400 font-bold">💰 {code.commissionPercent ?? 20}% Provision</div>
+                              {totalEarnings > 0 && (
+                                <div className="text-[10px] text-emerald-400 font-black">
+                                  💶 {totalEarnings.toFixed(2)} € ({code.paidStudents?.length || 0} Abos)
+                                </div>
+                              )}
+                            </div>
                           ) : (
-                            <>
-                              <Copy className="w-3.5 h-3.5" />
-                              <span>Link kopieren</span>
-                            </>
+                            <span className="px-2 py-0.5 bg-slate-800 text-slate-400 rounded text-[10px] font-bold">
+                              👑 Eigene Kampagne (Admin)
+                            </span>
                           )}
-                        </button>
-                        {code.partnerLink && (
-                          <a
-                            href={code.partnerLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[10px] text-sky-400 hover:underline inline-flex items-center gap-0.5 mt-1"
+                        </td>
+
+                        {/* Copy Link */}
+                        <td className="p-3 whitespace-nowrap">
+                          <button
+                            type="button"
+                            onClick={() => handleCopyPromoLink(code.code, code.id)}
+                            className="px-2.5 py-1 bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white rounded-lg border border-indigo-500/30 text-[11px] font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                            title="Direkten Empfehlungslink kopieren"
                           >
-                            <span>Profil ansehen</span>
-                            <ExternalLink className="w-2.5 h-2.5" />
-                          </a>
-                        )}
-                      </td>
-                      <td className="p-3 max-w-xs">
-                        {code.usedByEmails && Array.isArray(code.usedByEmails) && code.usedByEmails.length > 0 ? (
-                          <div className="flex flex-wrap gap-1 max-h-16 overflow-y-auto pr-1">
-                            {code.usedByEmails.map((emailItem, idx) => (
-                              <span
-                                key={idx}
-                                className="px-2 py-0.5 bg-slate-900 text-indigo-300 font-mono text-[10px] font-bold rounded-md border border-slate-800"
-                              >
-                                {emailItem}
-                              </span>
-                            ))}
+                            {copiedPromoId === code.id ? (
+                              <>
+                                <Check className="w-3.5 h-3.5 text-emerald-400" />
+                                <span className="text-emerald-300">Kopiert!</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3.5 h-3.5" />
+                                <span>Link kopieren</span>
+                              </>
+                            )}
+                          </button>
+                          {code.partnerLink && (
+                            <a
+                              href={code.partnerLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[10px] text-sky-400 hover:underline inline-flex items-center gap-0.5 mt-1"
+                            >
+                              <span>Profil ansehen</span>
+                              <ExternalLink className="w-2.5 h-2.5" />
+                            </a>
+                          )}
+                        </td>
+
+                        {/* Used Emails */}
+                        <td className="p-3 max-w-xs">
+                          {code.usedByEmails && Array.isArray(code.usedByEmails) && code.usedByEmails.length > 0 ? (
+                            <div className="flex flex-wrap gap-1 max-h-16 overflow-y-auto pr-1">
+                              {code.usedByEmails.map((emailItem, idx) => (
+                                <span
+                                  key={idx}
+                                  className="px-2 py-0.5 bg-slate-900 text-indigo-300 font-mono text-[10px] font-bold rounded-md border border-slate-800"
+                                >
+                                  {emailItem}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-slate-600 italic">Noch keine</span>
+                          )}
+                        </td>
+
+                        {/* Status Toggle */}
+                        <td className="p-3 whitespace-nowrap">
+                          <button
+                            onClick={() => handleTogglePromoActive(code.id)}
+                            className={`px-2.5 py-1 rounded-lg font-bold text-[10px] cursor-pointer transition-colors ${
+                              code.active ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' : 'bg-slate-800 text-slate-500 hover:bg-slate-700'
+                            }`}
+                          >
+                            {code.active ? 'AKTIV' : 'INAKTIV'}
+                          </button>
+                        </td>
+
+                        {/* Actions: Edit & Delete */}
+                        <td className="p-3 whitespace-nowrap text-right">
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => handleStartEditPromo(code)}
+                              className="p-1.5 text-amber-400 hover:text-amber-300 hover:bg-amber-500/10 rounded-lg transition-colors cursor-pointer"
+                              title="Gutschein bearbeiten"
+                            >
+                              <Edit3 className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeletePromoCode(code.id)}
+                              className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
+                              title="Gutschein löschen"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
                           </div>
-                        ) : (
-                          <span className="text-slate-600 italic">Noch keine</span>
-                        )}
-                      </td>
-                      <td className="p-3 whitespace-nowrap">
-                        <button
-                          onClick={() => handleTogglePromoActive(code.id)}
-                          className={`px-2 py-0.5 rounded font-bold text-[10px] cursor-pointer transition-colors ${
-                            code.active ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30' : 'bg-slate-800 text-slate-500 hover:bg-slate-700'
-                          }`}
-                        >
-                          {code.active ? 'AKTIV' : 'INAKTIV'}
-                        </button>
-                      </td>
-                      <td className="p-3 whitespace-nowrap">
-                        <button
-                          onClick={() => handleDeletePromoCode(code.id)}
-                          className="p-1.5 text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
-                          title="Gutschein löschen"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

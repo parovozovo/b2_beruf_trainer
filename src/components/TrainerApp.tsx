@@ -394,24 +394,31 @@ export const TrainerApp: React.FC<TrainerAppProps> = ({ theme, onToggleTheme }) 
       return { success: false, message: 'Aktionscode nicht mehr aktiv' };
     }
 
-    const durationDays = code.durationDays || null;
-    const expiresAt = durationDays
+    const isUnlim = Boolean(code.isUnlimited || code.maxUses >= 999999);
+    if (!isUnlim && (code.usedCount || 0) >= (code.maxUses || 50)) {
+      showToast('Das Nutzungslimit für diesen Aktionscode wurde erreicht', 'error');
+      return { success: false, message: 'Nutzungslimit erreicht' };
+    }
+
+    const hasFreeDays = Boolean(code.durationDays && code.durationDays > 0);
+    const durationDays = hasFreeDays ? code.durationDays : null;
+    const expiresAt = hasFreeDays && durationDays
       ? new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString()
-      : null;
+      : (currentUser?.premiumExpiresAt || null);
 
     const userToUpdate: User = currentUser || {
       id: `anon-${Date.now()}`,
       name: 'Gast',
       email: 'gast@beruf-b2.com',
       role: 'user',
-      isPremium: true,
+      isPremium: hasFreeDays ? true : false,
       premiumExpiresAt: expiresAt,
       appliedPromoCode: code.code,
     };
 
     const updatedUser: User = {
       ...userToUpdate,
-      isPremium: true,
+      isPremium: hasFreeDays ? true : userToUpdate.isPremium,
       premiumExpiresAt: expiresAt,
       appliedPromoCode: code.code,
     };
@@ -428,7 +435,7 @@ export const TrainerApp: React.FC<TrainerAppProps> = ({ theme, onToggleTheme }) 
             await supabase
               .from('registered_users')
               .update({
-                is_premium: true,
+                is_premium: updatedUser.isPremium,
                 premium_expires_at: expiresAt,
                 applied_promo_code: code.code,
               })
@@ -449,7 +456,15 @@ export const TrainerApp: React.FC<TrainerAppProps> = ({ theme, onToggleTheme }) 
     }
 
     confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-    showToast(`🎉 Code "${code.code}" erfolgreich eingelöst! Premium aktiviert (${durationDays ? durationDays + ' Tage' : 'Dauerhaft'}).`, 'success');
+    
+    if (hasFreeDays) {
+      showToast(`🎉 Code "${code.code}" erfolgreich eingelöst! Premium aktiviert (${durationDays ? durationDays + ' Tage' : 'Dauerhaft'}).`, 'success');
+    } else if (code.discountPercent && code.discountPercent > 0) {
+      showToast(`🎉 Rabattcode "${code.code}" aktiviert! Sie erhalten -${code.discountPercent}% Rabatt auf alle Tarife im Shop.`, 'success');
+    } else {
+      showToast(`🎉 Code "${code.code}" erfolgreich angewendet!`, 'success');
+    }
+    
     return { success: true, message: 'Code erfolgreich eingelöst', durationDays: code.durationDays };
   };
 
