@@ -82,6 +82,28 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
   const isDark = theme === 'dark';
 
+  const discountPercent = (pendingPromo && pendingPromo.discountPercent && pendingPromo.discountPercent > 0)
+    ? pendingPromo.discountPercent
+    : 0;
+
+  const calculatePrice = (originalStr: string) => {
+    const numeric = parseFloat(originalStr.replace(',', '.').replace(' €', ''));
+    if (!discountPercent || isNaN(numeric)) {
+      return { display: originalStr, isDiscounted: false, original: originalStr };
+    }
+    const discounted = Math.round(numeric * (1 - discountPercent / 100) * 100) / 100;
+    return {
+      display: `${discounted.toFixed(2).replace('.', ',')} €`,
+      isDiscounted: true,
+      original: originalStr,
+    };
+  };
+
+  const plan1P = calculatePrice(t.pricing.plan1Price);
+  const plan2P = calculatePrice(t.pricing.plan2Price);
+  const plan3P = calculatePrice(t.pricing.plan3Price);
+  const plan4P = calculatePrice(t.pricing.plan4Price);
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 selection:bg-indigo-600 selection:text-white transition-colors overflow-x-hidden w-full max-w-full">
       
@@ -790,9 +812,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
                 <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
                   <div className="flex items-baseline gap-1.5 flex-wrap">
-                    <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white whitespace-nowrap">
-                      {t.pricing.plan1Price}
-                    </span>
+                    {plan1P.isDiscounted ? (
+                      <>
+                        <span className="text-sm font-bold text-slate-400 line-through whitespace-nowrap">
+                          {plan1P.original}
+                        </span>
+                        <span className="text-2xl sm:text-3xl font-black text-amber-600 dark:text-amber-400 whitespace-nowrap">
+                          {plan1P.display}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white whitespace-nowrap">
+                        {plan1P.display}
+                      </span>
+                    )}
                     <span className="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">
                       / {t.pricing.plan1Period}
                     </span>
@@ -812,7 +845,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-slate-900 border-2 border-indigo-600 shadow-xl ring-4 ring-indigo-500/15 flex flex-col justify-between space-y-6 relative transform md:-translate-y-1 hover:-translate-y-2 transition-all duration-300">
               <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap">
                 <span className="px-3.5 py-1 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 text-[10px] font-black uppercase rounded-full tracking-wider shadow-sm">
-                  {t.pricing.plan2Badge}
+                  {plan2P.isDiscounted ? `-${discountPercent}% Rabatt` : t.pricing.plan2Badge}
                 </span>
               </div>
 
@@ -826,9 +859,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
                 <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
                   <div className="flex items-baseline gap-1.5 flex-wrap">
-                    <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white whitespace-nowrap">
-                      {t.pricing.plan2Price}
-                    </span>
+                    {plan2P.isDiscounted ? (
+                      <>
+                        <span className="text-sm font-bold text-slate-400 line-through whitespace-nowrap">
+                          {plan2P.original}
+                        </span>
+                        <span className="text-2xl sm:text-3xl font-black text-amber-600 dark:text-amber-400 whitespace-nowrap">
+                          {plan2P.display}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white whitespace-nowrap">
+                        {plan2P.display}
+                      </span>
+                    )}
                     <span className="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">
                       / {t.pricing.plan2Period}
                     </span>
@@ -849,7 +893,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-6 relative hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
               <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap">
                 <span className="px-3.5 py-1 bg-indigo-600 text-white text-[10px] font-black uppercase rounded-full tracking-wider shadow-sm">
-                  {t.pricing.plan3Badge}
+                  {plan3P.isDiscounted ? `-${discountPercent}% Rabatt` : t.pricing.plan3Badge}
                 </span>
               </div>
 
@@ -863,9 +907,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
                 <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
                   <div className="flex items-baseline gap-1.5 flex-wrap">
-                    <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white whitespace-nowrap">
-                      {t.pricing.plan3Price}
-                    </span>
+                    {plan3P.isDiscounted ? (
+                      <>
+                        <span className="text-sm font-bold text-slate-400 line-through whitespace-nowrap">
+                          {plan3P.original}
+                        </span>
+                        <span className="text-2xl sm:text-3xl font-black text-amber-600 dark:text-amber-400 whitespace-nowrap">
+                          {plan3P.display}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white whitespace-nowrap">
+                        {plan3P.display}
+                      </span>
+                    )}
                     <span className="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">
                       / {t.pricing.plan3Period}
                     </span>
@@ -885,7 +940,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs flex flex-col justify-between space-y-6 relative hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
               <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap">
                 <span className="px-3.5 py-1 bg-rose-600 text-white text-[10px] font-black uppercase rounded-full tracking-wider shadow-sm">
-                  {t.pricing.plan4Badge}
+                  {plan4P.isDiscounted ? `-${discountPercent}% Rabatt` : t.pricing.plan4Badge}
                 </span>
               </div>
 
@@ -899,14 +954,27 @@ export const LandingPage: React.FC<LandingPageProps> = ({
 
                 <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
                   <div className="flex items-baseline gap-1.5 flex-wrap">
-                    {t.pricing.plan4OldPrice && (
-                      <span className="text-sm sm:text-base font-bold text-slate-400 line-through whitespace-nowrap">
-                        {t.pricing.plan4OldPrice}
-                      </span>
+                    {plan4P.isDiscounted ? (
+                      <>
+                        <span className="text-sm sm:text-base font-bold text-slate-400 line-through whitespace-nowrap">
+                          {t.pricing.plan4Price}
+                        </span>
+                        <span className="text-2xl sm:text-3xl font-black text-amber-600 dark:text-amber-400 whitespace-nowrap">
+                          {plan4P.display}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        {t.pricing.plan4OldPrice && (
+                          <span className="text-sm sm:text-base font-bold text-slate-400 line-through whitespace-nowrap">
+                            {t.pricing.plan4OldPrice}
+                          </span>
+                        )}
+                        <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white whitespace-nowrap">
+                          {plan4P.display}
+                        </span>
+                      </>
                     )}
-                    <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white whitespace-nowrap">
-                      {t.pricing.plan4Price}
-                    </span>
                     <span className="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">
                       / {t.pricing.plan4Period}
                     </span>

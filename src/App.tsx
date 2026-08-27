@@ -136,6 +136,7 @@ export function App() {
           element={
             <PricingPage
               onOpenPromoModal={() => setIsPromoModalOpen(true)}
+              pendingPromo={detectedPartnerPromo}
             />
           }
         />

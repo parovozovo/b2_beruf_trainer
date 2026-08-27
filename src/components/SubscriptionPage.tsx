@@ -131,9 +131,14 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({
   const [showComingSoonModal, setShowComingSoonModal] = useState<boolean>(false);
   const [justPurchasedPlan] = useState<SubscriptionPlan | null>(null);
 
-  // Check for applied promo code or URL param
+  // Check for applied promo code or URL param or persisted pending promo
   const appliedCodeStr = useMemo(() => {
-    return currentUser?.appliedPromoCode || new URLSearchParams(window.location.search).get('promo') || '';
+    return (
+      currentUser?.appliedPromoCode ||
+      new URLSearchParams(window.location.search).get('promo') ||
+      (typeof window !== 'undefined' ? localStorage.getItem('b2_pending_promo') : '') ||
+      ''
+    );
   }, [currentUser?.appliedPromoCode]);
 
   const activePromo = useMemo(() => {
