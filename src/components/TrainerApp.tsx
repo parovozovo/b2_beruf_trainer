@@ -4,6 +4,7 @@ import confetti from 'canvas-confetti';
 import { CheckCircle2, AlertCircle, Info } from 'lucide-react';
 import type {
   User,
+  UserRole,
   Modelltest,
   PromoCode,
   ForumsbeitragTopic,
@@ -177,19 +178,22 @@ export const TrainerApp: React.FC<TrainerAppProps> = ({ theme, onToggleTheme }) 
         const uEmail = (u.email || '').toLowerCase();
         const isAdmin = isAdminEmail(uEmail);
 
-        // Fetch user's persistent premium and promo data from database
+        // Fetch user's persistent premium, role, and promo data from database
         let isPrem = isAdmin;
         let expAt: string | null = null;
         let promoCode: string | undefined = undefined;
+        let userRole: UserRole = isAdmin ? 'admin' : 'user';
+        let dbUserRecord: Record<string, unknown> | null = null;
 
         try {
           const { data: dbUser } = await supabase
             .from('registered_users')
-            .select('is_premium, premium_expires_at, applied_promo_code, role')
+            .select('*')
             .eq('email', uEmail)
             .maybeSingle();
 
           if (dbUser) {
+            dbUserRecord = dbUser;
             if (dbUser.premium_expires_at) {
               const isStillValid = new Date(dbUser.premium_expires_at).getTime() > Date.now();
               if (isStillValid) {
@@ -200,35 +204,54 @@ export const TrainerApp: React.FC<TrainerAppProps> = ({ theme, onToggleTheme }) 
               isPrem = true;
             }
             promoCode = dbUser.applied_promo_code || undefined;
+            if (!isAdmin && dbUser.role) {
+              userRole = dbUser.role as UserRole;
+            }
           }
         } catch (dbErr) {
           console.warn('Could not load user profile from database:', dbErr);
         }
 
-        // Fallback to local storage if DB query had no active record yet
-        if (!isPrem) {
-          const localUser = getRegisteredUsersLocal().find((usr) => usr.email.toLowerCase() === uEmail);
-          if (localUser?.isPremium) {
-            if (localUser.premiumExpiresAt) {
-              if (new Date(localUser.premiumExpiresAt).getTime() > Date.now()) {
-                isPrem = true;
-                expAt = localUser.premiumExpiresAt;
-              }
-            } else {
-              isPrem = true;
+        // Also check profiles table if registered_users didn't specify teacher role
+        if (!isAdmin && userRole === 'user') {
+          try {
+            const { data: pUser } = await supabase.from('profiles').select('role').eq('email', uEmail).maybeSingle();
+            if (pUser?.role) {
+              userRole = pUser.role as UserRole;
             }
-            promoCode = localUser.appliedPromoCode;
+          } catch (e) {
+            console.warn(e);
           }
+        }
+
+        const localUser = getRegisteredUsersLocal().find((usr) => usr.email.toLowerCase() === uEmail);
+        if (!isAdmin && userRole === 'user' && localUser?.role) {
+          userRole = localUser.role;
+        }
+
+        // Fallback to local storage if DB query had no active record yet
+        if (!isPrem && localUser?.isPremium) {
+          if (localUser.premiumExpiresAt) {
+            if (new Date(localUser.premiumExpiresAt).getTime() > Date.now()) {
+              isPrem = true;
+              expAt = localUser.premiumExpiresAt;
+            }
+          } else {
+            isPrem = true;
+          }
+          promoCode = localUser.appliedPromoCode;
         }
 
         const loggedUser: User = {
           id: u.id,
           email: u.email || '',
-          name: u.user_metadata?.name || u.email?.split('@')[0] || 'User',
-          role: isAdmin ? 'admin' : 'user',
+          name: u.user_metadata?.name || String(dbUserRecord?.name || '') || localUser?.name || u.email?.split('@')[0] || 'User',
+          role: userRole,
           isPremium: isPrem,
           premiumExpiresAt: isAdmin ? null : expAt,
           appliedPromoCode: promoCode,
+          createdAt: (dbUserRecord?.created_at ? String(dbUserRecord.created_at) : undefined) || localUser?.createdAt || new Date().toISOString(),
+          lastLoginAt: new Date().toISOString(),
         };
 
         setCurrentUser(loggedUser);

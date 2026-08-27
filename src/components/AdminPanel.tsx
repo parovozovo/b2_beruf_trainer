@@ -337,6 +337,18 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           },
           { onConflict: 'email' }
         );
+
+        await supabase.from('profiles').upsert(
+          {
+            id: updatedUser.id,
+            name: updatedUser.name,
+            email: updatedUser.email.toLowerCase(),
+            role: updatedUser.role,
+            is_premium: updatedUser.isPremium,
+            premium_expires_at: updatedUser.premiumExpiresAt,
+          },
+          { onConflict: 'email' }
+        );
       } catch (e) {
         console.warn('Direct upsert role in AdminPanel error:', e);
       }
@@ -3722,7 +3734,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                           {/* Registered Date */}
                           <td className="py-3 px-3 text-[11px] text-slate-400 font-mono">
                             {u.createdAt
-                              ? new Date(u.createdAt).toLocaleDateString('de-DE', {
+                              ? new Date(u.createdAt).toLocaleString('de-DE', {
                                   day: '2-digit',
                                   month: '2-digit',
                                   year: 'numeric',
@@ -3735,7 +3747,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                           {/* Last Login Date */}
                           <td className="py-3 px-3 text-[11px] text-slate-400 font-mono">
                             {u.lastLoginAt
-                              ? new Date(u.lastLoginAt).toLocaleDateString('de-DE', {
+                              ? new Date(u.lastLoginAt).toLocaleString('de-DE', {
                                   day: '2-digit',
                                   month: '2-digit',
                                   year: 'numeric',
