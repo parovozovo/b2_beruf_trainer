@@ -432,6 +432,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [promoPartnerName, setPromoPartnerName] = useState('');
   const [promoPartnerLink, setPromoPartnerLink] = useState('');
   const [promoDescription, setPromoDescription] = useState('');
+  const [promoOwnerEmail, setPromoOwnerEmail] = useState('');
+  const [promoOwnerUserId, setPromoOwnerUserId] = useState('');
   const [copiedPromoId, setCopiedPromoId] = useState<string | null>(null);
 
   // Tile Variant Editor State
@@ -1016,6 +1018,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       partnerName: promoPartnerName.trim() || undefined,
       partnerLink: promoPartnerLink.trim() || undefined,
       description: promoDescription.trim() || undefined,
+      ownerUserId: promoOwnerUserId.trim() || undefined,
+      ownerEmail: promoOwnerEmail.trim().toLowerCase() || undefined,
     };
 
     const res = await onSavePromoCodes([...promoCodes, newCodeObj]);
@@ -1026,6 +1030,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       setPromoPartnerName('');
       setPromoPartnerLink('');
       setPromoDescription('');
+      setPromoOwnerEmail('');
+      setPromoOwnerUserId('');
       showToast('Gutscheincode erfolgreich erstellt & in Supabase gespeichert!');
     }
   };
@@ -2627,17 +2633,66 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
               {/* Partner & Influencer Details */}
               <div className="p-4 bg-slate-900/60 rounded-xl border border-slate-800 space-y-3">
                 <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider block">
-                  🎁 Partner- / Influencer-Angaben (Optional)
+                  🎁 Partner- / Lehrkraft-Zuweisung (Optional)
                 </span>
+
+                <div>
+                  <label className="block text-[11px] text-slate-400 mb-1">
+                    👤 Zugeordnete registrierte Lehrkraft / Partner
+                  </label>
+                  <select
+                    value={promoOwnerEmail}
+                    onChange={(e) => {
+                      const selectedEmail = e.target.value;
+                      setPromoOwnerEmail(selectedEmail);
+                      const foundUser = usersList.find((u) => u.email.toLowerCase() === selectedEmail.toLowerCase());
+                      if (foundUser) {
+                        setPromoOwnerUserId(foundUser.id);
+                        if (!promoPartnerName) {
+                          setPromoPartnerName(foundUser.name);
+                        }
+                      } else {
+                        setPromoOwnerUserId('');
+                      }
+                    }}
+                    className="w-full px-3 py-2 glass-input rounded-lg text-xs bg-slate-900 font-bold text-white cursor-pointer"
+                  >
+                    <option value="">-- Nicht zugeordnet (Manueller externer Partner) --</option>
+                    {usersList
+                      .filter((u) => u.role === 'teacher')
+                      .map((u) => (
+                        <option key={u.id} value={u.email}>
+                          🎓 {u.name} ({u.email}) [Lehrkraft]
+                        </option>
+                      ))}
+                    {usersList
+                      .filter((u) => u.role === 'admin')
+                      .map((u) => (
+                        <option key={u.id} value={u.email}>
+                          👑 {u.name} ({u.email}) [Admin]
+                        </option>
+                      ))}
+                    <optgroup label="Andere registrierte Benutzer">
+                      {usersList
+                        .filter((u) => u.role === 'user')
+                        .map((u) => (
+                          <option key={u.id} value={u.email}>
+                            👤 {u.name} ({u.email})
+                          </option>
+                        ))}
+                    </optgroup>
+                  </select>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] text-slate-400 mb-1">Partner / Urheber Name</label>
+                    <label className="block text-[11px] text-slate-400 mb-1">Öffentlicher Partner-Name</label>
                     <input
                       type="text"
                       value={promoPartnerName}
                       onChange={(e) => setPromoPartnerName(e.target.value)}
                       placeholder="Z. B. Deutsch mit Maria / Anna Schmidt"
-                      className="w-full px-3 py-1.5 glass-input rounded-lg text-xs"
+                      className="w-full px-3 py-1.5 glass-input rounded-lg text-xs font-bold"
                     />
                   </div>
 
@@ -2648,7 +2703,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                       value={promoPartnerLink}
                       onChange={(e) => setPromoPartnerLink(e.target.value)}
                       placeholder="https://t.me/maria_deutsch oder https://instagram.com/..."
-                      className="w-full px-3 py-1.5 glass-input rounded-lg text-xs"
+                      className="w-full px-3 py-1.5 glass-input rounded-lg text-xs font-mono"
                     />
                   </div>
                 </div>
@@ -2699,6 +2754,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         {code.partnerName && (
                           <div className="text-[11px] font-semibold text-slate-300 mt-0.5 flex items-center gap-1">
                             <span>🎓 {code.partnerName}</span>
+                          </div>
+                        )}
+                        {code.ownerEmail && (
+                          <div className="text-[10px] text-purple-400 font-mono mt-0.5">
+                            👤 Inhaber: {code.ownerEmail}
                           </div>
                         )}
                         {code.description && (

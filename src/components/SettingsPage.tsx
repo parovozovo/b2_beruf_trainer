@@ -26,6 +26,9 @@ import {
   Landmark,
   Bell,
   BellRing,
+  Users,
+  Copy,
+  Check,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import type { User, PromoCode, TileResult, FullExamResult } from '../types';
@@ -64,6 +67,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   const [promoInput, setPromoInput] = useState('');
   const [redeemSuccessMsg, setRedeemSuccessMsg] = useState<string | null>(null);
   const [redeemError, setRedeemError] = useState<string | null>(null);
+  const [copiedTeacherPromoId, setCopiedTeacherPromoId] = useState<string | null>(null);
 
   // Settings State
   const [fontScale, setFontScale] = useState<string>(() => localStorage.getItem('b2_font_scale') || '100%');
@@ -439,6 +443,98 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 
         {/* Right Column: Preferences & Security */}
         <div className="md:col-span-2 space-y-6">
+          {/* Teacher Partner Hub & Student List */}
+          {currentUser.role === 'teacher' && (
+            <div className="glass-panel p-6 rounded-3xl border border-purple-500/30 bg-purple-950/10 dark:bg-purple-950/20 space-y-4 shadow-sm">
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Users className="w-5 h-5 text-purple-600 dark:text-purple-400" /> Dozenten-Bereich: Meine Gutscheine & Schüler
+                </h3>
+                <span className="px-2.5 py-0.5 bg-purple-500/20 text-purple-800 dark:text-purple-300 rounded-full text-xs font-black">
+                  🎓 Lehrkraft
+                </span>
+              </div>
+
+              {(() => {
+                const myCodes = _promoCodes.filter(
+                  (c) =>
+                    (currentUser.email && c.ownerEmail?.toLowerCase() === currentUser.email.toLowerCase()) ||
+                    (currentUser.id && c.ownerUserId === currentUser.id)
+                );
+
+                if (myCodes.length === 0) {
+                  return (
+                    <div className="p-4 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 text-center">
+                      Ihnen ist derzeit noch kein Gutscheincode zugewiesen. Wenden Sie sich an den Administrator, um Ihren persönlichen Schüler-Gutschein zu erhalten.
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="space-y-4">
+                    {myCodes.map((code) => {
+                      const promoUrl = `${window.location.origin}/?promo=${encodeURIComponent(code.code)}`;
+                      const isCopied = copiedTeacherPromoId === code.id;
+
+                      return (
+                        <div key={code.id} className="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-purple-200 dark:border-purple-500/30 space-y-3 shadow-xs">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div>
+                              <div className="font-mono font-black text-base text-purple-600 dark:text-amber-400">{code.code}</div>
+                              {code.description && (
+                                <p className="text-xs text-slate-600 dark:text-slate-300 italic mt-0.5">«{code.description}»</p>
+                              )}
+                            </div>
+                            <span className="px-3 py-1 bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 rounded-xl text-xs font-bold shrink-0 self-start sm:self-auto">
+                              👥 {code.usedCount} von {code.maxUses} Schülern aktiv
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2 pt-1">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText(promoUrl);
+                                setCopiedTeacherPromoId(code.id);
+                                setTimeout(() => setCopiedTeacherPromoId(null), 3000);
+                              }}
+                              className="w-full py-2.5 px-4 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 transition-all shadow-sm cursor-pointer"
+                            >
+                              {isCopied ? (
+                                <>
+                                  <Check className="w-4 h-4 text-emerald-300" />
+                                  <span>Link für Schüler in die Zwischenablage kopiert!</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-4 h-4" />
+                                  <span>Schüler-Empfehlungslink kopieren</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+
+                          {code.usedByEmails && code.usedByEmails.length > 0 && (
+                            <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 text-xs space-y-1.5">
+                              <span className="font-bold text-slate-700 dark:text-slate-400">Registrierte Schüler ({code.usedByEmails.length}):</span>
+                              <div className="flex flex-wrap gap-1.5">
+                                {code.usedByEmails.map((em, idx) => (
+                                  <span key={idx} className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg font-mono text-[11px]">
+                                    {em}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
           {/* Individual Learning & Accessibility Settings */}
           <div className="glass-panel p-6 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-5 shadow-sm">
             <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">

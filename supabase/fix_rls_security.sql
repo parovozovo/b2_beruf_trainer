@@ -41,13 +41,15 @@ ALTER TABLE IF EXISTS public.full_exam_results ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.wortschatz_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.blog_posts ENABLE ROW LEVEL SECURITY;
 
--- 2.1 Add Partner Columns to promo_codes if not exist
+-- 2.1 Add Partner and Owner Columns to promo_codes if not exist
 ALTER TABLE IF EXISTS public.promo_codes 
   ADD COLUMN IF NOT EXISTS partner_name TEXT,
   ADD COLUMN IF NOT EXISTS partner_link TEXT,
   ADD COLUMN IF NOT EXISTS partner_link_title TEXT,
   ADD COLUMN IF NOT EXISTS description TEXT,
-  ADD COLUMN IF NOT EXISTS discount_percent INT DEFAULT 0;
+  ADD COLUMN IF NOT EXISTS discount_percent INT DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS owner_user_id TEXT,
+  ADD COLUMN IF NOT EXISTS owner_email TEXT;
 
 -- 3. DROP EXISTING CONFLICTING POLICIES (Idempotent cleanup)
 DO $$

@@ -29,6 +29,8 @@ export interface PromoCode {
   partnerLinkTitle?: string;
   description?: string;
   discountPercent?: number;
+  ownerUserId?: string;
+  ownerEmail?: string;
 }
 
 export interface TaskComment {

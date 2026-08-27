@@ -468,6 +468,8 @@ export async function fetchPromoCodesAsync(): Promise<PromoCode[]> {
           partnerLinkTitle: item.partner_link_title ? String(item.partner_link_title) : undefined,
           description: item.description ? String(item.description) : undefined,
           discountPercent: item.discount_percent ? Number(item.discount_percent) : undefined,
+          ownerUserId: item.owner_user_id ? String(item.owner_user_id) : undefined,
+          ownerEmail: item.owner_email ? String(item.owner_email) : undefined,
         }));
         savePromoCodesLocal(codes);
         return codes;
@@ -529,6 +531,8 @@ export async function savePromoCodesAsync(codes: PromoCode[]): Promise<{ success
         partner_link_title: pc.partnerLinkTitle || null,
         description: pc.description || null,
         discount_percent: pc.discountPercent || 0,
+        owner_user_id: pc.ownerUserId || null,
+        owner_email: pc.ownerEmail || null,
       });
 
       if (error) {

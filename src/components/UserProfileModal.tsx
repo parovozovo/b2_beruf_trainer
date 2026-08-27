@@ -12,6 +12,9 @@ import {
   Volume2,
   AlertCircle,
   Save,
+  Users,
+  Copy,
+  Check,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import type { User, PromoCode } from '../types';
@@ -42,6 +45,7 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
   const [promoInput, setPromoInput] = useState('');
   const [redeemSuccessMsg, setRedeemSuccessMsg] = useState<string | null>(null);
   const [redeemError, setRedeemError] = useState<string | null>(null);
+  const [copiedTeacherPromoId, setCopiedTeacherPromoId] = useState<string | null>(null);
 
   // Settings State
   const [fontScale, setFontScale] = useState<string>(() => localStorage.getItem('b2_font_scale') || '100%');
@@ -275,10 +279,101 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
               onNavigateToAdmin();
               onClose();
             }}
-            className="w-full py-2.5 px-4 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg transition-colors border border-rose-500/40"
+            className="w-full py-2.5 px-4 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg transition-colors border border-rose-500/40 cursor-pointer"
           >
             <Shield className="w-4 h-4" /> Verwaltungsbereich öffnen (/admin-beruf)
           </button>
+        )}
+
+        {/* Teacher Partner Hub & Student List */}
+        {currentUser.role === 'teacher' && (
+          <div className="p-4 bg-purple-950/30 rounded-2xl border border-purple-500/30 space-y-3 text-xs">
+            <div className="flex items-center justify-between">
+              <div className="font-black text-purple-300 flex items-center gap-1.5">
+                <Users className="w-4 h-4 text-purple-400" /> Dozenten-Bereich: Meine Gutscheine & Schüler
+              </div>
+              <span className="px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded text-[10px] font-bold">
+                Lehrkraft
+              </span>
+            </div>
+
+            {(() => {
+              const myCodes = _promoCodes.filter(
+                (c) =>
+                  (currentUser.email && c.ownerEmail?.toLowerCase() === currentUser.email.toLowerCase()) ||
+                  (currentUser.id && c.ownerUserId === currentUser.id)
+              );
+
+              if (myCodes.length === 0) {
+                return (
+                  <div className="p-3 bg-slate-900/80 rounded-xl text-[11px] text-slate-400 text-center">
+                    Ihnen ist derzeit noch kein Gutscheincode zugewiesen. Wenden Sie sich an den Administrator, um Ihren persönlichen Schüler-Gutschein zu erhalten.
+                  </div>
+                );
+              }
+
+              return (
+                <div className="space-y-3">
+                  {myCodes.map((code) => {
+                    const promoUrl = `${window.location.origin}/?promo=${encodeURIComponent(code.code)}`;
+                    const isCopied = copiedTeacherPromoId === code.id;
+
+                    return (
+                      <div key={code.id} className="p-3 bg-slate-900/90 rounded-xl border border-purple-500/20 space-y-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-mono font-black text-sm text-amber-400">{code.code}</span>
+                          <span className="text-[11px] font-bold text-emerald-400">
+                            👥 {code.usedCount} von {code.maxUses} Schülern aktiv
+                          </span>
+                        </div>
+
+                        {code.description && (
+                          <p className="text-[11px] text-slate-300 italic">«{code.description}»</p>
+                        )}
+
+                        <div className="flex items-center gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              navigator.clipboard.writeText(promoUrl);
+                              setCopiedTeacherPromoId(code.id);
+                              setTimeout(() => setCopiedTeacherPromoId(null), 3000);
+                            }}
+                            className="w-full py-2 px-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer"
+                          >
+                            {isCopied ? (
+                              <>
+                                <Check className="w-3.5 h-3.5 text-emerald-300" />
+                                <span>Link für Schüler kopiert!</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3.5 h-3.5" />
+                                <span>Schüler-Link kopieren</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+
+                        {code.usedByEmails && code.usedByEmails.length > 0 && (
+                          <div className="pt-2 border-t border-slate-800 text-[10px] space-y-1">
+                            <span className="font-bold text-slate-400">Registrierte Schüler:</span>
+                            <div className="flex flex-wrap gap-1">
+                              {code.usedByEmails.map((em, idx) => (
+                                <span key={idx} className="px-2 py-0.5 bg-slate-800 text-slate-300 rounded font-mono">
+                                  {em}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+          </div>
         )}
 
         {/* Learning Settings: Font Scale & Audio Speed */}
