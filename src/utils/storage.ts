@@ -1,4 +1,4 @@
-import type { User, UserRole, PromoCode, Modelltest, ForumsbeitragTopic, WrittenEssayRecord, FullExamResult, TileResult, WortschatzItem, StreakState } from '../types';
+import type { User, UserRole, PromoCode, PromoPaidStudent, Modelltest, ForumsbeitragTopic, WrittenEssayRecord, FullExamResult, TileResult, WortschatzItem, StreakState } from '../types';
 import { INITIAL_PROMO_CODES, INITIAL_FORUMSBEITRAG_TOPICS, INITIAL_MODELLTESTS, INITIAL_SPRECHEN_TOPICS } from '../data/initialData';
 import { DEFAULT_WORTSCHATZ_ITEMS } from '../data/defaultWortschatz';
 import { supabase, isSupabaseConfigured } from './supabase';
@@ -468,8 +468,10 @@ export async function fetchPromoCodesAsync(): Promise<PromoCode[]> {
           partnerLinkTitle: item.partner_link_title ? String(item.partner_link_title) : undefined,
           description: item.description ? String(item.description) : undefined,
           discountPercent: item.discount_percent ? Number(item.discount_percent) : undefined,
+          commissionPercent: item.commission_percent !== undefined && item.commission_percent !== null ? Number(item.commission_percent) : undefined,
           ownerUserId: item.owner_user_id ? String(item.owner_user_id) : undefined,
           ownerEmail: item.owner_email ? String(item.owner_email) : undefined,
+          paidStudents: Array.isArray(item.paid_students) ? (item.paid_students as PromoPaidStudent[]) : [],
         }));
         savePromoCodesLocal(codes);
         return codes;
@@ -531,8 +533,10 @@ export async function savePromoCodesAsync(codes: PromoCode[]): Promise<{ success
         partner_link_title: pc.partnerLinkTitle || null,
         description: pc.description || null,
         discount_percent: pc.discountPercent || 0,
+        commission_percent: pc.commissionPercent ?? 20,
         owner_user_id: pc.ownerUserId || null,
         owner_email: pc.ownerEmail || null,
+        paid_students: pc.paidStudents || [],
       });
 
       if (error) {
@@ -544,6 +548,48 @@ export async function savePromoCodesAsync(codes: PromoCode[]): Promise<{ success
     const msg = e instanceof Error ? e.message : 'Verbindungsfehler';
     return { success: false, error: msg };
   }
+}
+
+/**
+ * Record a student subscription payment against a teacher promo code
+ */
+export async function recordPromoStudentPurchase(
+  promoCodeStr: string,
+  studentEmail: string,
+  planId: string,
+  planName: string,
+  amountPaid: number
+): Promise<{ success: boolean; teacherEarnings?: number; error?: string }> {
+  const codes = getPromoCodesLocal();
+  const idx = codes.findIndex((c) => c.code.toUpperCase() === promoCodeStr.trim().toUpperCase());
+  if (idx === -1) return { success: false, error: 'Gutscheincode nicht gefunden.' };
+
+  const targetCode = codes[idx];
+  const commissionRate = (targetCode.commissionPercent ?? 20) / 100;
+  const teacherEarnings = Math.round(amountPaid * commissionRate * 100) / 100;
+
+  const purchaseEntry: PromoPaidStudent = {
+    email: studentEmail.toLowerCase(),
+    planId,
+    planName,
+    amountPaid,
+    teacherEarnings,
+    date: new Date().toISOString().split('T')[0],
+  };
+
+  const updatedList = [...(targetCode.paidStudents || []), purchaseEntry];
+  const updatedCode: PromoCode = { ...targetCode, paidStudents: updatedList };
+  codes[idx] = updatedCode;
+
+  savePromoCodesLocal(codes);
+  if (isSupabaseConfigured) {
+    try {
+      await savePromoCodesAsync(codes);
+    } catch (e) {
+      console.warn('Could not sync promo student purchase to Supabase:', e);
+    }
+  }
+  return { success: true, teacherEarnings };
 }
 
 // ==========================================

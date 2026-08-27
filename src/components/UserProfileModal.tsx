@@ -312,18 +312,49 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                 );
               }
 
+              const totalRegistered = myCodes.reduce((acc, c) => acc + (c.usedByEmails?.length || 0), 0);
+              const allPaidStudents = myCodes.flatMap((c) => c.paidStudents || []);
+              const totalEarnings = allPaidStudents.reduce((acc, s) => acc + s.teacherEarnings, 0);
+
               return (
                 <div className="space-y-3">
+                  {/* KPI Summary Strip */}
+                  <div className="grid grid-cols-3 gap-2 text-center">
+                    <div className="p-2.5 bg-slate-900/80 rounded-xl border border-purple-500/20">
+                      <div className="text-base font-black text-purple-300">{totalRegistered}</div>
+                      <div className="text-[10px] text-slate-400 font-medium">Registrierte Schüler</div>
+                    </div>
+                    <div className="p-2.5 bg-slate-900/80 rounded-xl border border-purple-500/20">
+                      <div className="text-base font-black text-emerald-400">{allPaidStudents.length}</div>
+                      <div className="text-[10px] text-slate-400 font-medium">Bezahlte Abos</div>
+                    </div>
+                    <div className="p-2.5 bg-slate-900/80 rounded-xl border border-purple-500/20">
+                      <div className="text-base font-black text-amber-400">€ {totalEarnings.toFixed(2)}</div>
+                      <div className="text-[10px] text-slate-400 font-medium">Ihre Provision</div>
+                    </div>
+                  </div>
+
                   {myCodes.map((code) => {
                     const promoUrl = `${window.location.origin}/?promo=${encodeURIComponent(code.code)}`;
                     const isCopied = copiedTeacherPromoId === code.id;
+                    const codeEarnings = (code.paidStudents || []).reduce((acc, s) => acc + s.teacherEarnings, 0);
 
                     return (
-                      <div key={code.id} className="p-3 bg-slate-900/90 rounded-xl border border-purple-500/20 space-y-2">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="font-mono font-black text-sm text-amber-400">{code.code}</span>
+                      <div key={code.id} className="p-3.5 bg-slate-900/90 rounded-xl border border-purple-500/30 space-y-2.5">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono font-black text-sm text-amber-400">{code.code}</span>
+                            {Boolean(code.discountPercent && code.discountPercent > 0) && (
+                              <span className="px-1.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded text-[9px] font-bold">
+                                🏷️ -{code.discountPercent}% Rabatt
+                              </span>
+                            )}
+                            <span className="px-1.5 py-0.5 bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded text-[9px] font-bold">
+                              💰 {code.commissionPercent ?? 20}% Provision
+                            </span>
+                          </div>
                           <span className="text-[11px] font-bold text-emerald-400">
-                            👥 {code.usedCount} von {code.maxUses} Schülern aktiv
+                            👥 {code.usedCount} von {code.maxUses} Schülern
                           </span>
                         </div>
 
@@ -349,15 +380,35 @@ export const UserProfileModal: React.FC<UserProfileModalProps> = ({
                             ) : (
                               <>
                                 <Copy className="w-3.5 h-3.5" />
-                                <span>Schüler-Link kopieren</span>
+                                <span>Schüler-Empfehlungslink kopieren</span>
                               </>
                             )}
                           </button>
                         </div>
 
+                        {/* Paid Subscriptions Breakdown */}
+                        {code.paidStudents && code.paidStudents.length > 0 && (
+                          <div className="pt-2 border-t border-purple-500/20 text-[10px] space-y-1.5">
+                            <div className="flex justify-between items-center font-bold text-emerald-400">
+                              <span>💳 Bezahlte Käufe ({code.paidStudents.length}):</span>
+                              <span>Gesamt: € {codeEarnings.toFixed(2)}</span>
+                            </div>
+                            <div className="space-y-1">
+                              {code.paidStudents.map((ps, idx) => (
+                                <div key={idx} className="flex justify-between items-center bg-slate-950/60 p-1.5 rounded-lg border border-slate-800 font-mono text-[10px]">
+                                  <span className="text-slate-300 truncate max-w-[140px]" title={ps.email}>{ps.email}</span>
+                                  <span className="text-slate-400">{ps.planName}</span>
+                                  <span className="text-emerald-400 font-bold">+€ {ps.teacherEarnings.toFixed(2)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Free Registered Students */}
                         {code.usedByEmails && code.usedByEmails.length > 0 && (
                           <div className="pt-2 border-t border-slate-800 text-[10px] space-y-1">
-                            <span className="font-bold text-slate-400">Registrierte Schüler:</span>
+                            <span className="font-bold text-slate-400">Alle registrierten Schüler ({code.usedByEmails.length}):</span>
                             <div className="flex flex-wrap gap-1">
                               {code.usedByEmails.map((em, idx) => (
                                 <span key={idx} className="px-2 py-0.5 bg-slate-800 text-slate-300 rounded font-mono">

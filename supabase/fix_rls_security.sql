@@ -48,8 +48,10 @@ ALTER TABLE IF EXISTS public.promo_codes
   ADD COLUMN IF NOT EXISTS partner_link_title TEXT,
   ADD COLUMN IF NOT EXISTS description TEXT,
   ADD COLUMN IF NOT EXISTS discount_percent INT DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS commission_percent INT DEFAULT 20,
   ADD COLUMN IF NOT EXISTS owner_user_id TEXT,
-  ADD COLUMN IF NOT EXISTS owner_email TEXT;
+  ADD COLUMN IF NOT EXISTS owner_email TEXT,
+  ADD COLUMN IF NOT EXISTS paid_students JSONB DEFAULT '[]'::jsonb;
 
 -- 3. DROP EXISTING CONFLICTING POLICIES (Idempotent cleanup)
 DO $$

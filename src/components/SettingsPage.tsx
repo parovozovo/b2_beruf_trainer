@@ -470,23 +470,54 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                   );
                 }
 
+                const totalRegistered = myCodes.reduce((acc, c) => acc + (c.usedByEmails?.length || 0), 0);
+                const allPaidStudents = myCodes.flatMap((c) => c.paidStudents || []);
+                const totalEarnings = allPaidStudents.reduce((acc, s) => acc + s.teacherEarnings, 0);
+
                 return (
                   <div className="space-y-4">
+                    {/* KPI Summary Cards */}
+                    <div className="grid grid-cols-3 gap-3 text-center">
+                      <div className="p-3.5 bg-white dark:bg-slate-900/80 rounded-2xl border border-purple-200 dark:border-purple-500/30 shadow-xs">
+                        <div className="text-xl font-black text-purple-600 dark:text-purple-300">{totalRegistered}</div>
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">Registrierte Schüler</div>
+                      </div>
+                      <div className="p-3.5 bg-white dark:bg-slate-900/80 rounded-2xl border border-purple-200 dark:border-purple-500/30 shadow-xs">
+                        <div className="text-xl font-black text-emerald-600 dark:text-emerald-400">{allPaidStudents.length}</div>
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">Bezahlte Abos</div>
+                      </div>
+                      <div className="p-3.5 bg-white dark:bg-slate-900/80 rounded-2xl border border-purple-200 dark:border-purple-500/30 shadow-xs">
+                        <div className="text-xl font-black text-amber-600 dark:text-amber-400">€ {totalEarnings.toFixed(2)}</div>
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">Ihre Gesamtprovision</div>
+                      </div>
+                    </div>
+
                     {myCodes.map((code) => {
                       const promoUrl = `${window.location.origin}/?promo=${encodeURIComponent(code.code)}`;
                       const isCopied = copiedTeacherPromoId === code.id;
+                      const codeEarnings = (code.paidStudents || []).reduce((acc, s) => acc + s.teacherEarnings, 0);
 
                       return (
-                        <div key={code.id} className="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-purple-200 dark:border-purple-500/30 space-y-3 shadow-xs">
+                        <div key={code.id} className="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-purple-200 dark:border-purple-500/30 space-y-3.5 shadow-xs">
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                            <div>
-                              <div className="font-mono font-black text-base text-purple-600 dark:text-amber-400">{code.code}</div>
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-mono font-black text-lg text-purple-600 dark:text-amber-400">{code.code}</span>
+                                {Boolean(code.discountPercent && code.discountPercent > 0) && (
+                                  <span className="px-2 py-0.5 bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/30 rounded-md text-[10px] font-bold">
+                                    🏷️ -{code.discountPercent}% Schüler-Rabatt
+                                  </span>
+                                )}
+                                <span className="px-2 py-0.5 bg-purple-500/20 text-purple-800 dark:text-purple-300 border border-purple-500/30 rounded-md text-[10px] font-bold">
+                                  💰 {code.commissionPercent ?? 20}% Provision
+                                </span>
+                              </div>
                               {code.description && (
-                                <p className="text-xs text-slate-600 dark:text-slate-300 italic mt-0.5">«{code.description}»</p>
+                                <p className="text-xs text-slate-600 dark:text-slate-300 italic">«{code.description}»</p>
                               )}
                             </div>
                             <span className="px-3 py-1 bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 rounded-xl text-xs font-bold shrink-0 self-start sm:self-auto">
-                              👥 {code.usedCount} von {code.maxUses} Schülern aktiv
+                              👥 {code.usedCount} von {code.maxUses} Schülern
                             </span>
                           </div>
 
@@ -514,9 +545,29 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                             </button>
                           </div>
 
+                          {/* Paid Subscriptions Breakdown */}
+                          {code.paidStudents && code.paidStudents.length > 0 && (
+                            <div className="pt-3 border-t border-purple-200 dark:border-purple-500/20 text-xs space-y-2">
+                              <div className="flex justify-between items-center font-bold text-emerald-600 dark:text-emerald-400">
+                                <span>💳 Bezahlte Abos ({code.paidStudents.length}):</span>
+                                <span>Ihre Auszahlung: € {codeEarnings.toFixed(2)}</span>
+                              </div>
+                              <div className="space-y-1.5">
+                                {code.paidStudents.map((ps, idx) => (
+                                  <div key={idx} className="flex justify-between items-center bg-slate-50 dark:bg-slate-950/60 p-2 rounded-xl border border-slate-200 dark:border-slate-800 font-mono text-xs">
+                                    <span className="text-slate-800 dark:text-slate-300 truncate max-w-[200px]" title={ps.email}>{ps.email}</span>
+                                    <span className="text-slate-500">{ps.planName}</span>
+                                    <span className="text-emerald-600 dark:text-emerald-400 font-black">+€ {ps.teacherEarnings.toFixed(2)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Free Registered Students */}
                           {code.usedByEmails && code.usedByEmails.length > 0 && (
                             <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 text-xs space-y-1.5">
-                              <span className="font-bold text-slate-700 dark:text-slate-400">Registrierte Schüler ({code.usedByEmails.length}):</span>
+                              <span className="font-bold text-slate-700 dark:text-slate-400">Alle registrierten Schüler ({code.usedByEmails.length}):</span>
                               <div className="flex flex-wrap gap-1.5">
                                 {code.usedByEmails.map((em, idx) => (
                                   <span key={idx} className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-lg font-mono text-[11px]">

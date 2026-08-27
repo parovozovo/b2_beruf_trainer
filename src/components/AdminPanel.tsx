@@ -434,6 +434,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [promoDescription, setPromoDescription] = useState('');
   const [promoOwnerEmail, setPromoOwnerEmail] = useState('');
   const [promoOwnerUserId, setPromoOwnerUserId] = useState('');
+  const [promoDiscountPercent, setPromoDiscountPercent] = useState<number>(15);
+  const [promoCommissionPercent, setPromoCommissionPercent] = useState<number>(20);
   const [copiedPromoId, setCopiedPromoId] = useState<string | null>(null);
 
   // Tile Variant Editor State
@@ -1018,8 +1020,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       partnerName: promoPartnerName.trim() || undefined,
       partnerLink: promoPartnerLink.trim() || undefined,
       description: promoDescription.trim() || undefined,
+      discountPercent: promoDiscountPercent,
+      commissionPercent: promoCommissionPercent,
       ownerUserId: promoOwnerUserId.trim() || undefined,
       ownerEmail: promoOwnerEmail.trim().toLowerCase() || undefined,
+      paidStudents: [],
     };
 
     const res = await onSavePromoCodes([...promoCodes, newCodeObj]);
@@ -1032,6 +1037,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
       setPromoDescription('');
       setPromoOwnerEmail('');
       setPromoOwnerUserId('');
+      setPromoDiscountPercent(15);
+      setPromoCommissionPercent(20);
       showToast('Gutscheincode erfolgreich erstellt & in Supabase gespeichert!');
     }
   };
@@ -2718,6 +2725,46 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                     className="w-full px-3 py-1.5 glass-input rounded-lg text-xs"
                   />
                 </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-800/80">
+                  <div>
+                    <label className="block text-[11px] text-amber-400 font-bold mb-1">
+                      🏷️ Schüler-Rabatt (% Rabatt auf alle Tarife)
+                    </label>
+                    <select
+                      value={promoDiscountPercent}
+                      onChange={(e) => setPromoDiscountPercent(Number(e.target.value))}
+                      className="w-full px-3 py-2 glass-input rounded-lg text-xs font-bold bg-slate-900 text-white cursor-pointer"
+                    >
+                      <option value={0}>0% (Kein Rabatt)</option>
+                      <option value={10}>-10% Rabatt</option>
+                      <option value={15}>-15% Rabatt (Empfohlen)</option>
+                      <option value={20}>-20% Rabatt</option>
+                      <option value={25}>-25% Rabatt</option>
+                      <option value={30}>-30% Rabatt</option>
+                      <option value={50}>-50% Rabatt</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] text-purple-400 font-bold mb-1">
+                      💰 Dozenten-Provision (% Verdienst für die Lehrkraft)
+                    </label>
+                    <select
+                      value={promoCommissionPercent}
+                      onChange={(e) => setPromoCommissionPercent(Number(e.target.value))}
+                      className="w-full px-3 py-2 glass-input rounded-lg text-xs font-bold bg-slate-900 text-white cursor-pointer"
+                    >
+                      <option value={0}>0% (Keine Provision)</option>
+                      <option value={15}>15% Provision</option>
+                      <option value={20}>20% Provision (Standard)</option>
+                      <option value={25}>25% Provision</option>
+                      <option value={30}>30% Provision</option>
+                      <option value={40}>40% Provision</option>
+                      <option value={50}>50% Provision</option>
+                    </select>
+                  </div>
+                </div>
               </div>
 
               <div className="flex justify-end pt-1">
@@ -2738,6 +2785,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                 <thead className="bg-slate-900/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
                   <tr>
                     <th className="p-3">Code & Partner</th>
+                    <th className="p-3">Rabatt & Provision</th>
                     <th className="p-3">Dauer</th>
                     <th className="p-3">Nutzungen</th>
                     <th className="p-3">Partner-Link</th>
@@ -2747,7 +2795,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/60">
-                  {promoCodes.map((code) => (
+                  {promoCodes.map((code) => {
+                    const totalEarnings = (code.paidStudents || []).reduce((acc, s) => acc + s.teacherEarnings, 0);
+
+                    return (
                     <tr key={code.id} className="hover:bg-slate-900/40">
                       <td className="p-3">
                         <div className="font-mono font-black text-amber-400 text-sm">{code.code}</div>
@@ -2764,6 +2815,23 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         {code.description && (
                           <div className="text-[10px] text-slate-400 italic max-w-xs truncate" title={code.description}>
                             «{code.description}»
+                          </div>
+                        )}
+                      </td>
+                      <td className="p-3 whitespace-nowrap space-y-1">
+                        <div className="flex flex-wrap gap-1">
+                          {Boolean(code.discountPercent && code.discountPercent > 0) && (
+                            <span className="px-1.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded text-[9px] font-bold">
+                              🏷️ -{code.discountPercent}% Rabatt
+                            </span>
+                          )}
+                          <span className="px-1.5 py-0.5 bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded text-[9px] font-bold">
+                            💰 {code.commissionPercent ?? 20}% Provision
+                          </span>
+                        </div>
+                        {totalEarnings > 0 && (
+                          <div className="text-[10px] text-emerald-400 font-black">
+                            💶 {totalEarnings.toFixed(2)} € verdient ({code.paidStudents?.length || 0} Abos)
                           </div>
                         )}
                       </td>
@@ -2843,7 +2911,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                         </button>
                       </td>
                     </tr>
-                  ))}
+                  );
+                })}
                 </tbody>
               </table>
             </div>

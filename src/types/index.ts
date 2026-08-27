@@ -15,6 +15,15 @@ export interface User {
   lastLoginAt?: string; // ISO Date string
 }
 
+export interface PromoPaidStudent {
+  email: string;
+  planId: string;
+  planName: string;
+  amountPaid: number; // EUR (e.g. 13.59)
+  teacherEarnings: number; // EUR (e.g. 3.40)
+  date: string; // ISO date or YYYY-MM-DD
+}
+
 export interface PromoCode {
   id: string;
   code: string;
@@ -29,8 +38,10 @@ export interface PromoCode {
   partnerLinkTitle?: string;
   description?: string;
   discountPercent?: number;
+  commissionPercent?: number;
   ownerUserId?: string;
   ownerEmail?: string;
+  paidStudents?: PromoPaidStudent[];
 }
 
 export interface TaskComment {
