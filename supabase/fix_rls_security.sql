@@ -41,7 +41,7 @@ ALTER TABLE IF EXISTS public.full_exam_results ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.wortschatz_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE IF EXISTS public.blog_posts ENABLE ROW LEVEL SECURITY;
 
--- 2.1 Add Partner and Owner Columns to promo_codes if not exist
+-- 2.1 Add Partner, Category, and Owner Columns to promo_codes if not exist
 ALTER TABLE IF EXISTS public.promo_codes 
   ADD COLUMN IF NOT EXISTS partner_name TEXT,
   ADD COLUMN IF NOT EXISTS partner_link TEXT,
@@ -51,7 +51,12 @@ ALTER TABLE IF EXISTS public.promo_codes
   ADD COLUMN IF NOT EXISTS commission_percent INT DEFAULT 20,
   ADD COLUMN IF NOT EXISTS owner_user_id TEXT,
   ADD COLUMN IF NOT EXISTS owner_email TEXT,
-  ADD COLUMN IF NOT EXISTS paid_students JSONB DEFAULT '[]'::jsonb;
+  ADD COLUMN IF NOT EXISTS paid_students JSONB DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS category TEXT DEFAULT 'free_days',
+  ADD COLUMN IF NOT EXISTS is_unlimited BOOLEAN DEFAULT false;
+
+-- Notify PostgREST to reload schema cache
+NOTIFY pgrst, 'reload schema';
 
 -- 3. DROP EXISTING CONFLICTING POLICIES (Idempotent cleanup)
 DO $$
