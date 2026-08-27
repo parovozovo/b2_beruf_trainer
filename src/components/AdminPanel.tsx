@@ -4174,6 +4174,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
                                 <CheckCircle className="w-3 h-3 text-emerald-400" /> Geprüfte Erklärung
                               </span>
                             )}
+
+                            {c.parentId && (
+                              <span className="px-2 py-0.5 rounded-md bg-indigo-500/20 border border-indigo-500/40 text-indigo-300 text-[10px] font-black flex items-center gap-1">
+                                ↳ Antwort
+                              </span>
+                            )}
                           </div>
 
                           {/* Email & Date & Target Key */}

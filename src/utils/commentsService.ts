@@ -42,6 +42,7 @@ export async function fetchAllCommentsAdmin(): Promise<TaskComment[]> {
           tileType: String(row.tile_type),
           variantId: String(row.variant_id),
           targetKey: String(row.target_key),
+          parentId: row.parent_id ? String(row.parent_id) : undefined,
           userId: String(row.user_id),
           userName: String(row.user_name || 'Gast'),
           userRole: (row.user_role as UserRole) || 'user',
@@ -105,6 +106,7 @@ export async function fetchCommentsForTask(
           tileType: String(row.tile_type),
           variantId: String(row.variant_id),
           targetKey: String(row.target_key),
+          parentId: row.parent_id ? String(row.parent_id) : undefined,
           userId: String(row.user_id),
           userName: String(row.user_name || 'Gast'),
           userRole: (row.user_role as UserRole) || 'user',
@@ -131,6 +133,7 @@ export async function fetchCommentsForTask(
                 tile_type: c.tileType,
                 variant_id: c.variantId,
                 target_key: c.targetKey,
+                parent_id: c.parentId || null,
                 user_id: c.userId,
                 user_name: c.userName,
                 user_role: c.userRole,
@@ -161,7 +164,7 @@ export async function fetchCommentsForTask(
 }
 
 /**
- * Post a new comment
+ * Post a new comment or reply
  */
 export async function createTaskComment(params: {
   testId: string;
@@ -172,6 +175,7 @@ export async function createTaskComment(params: {
   userRole?: UserRole;
   userEmail?: string;
   content: string;
+  parentId?: string | null;
 }): Promise<{ success: boolean; comment?: TaskComment; error?: string }> {
   const targetKey = buildTargetKey(params.testId, params.tileType, params.variantId);
   const now = new Date().toISOString();
@@ -183,6 +187,7 @@ export async function createTaskComment(params: {
     tileType: params.tileType,
     variantId: params.variantId,
     targetKey,
+    parentId: params.parentId || undefined,
     userId: params.userId,
     userName: params.userName.trim() || 'Gast',
     userRole: params.userRole || 'user',
@@ -209,6 +214,7 @@ export async function createTaskComment(params: {
         tile_type: newComment.tileType,
         variant_id: newComment.variantId,
         target_key: newComment.targetKey,
+        parent_id: newComment.parentId || null,
         user_id: newComment.userId,
         user_name: newComment.userName,
         user_role: newComment.userRole,
@@ -225,7 +231,7 @@ export async function createTaskComment(params: {
         console.error('Could not save comment in Supabase:', error);
         return {
           success: false,
-          error: `Cloud-Sync Fehler: ${error.message} (Tabelle task_comments existiert möglicherweise noch nicht in Supabase).`,
+          error: `Cloud-Sync Fehler: ${error.message}`,
         };
       }
     } catch (e: unknown) {
@@ -300,14 +306,16 @@ export async function deleteTaskComment(
   commentId: string,
   targetKey: string
 ): Promise<{ success: boolean; error?: string }> {
-  // Update local cache
+  // Update local cache: remove comment and any nested replies
   const localList = getLocalCache(targetKey);
-  const updatedLocal = localList.filter((c) => c.id !== commentId);
+  const updatedLocal = localList.filter((c) => c.id !== commentId && c.parentId !== commentId);
   setLocalCache(targetKey, updatedLocal);
 
   // Sync to Supabase
   if (isSupabaseConfigured) {
     try {
+      // Delete child replies first if any
+      await supabase.from('task_comments').delete().eq('parent_id', commentId);
       const { error } = await supabase.from('task_comments').delete().eq('id', commentId);
       if (error) {
         return { success: false, error: error.message };

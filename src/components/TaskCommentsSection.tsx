@@ -13,6 +13,9 @@ import {
   HelpCircle,
   Lightbulb,
   Lock,
+  CornerDownRight,
+  Reply,
+  X,
 } from 'lucide-react';
 import type { TaskComment, User } from '../types';
 import {
@@ -155,6 +158,10 @@ export const TaskCommentsSection: React.FC<TaskCommentsSectionProps> = ({
   }, [testId, tileType, variantId]);
 
   const [lastPostTime, setLastPostTime] = useState<number>(0);
+  const [replyingToId, setReplyingToId] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState('');
+  const [replySubmitting, setReplySubmitting] = useState(false);
+  const [replyError, setReplyError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -207,6 +214,47 @@ export const TaskCommentsSection: React.FC<TaskCommentsSectionProps> = ({
     }
   };
 
+  const handleReplySubmit = async (parentId: string) => {
+    setReplyError(null);
+    const cleanText = replyText.trim();
+    if (!cleanText || cleanText.length < 3) {
+      setReplyError('Die Antwort muss mindestens 3 Zeichen lang sein.');
+      return;
+    }
+    if (cleanText.length > 1000) {
+      setReplyError('Die Antwort darf maximal 1000 Zeichen lang sein.');
+      return;
+    }
+
+    setReplySubmitting(true);
+    try {
+      const res = await createTaskComment({
+        testId,
+        tileType,
+        variantId,
+        parentId,
+        userId: effectiveUserId,
+        userName: isAdmin ? 'Administrator' : currentUser?.role === 'teacher' ? 'Lehrkraft / Dozent' : myPersona.name,
+        userRole: isAdmin ? 'admin' : currentUser?.role === 'teacher' ? 'teacher' : 'user',
+        userEmail: currentUser?.email,
+        content: cleanText,
+      });
+
+      if (res.success && res.comment) {
+        setComments((prev) => [...prev, res.comment!]);
+        setReplyText('');
+        setReplyingToId(null);
+      } else {
+        setReplyError(res.error || 'Fehler beim Senden der Antwort.');
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Fehler beim Senden.';
+      setReplyError(msg);
+    } finally {
+      setReplySubmitting(false);
+    }
+  };
+
   const handleUpvote = async (commentId: string, targetKey: string) => {
     try {
       const res = await toggleUpvoteComment(commentId, targetKey, effectiveUserId);
@@ -233,11 +281,11 @@ export const TaskCommentsSection: React.FC<TaskCommentsSectionProps> = ({
   };
 
   const handleDelete = async (commentId: string, targetKey: string) => {
-    if (!window.confirm('Möchten Sie Ihren Kommentar wirklich löschen?')) return;
+    if (!window.confirm('Möchten Sie diesen Kommentar wirklich löschen?')) return;
     try {
       const res = await deleteTaskComment(commentId, targetKey);
       if (res.success) {
-        setComments((prev) => prev.filter((c) => c.id !== commentId));
+        setComments((prev) => prev.filter((c) => c.id !== commentId && c.parentId !== commentId));
       }
     } catch (err) {
       console.warn('Delete error:', err);
@@ -261,6 +309,9 @@ export const TaskCommentsSection: React.FC<TaskCommentsSectionProps> = ({
       prev.map((c) => (c.id === commentId ? { ...c, isVerified: nextVal } : c))
     );
   };
+
+  // Partition into top-level and replies
+  const topLevelComments = comments.filter((c) => !c.parentId);
 
   const formatDate = (isoString: string) => {
     try {
@@ -379,7 +430,7 @@ export const TaskCommentsSection: React.FC<TaskCommentsSectionProps> = ({
           {/* Comments List */}
           {loading ? (
             <div className="py-8 text-center text-xs text-slate-500">Kommentare werden geladen...</div>
-          ) : comments.length === 0 ? (
+          ) : topLevelComments.length === 0 ? (
             <div className="py-8 text-center bg-slate-950/30 rounded-xl border border-dashed border-slate-800 text-xs text-slate-400 space-y-1">
               <p className="font-semibold text-slate-300">Noch keine Erklärungen oder Kommentare vorhanden.</p>
               <p className="text-[11px] text-slate-500">
@@ -387,16 +438,18 @@ export const TaskCommentsSection: React.FC<TaskCommentsSectionProps> = ({
               </p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {comments.map((cmt) => {
+            <div className="space-y-3.5">
+              {topLevelComments.map((cmt) => {
                 const authorInfo = getDisplayAuthor(cmt, effectiveUserId);
                 const hasUpvoted = cmt.upvotedBy.includes(effectiveUserId);
                 const canDelete = authorInfo.isYou || isAdmin;
+                const childReplies = comments.filter((r) => r.parentId === cmt.id);
+                const isReplying = replyingToId === cmt.id;
 
                 return (
                   <div
                     key={cmt.id}
-                    className={`p-4 rounded-xl border transition-all ${
+                    className={`p-4 rounded-2xl border transition-all ${
                       cmt.isPinned
                         ? 'bg-amber-950/20 border-amber-500/40 shadow-md shadow-amber-500/5'
                         : cmt.isVerified
@@ -472,7 +525,7 @@ export const TaskCommentsSection: React.FC<TaskCommentsSectionProps> = ({
                             type="button"
                             onClick={() => handleDelete(cmt.id, cmt.targetKey)}
                             className="p-1 rounded hover:bg-rose-500/20 text-slate-500 hover:text-rose-400 transition-colors"
-                            title="Meinen Kommentar löschen"
+                            title="Kommentar löschen"
                           >
                             <Trash2 className="w-3 h-3" />
                           </button>
@@ -485,7 +538,7 @@ export const TaskCommentsSection: React.FC<TaskCommentsSectionProps> = ({
                       {cmt.content}
                     </p>
 
-                    {/* Footer / Upvote button */}
+                    {/* Footer: Upvote & Reply toggle */}
                     <div className="pl-8 pt-2.5 flex items-center gap-3">
                       <button
                         type="button"
@@ -500,7 +553,176 @@ export const TaskCommentsSection: React.FC<TaskCommentsSectionProps> = ({
                         <ThumbsUp className={`w-3 h-3 ${hasUpvoted ? 'text-white' : 'text-slate-400'}`} />
                         <span>{cmt.upvotes}</span>
                       </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (isReplying) {
+                            setReplyingToId(null);
+                            setReplyText('');
+                          } else {
+                            setReplyingToId(cmt.id);
+                            setReplyText('');
+                            setReplyError(null);
+                          }
+                        }}
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                          isReplying
+                            ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
+                            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                        }`}
+                      >
+                        <Reply className="w-3 h-3" />
+                        <span>Antworten</span>
+                        {childReplies.length > 0 && (
+                          <span className="ml-0.5 px-1.5 py-0.2 bg-slate-800 rounded-full text-[10px] text-slate-400">
+                            {childReplies.length}
+                          </span>
+                        )}
+                      </button>
                     </div>
+
+                    {/* Inline Reply Input Form */}
+                    {isReplying && (
+                      <div className="mt-3 pl-8 animate-fadeIn">
+                        <div className="p-3 bg-slate-900/95 rounded-xl border border-indigo-500/30 space-y-2 shadow-lg">
+                          <div className="flex items-center justify-between text-[11px] text-slate-400">
+                            <span className="flex items-center gap-1 font-bold text-indigo-300">
+                              <CornerDownRight className="w-3 h-3" /> Antwort an {authorInfo.displayName}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setReplyingToId(null);
+                                setReplyText('');
+                                setReplyError(null);
+                              }}
+                              className="text-slate-500 hover:text-slate-300 p-0.5 cursor-pointer"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                          <textarea
+                            rows={2}
+                            value={replyText}
+                            onChange={(e) => setReplyText(e.target.value)}
+                            placeholder="Ihre Antwort schreiben..."
+                            className="w-full px-3 py-2 bg-slate-950/80 border border-slate-700/80 rounded-lg text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
+                            autoFocus
+                          />
+                          {replyError && (
+                            <div className="text-[11px] text-rose-400 font-medium">{replyError}</div>
+                          )}
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setReplyingToId(null);
+                                setReplyText('');
+                                setReplyError(null);
+                              }}
+                              className="px-3 py-1 rounded-lg text-xs text-slate-400 hover:text-white cursor-pointer"
+                            >
+                              Abbrechen
+                            </button>
+                            <button
+                              type="button"
+                              disabled={replySubmitting || !replyText.trim()}
+                              onClick={() => handleReplySubmit(cmt.id)}
+                              className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold rounded-lg text-xs flex items-center gap-1.5 cursor-pointer shadow transition-all"
+                            >
+                              <Send className="w-3 h-3" />
+                              <span>{replySubmitting ? 'Sendet...' : 'Antworten'}</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Second Level Replies List */}
+                    {childReplies.length > 0 && (
+                      <div className="mt-3 ml-3 pl-3.5 border-l-2 border-indigo-500/30 space-y-2.5">
+                        {childReplies.map((reply) => {
+                          const replyAuthor = getDisplayAuthor(reply, effectiveUserId);
+                          const replyHasUpvoted = reply.upvotedBy.includes(effectiveUserId);
+                          const canDeleteReply = replyAuthor.isYou || isAdmin;
+
+                          return (
+                            <div
+                              key={reply.id}
+                              className={`p-3 rounded-xl border transition-all text-xs ${
+                                reply.isPinned
+                                  ? 'bg-amber-950/20 border-amber-500/40'
+                                  : reply.isVerified
+                                  ? 'bg-emerald-950/20 border-emerald-500/40'
+                                  : replyAuthor.isYou
+                                  ? 'bg-slate-900/80 border-indigo-500/20'
+                                  : 'bg-slate-950/50 border-slate-800/70 hover:border-slate-700'
+                              }`}
+                            >
+                              {/* Reply Header */}
+                              <div className="flex items-center justify-between gap-2 mb-1">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <div className="w-5 h-5 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px]">
+                                    {replyAuthor.avatarEmoji}
+                                  </div>
+                                  <span className={`font-bold text-[11px] ${replyAuthor.isYou ? 'text-indigo-300 font-black' : 'text-slate-200'}`}>
+                                    {replyAuthor.displayName}
+                                  </span>
+
+                                  {replyAuthor.isAdmin && (
+                                    <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                                      Admin
+                                    </span>
+                                  )}
+                                  {reply.isVerified && (
+                                    <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-0.5">
+                                      <ShieldCheck className="w-2.5 h-2.5" /> Verifiziert
+                                    </span>
+                                  )}
+                                </div>
+
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[9px] text-slate-500">{formatDate(reply.createdAt)}</span>
+                                  {canDeleteReply && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDelete(reply.id, reply.targetKey)}
+                                      className="p-0.5 rounded hover:bg-rose-500/20 text-slate-500 hover:text-rose-400 transition-colors cursor-pointer"
+                                      title="Antwort löschen"
+                                    >
+                                      <Trash2 className="w-2.5 h-2.5" />
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Reply Content */}
+                              <p className="text-[11px] text-slate-300 leading-relaxed whitespace-pre-line pl-6">
+                                {reply.content}
+                              </p>
+
+                              {/* Upvote for Reply */}
+                              <div className="pl-6 pt-1.5 flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleUpvote(reply.id, reply.targetKey)}
+                                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                                    replyHasUpvoted
+                                      ? 'bg-indigo-600 text-white'
+                                      : 'bg-slate-800/80 text-slate-400 hover:text-slate-200'
+                                  }`}
+                                  title="Als hilfreich bewerten"
+                                >
+                                  <ThumbsUp className={`w-2.5 h-2.5 ${replyHasUpvoted ? 'text-white' : 'text-slate-400'}`} />
+                                  <span>{reply.upvotes}</span>
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 );
               })}

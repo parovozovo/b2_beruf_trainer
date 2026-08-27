@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS public.task_comments (
   tile_type TEXT NOT NULL,
   variant_id TEXT NOT NULL,
   target_key TEXT NOT NULL,
+  parent_id TEXT DEFAULT NULL,
   user_id TEXT NOT NULL,
   user_name TEXT NOT NULL,
   user_role TEXT DEFAULT 'user',
@@ -22,8 +23,12 @@ CREATE TABLE IF NOT EXISTS public.task_comments (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Ensure parent_id column exists if table was created previously
+ALTER TABLE public.task_comments ADD COLUMN IF NOT EXISTS parent_id TEXT DEFAULT NULL;
+
 -- 2. Indexes for fast lookup
 CREATE INDEX IF NOT EXISTS idx_task_comments_target ON public.task_comments(target_key);
+CREATE INDEX IF NOT EXISTS idx_task_comments_parent ON public.task_comments(parent_id);
 CREATE INDEX IF NOT EXISTS idx_task_comments_created ON public.task_comments(created_at DESC);
 
 -- 3. GRANT TABLE PERMISSIONS (Crucial for anon & authenticated Supabase clients)

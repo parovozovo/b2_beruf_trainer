@@ -54,6 +54,7 @@ export interface TaskComment {
   tileType: string;
   variantId: string;
   targetKey: string; // "testId_tileType_variantId"
+  parentId?: string; // ID of the parent comment if this is a reply (2nd level)
   userId: string;
   userName: string;
   userRole?: UserRole;
