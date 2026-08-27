@@ -921,15 +921,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center max-w-3xl mx-auto space-y-2 text-xs font-bold text-slate-500 dark:text-slate-400 shadow-2xs">
             <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs font-bold text-slate-600 dark:text-slate-300">
               <span className="flex items-center gap-1.5 text-slate-900 dark:text-white">
-                <CreditCard className="w-4 h-4 text-indigo-500" /> Apple Pay / Google Pay
+                <CreditCard className="w-4 h-4 text-indigo-500" /> Sichere Online-Zahlung (Apple Pay, Google Pay, Karte)
               </span>
               <span>•</span>
-              <span className="text-slate-900 dark:text-white">Visa & Mastercard</span>
+              <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-black">
+                <ShieldCheck className="w-4 h-4" /> 256-Bit SSL Verschlüsselung
+              </span>
               <span>•</span>
-              <span className="text-slate-900 dark:text-white">Privat24 / Monobank / SEPA</span>
-              <span>•</span>
-              <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-black">
-                <ShieldCheck className="w-4 h-4" /> 100% Einmalzahlung (Kein Abo)
+              <span className="text-slate-900 dark:text-white font-bold">
+                🛡️ 100% Einmalzahlung (Kein Abo)
               </span>
             </div>
           </div>

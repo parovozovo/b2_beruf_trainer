@@ -422,19 +422,17 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({
         </div>
 
         {/* Payment Methods Trust Banner */}
-        <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-center gap-4 text-xs text-slate-500 dark:text-slate-400 font-bold">
-          <span className="flex items-center gap-1">
-            <CreditCard className="w-3.5 h-3.5 text-indigo-500" /> Apple Pay / Google Pay
+        <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-slate-500 dark:text-slate-400 font-bold">
+          <span className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
+            <CreditCard className="w-4 h-4 text-indigo-500" /> Sichere Online-Zahlung (Apple Pay, Google Pay, Karte)
           </span>
           <span>•</span>
-          <span>Visa & Mastercard</span>
+          <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-black">
+            <ShieldCheck className="w-4 h-4" /> 256-Bit SSL Verschlüsselung
+          </span>
           <span>•</span>
-          <span>Klarna / Sofort</span>
-          <span>•</span>
-          <span>PayPal</span>
-          <span>•</span>
-          <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-            <ShieldCheck className="w-3.5 h-3.5" /> 256-Bit SSL
+          <span className="text-slate-700 dark:text-slate-300 font-bold">
+            🛡️ 100% Einmalzahlung (Kein Abo)
           </span>
         </div>
       </div>
