@@ -190,10 +190,16 @@ export async function createTaskComment(params: {
       });
 
       if (error) {
-        console.warn('Could not save comment in Supabase:', error);
+        console.error('Could not save comment in Supabase:', error);
+        return {
+          success: false,
+          error: `Cloud-Sync Fehler: ${error.message} (Tabelle task_comments existiert möglicherweise noch nicht in Supabase).`,
+        };
       }
     } catch (e: unknown) {
-      console.warn('Supabase post comment exception:', e);
+      console.error('Supabase post comment exception:', e);
+      const msg = e instanceof Error ? e.message : 'Verbindungsfehler';
+      return { success: false, error: msg };
     }
   }
 
