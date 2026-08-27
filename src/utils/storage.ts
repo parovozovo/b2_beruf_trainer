@@ -537,7 +537,7 @@ export async function savePromoCodesAsync(codes: PromoCode[]): Promise<{ success
         partner_link_title: pc.partnerLinkTitle || null,
         description: pc.description || null,
         discount_percent: pc.discountPercent || 0,
-        commission_percent: pc.commissionPercent ?? 20,
+        commission_percent: pc.commissionPercent ?? (pc.ownerEmail ? 20 : 0),
         owner_user_id: pc.ownerUserId || null,
         owner_email: pc.ownerEmail || null,
         paid_students: pc.paidStudents || [],
@@ -569,7 +569,7 @@ export async function recordPromoStudentPurchase(
   if (idx === -1) return { success: false, error: 'Gutscheincode nicht gefunden.' };
 
   const targetCode = codes[idx];
-  const commissionRate = (targetCode.commissionPercent ?? 20) / 100;
+  const commissionRate = (targetCode.commissionPercent ?? (targetCode.ownerEmail ? 20 : 0)) / 100;
   const teacherEarnings = Math.round(amountPaid * commissionRate * 100) / 100;
 
   const purchaseEntry: PromoPaidStudent = {

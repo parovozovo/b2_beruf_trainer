@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Crown,
   CheckCircle2,
@@ -23,65 +23,100 @@ export interface SubscriptionPlan {
   id: string;
   name: string;
   badge?: string;
+  durationLabel: string;
+  durationDays: number | null; // null = lifetime
   price: string;
   originalPrice?: string;
-  period: string;
-  durationDays: number | null; // null for lifetime
-  description: string;
+  billingPeriod: string;
+  period?: string;
+  description?: string;
+  highlight?: boolean;
   popular?: boolean;
+  savings?: string;
+  features: string[];
 }
 
-const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
+export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   {
     id: 'sprint_7d',
-    name: '7 Tage Sprint-Pass',
-    price: '9,99 €',
-    period: 'für 7 Tage',
+    name: 'Sprint-Woche',
+    badge: '⚡ Schnellstart',
+    durationLabel: '7 Tage Zugang',
     durationDays: 7,
-    description: '1 Woche voller Zugriff. Ideal für den schnellen Endspurt vor dem Prüfungstermin.',
+    price: '9,99 €',
+    billingPeriod: 'Einmalig für 7 Tage',
+    features: [
+      'Alle Modelltests 1–6 freigeschaltet',
+      'Unbegrenzte KI-Korrekturen (Schreiben)',
+      'Sprechen & Audio-Prüfungstrainer',
+      'Vollständiger Wortschatz-Trainer',
+    ],
   },
   {
     id: 'standard_30d',
-    name: '30 Tage Standard-Pass',
-    badge: 'Bestseller',
-    price: '15,99 €',
-    period: 'für 30 Tage',
+    name: 'Standard-Monat',
+    badge: '🏆 Empfohlen',
+    durationLabel: '30 Tage Zugang',
     durationDays: 30,
+    price: '15,99 €',
+    billingPeriod: 'Einmalig für 30 Tage',
     popular: true,
-    description: '1 Monat voller Zugriff. Die beliebteste Wahl für eine gründliche und stressfreie Vorbereitung.',
+    highlight: true,
+    features: [
+      'Alle Modelltests 1–6 + künftige Updates',
+      'Unbegrenzte KI-Korrekturen & Detailfeedback',
+      'Prüfungssimulation mit Timer & Punkten',
+      'Detaillierte Fehleranalyse & Wortschatz-Export',
+      'Sprechen Teil 1, 2 & 3 mit KI-Audio',
+    ],
   },
   {
     id: 'complete_90d',
-    name: '90 Tage Kursbegleiter',
-    badge: 'Spart 38%',
-    price: '29,99 €',
-    period: 'für 90 Tage',
+    name: 'Komplett-Quartal',
+    badge: '🔥 Bester Wert',
+    durationLabel: '90 Tage Zugang',
     durationDays: 90,
-    description: '3 Monate voller Zugriff. Begleitet Sie zuverlässig durch den gesamten B2-Berufssprachkurs.',
+    price: '29,99 €',
+    billingPeriod: 'Einmalig für 90 Tage',
+    savings: 'Spare 37 % ggü. Monat',
+    features: [
+      'Alle Features aus Standard-Monat',
+      '90 Tage unbegrenzter Vollzugriff',
+      'Prioritäts-Support & neue Prüfungssets',
+      'Umfassende Prüfungsvorbereitung telc B2',
+    ],
   },
   {
     id: 'lifetime',
-    name: 'Lebenslanger Pass',
-    badge: 'Aktion: -20%',
+    name: 'Lifetime VIP',
+    badge: '👑 Lebenslang',
+    durationLabel: 'Dauerhafter Zugang',
+    durationDays: null,
     price: '39,99 €',
     originalPrice: '49,99 €',
-    period: 'dauerhaft',
-    durationDays: null,
-    description: 'Einmal zahlen, unbegrenzt üben ohne zeitliche Begrenzung bis zum sicheren Bestehen.',
+    billingPeriod: 'Einmalige Zahlung für immer',
+    savings: 'Einmal zahlen, für immer nutzen',
+    features: [
+      'Lebenslanger Vollzugriff auf alle Inhalte',
+      'Alle zukünftigen Modelltests inklusive',
+      'Alle neuen Features & KI-Tools dauerhaft',
+      'Höchste KI-Verarbeitungsgeschwindigkeit',
+    ],
   },
 ];
 
 interface SubscriptionPageProps {
   currentUser: User | null;
   onOpenLoginModal: () => void;
-  onActivateSubscription?: (planId: string, durationDays: number | null) => void;
-  onNavigateToTab: (tab: string) => void;
+  onActivateSubscription?: (planId: string, durationDays: number | null) => Promise<void> | void;
+  onBackToApp?: () => void;
+  onNavigateToTab?: (tab: string) => void;
 }
 
 export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({
   currentUser,
-  onOpenLoginModal,
   onActivateSubscription: _onActivateSubscription,
+  onOpenLoginModal,
   onNavigateToTab,
 }) => {
   const [selectedPlanId, setSelectedPlanId] = useState<string>(() => {
@@ -97,10 +132,17 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({
   const [justPurchasedPlan] = useState<SubscriptionPlan | null>(null);
 
   // Check for applied promo code or URL param
-  const appliedCodeStr = currentUser?.appliedPromoCode || new URLSearchParams(window.location.search).get('promo') || '';
-  const promoCodes = getPromoCodesLocal();
-  const activePromo = promoCodes.find((p) => p.code.toUpperCase() === appliedCodeStr.toUpperCase() && p.active);
-  const discountPercent = activePromo?.discountPercent || 0;
+  const appliedCodeStr = useMemo(() => {
+    return currentUser?.appliedPromoCode || new URLSearchParams(window.location.search).get('promo') || '';
+  }, [currentUser?.appliedPromoCode]);
+
+  const activePromo = useMemo(() => {
+    if (!appliedCodeStr) return null;
+    const promoCodes = getPromoCodesLocal();
+    return promoCodes.find((p) => p.code.toUpperCase() === appliedCodeStr.toUpperCase() && p.active) || null;
+  }, [appliedCodeStr]);
+
+  const discountPercent = (activePromo?.category !== 'free_days' ? activePromo?.discountPercent : 0) || activePromo?.discountPercent || 0;
 
   const getPlanPrices = (plan: SubscriptionPlan) => {
     const baseNum = parseFloat(plan.price.replace(',', '.').replace(' €', ''));
@@ -192,7 +234,7 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({
           <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
             <button
               type="button"
-              onClick={() => onNavigateToTab('tile_practice')}
+              onClick={() => onNavigateToTab?.('tile_practice')}
               className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black text-xs sm:text-sm shadow-md flex items-center gap-2 transition-all cursor-pointer active:scale-95"
             >
               <Layers className="w-4 h-4" />
@@ -200,7 +242,7 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({
             </button>
             <button
               type="button"
-              onClick={() => onNavigateToTab('full_exam')}
+              onClick={() => onNavigateToTab?.('full_exam')}
               className="px-6 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-2xl font-black text-xs sm:text-sm shadow-md flex items-center gap-2 transition-all cursor-pointer active:scale-95"
             >
               <Award className="w-4 h-4" />
@@ -249,7 +291,7 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({
           <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
             <button
               type="button"
-              onClick={() => onNavigateToTab('tile_practice')}
+              onClick={() => onNavigateToTab?.('tile_practice')}
               className="w-full sm:w-auto px-8 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black text-sm shadow-lg flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
             >
               <span>Jetzt mit dem Training starten</span>
@@ -361,7 +403,7 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({
                     {plan.name}
                   </h3>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 min-h-[32px] leading-relaxed">
-                    {plan.description}
+                    {plan.description || plan.durationLabel}
                   </p>
                 </div>
 
@@ -389,7 +431,7 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({
                         </span>
                       </>
                     )}
-                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">/ {plan.period}</span>
+                    <span className="text-xs font-bold text-slate-500 dark:text-slate-400 whitespace-nowrap">/ {plan.period || plan.billingPeriod}</span>
                   </div>
                 </div>
               </div>
@@ -601,7 +643,7 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({
                 type="button"
                 onClick={() => {
                   setShowComingSoonModal(false);
-                  onNavigateToTab('tile_practice');
+                  onNavigateToTab?.('tile_practice');
                 }}
                 className="flex-1 py-3 px-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black text-xs shadow-md transition-all cursor-pointer"
               >

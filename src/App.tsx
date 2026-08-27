@@ -132,12 +132,19 @@ export function App() {
         onClose={() => setIsPromoModalOpen(false)}
         currentUser={currentUser}
         promoCodes={promoCodes}
-        onApplyPromo={(_code) => {
+        onApplyPromo={(code) => {
           if (currentUser) {
+            const hasFreeDays = Boolean(code.durationDays && code.durationDays > 0);
+            const durationDays = hasFreeDays ? code.durationDays : null;
+            const expiresAt = hasFreeDays && durationDays
+              ? new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString()
+              : (currentUser.premiumExpiresAt || null);
+
             const updatedUser: User = {
               ...currentUser,
-              isPremium: true,
-              premiumExpiresAt: null,
+              isPremium: hasFreeDays ? true : currentUser.isPremium,
+              premiumExpiresAt: expiresAt,
+              appliedPromoCode: code.code,
             };
             setCurrentUser(updatedUser);
             setCurrentUserState(updatedUser);

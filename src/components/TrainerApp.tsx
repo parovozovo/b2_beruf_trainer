@@ -18,6 +18,7 @@ import {
   getModelltestsLocal,
   saveModelltestsAsync,
   getPromoCodesLocal,
+  savePromoCodesLocal,
   savePromoCodesAsync,
   getForumsbeitragTopicsLocal,
   saveForumsbeitragTopicsAsync,
@@ -400,10 +401,30 @@ export const TrainerApp: React.FC<TrainerAppProps> = ({ theme, onToggleTheme }) 
       return { success: false, message: 'Nutzungslimit erreicht' };
     }
 
+    const cleanUserEmail = currentUser?.email?.trim().toLowerCase();
+    const isRealUser = Boolean(
+      cleanUserEmail &&
+      !cleanUserEmail.startsWith('anon-') &&
+      cleanUserEmail !== 'gast@beruf-b2.com'
+    );
+
+    if (
+      isRealUser &&
+      cleanUserEmail &&
+      code.usedByEmails &&
+      code.usedByEmails.map((e) => e.toLowerCase()).includes(cleanUserEmail)
+    ) {
+      showToast('Sie haben diesen Aktionscode bereits eingelöst', 'error');
+      return { success: false, message: 'Aktionscode bereits eingelöst' };
+    }
+
     const hasFreeDays = Boolean(code.durationDays && code.durationDays > 0);
     const durationDays = hasFreeDays ? code.durationDays : null;
     const expiresAt = hasFreeDays && durationDays
-      ? new Date(Date.now() + durationDays * 24 * 60 * 60 * 1000).toISOString()
+      ? new Date(
+          Math.max(Date.now(), currentUser?.premiumExpiresAt ? new Date(currentUser.premiumExpiresAt).getTime() : 0) +
+            durationDays * 24 * 60 * 60 * 1000
+        ).toISOString()
       : (currentUser?.premiumExpiresAt || null);
 
     const userToUpdate: User = currentUser || {
@@ -427,11 +448,26 @@ export const TrainerApp: React.FC<TrainerAppProps> = ({ theme, onToggleTheme }) 
     setCurrentUserTab(updatedUser);
     syncUserToRegisteredList(updatedUser);
 
+    // Update promo code usage & tracking
+    const updatedUsedByEmails = isRealUser && cleanUserEmail
+      ? Array.from(new Set([...(code.usedByEmails || []), cleanUserEmail]))
+      : (code.usedByEmails || []);
+    const updatedUsedCount = (code.usedCount || 0) + 1;
+
+    const updatedPromoCodes = promoCodes.map((p) =>
+      p.id === code.id || p.code.toLowerCase() === cleanCode
+        ? { ...p, usedCount: updatedUsedCount, usedByEmails: updatedUsedByEmails }
+        : p
+    );
+
+    setPromoCodes(updatedPromoCodes);
+    savePromoCodesLocal(updatedPromoCodes);
+
     // Sync redemption to Supabase Cloud in background
     if (isSupabaseConfigured) {
       (async () => {
         try {
-          if (updatedUser.email && !updatedUser.email.startsWith('anon-')) {
+          if (isRealUser && updatedUser.email) {
             await supabase
               .from('registered_users')
               .update({
@@ -442,11 +478,12 @@ export const TrainerApp: React.FC<TrainerAppProps> = ({ theme, onToggleTheme }) 
               .eq('email', updatedUser.email.toLowerCase());
           }
 
-          // Increment promo code used count in DB
+          // Update promo code used count and used_by_emails in DB
           await supabase
             .from('promo_codes')
             .update({
-              used_count: (code.usedCount || 0) + 1,
+              used_count: updatedUsedCount,
+              used_by_emails: updatedUsedByEmails,
             })
             .eq('code', code.code);
         } catch (dbErr) {
@@ -457,7 +494,9 @@ export const TrainerApp: React.FC<TrainerAppProps> = ({ theme, onToggleTheme }) 
 
     confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
     
-    if (hasFreeDays) {
+    if (hasFreeDays && code.discountPercent && code.discountPercent > 0) {
+      showToast(`🎉 Code "${code.code}" eingelöst! ${durationDays} Tage Premium aktiviert + -${code.discountPercent}% Rabatt im Shop.`, 'success');
+    } else if (hasFreeDays) {
       showToast(`🎉 Code "${code.code}" erfolgreich eingelöst! Premium aktiviert (${durationDays ? durationDays + ' Tage' : 'Dauerhaft'}).`, 'success');
     } else if (code.discountPercent && code.discountPercent > 0) {
       showToast(`🎉 Rabattcode "${code.code}" aktiviert! Sie erhalten -${code.discountPercent}% Rabatt auf alle Tarife im Shop.`, 'success');

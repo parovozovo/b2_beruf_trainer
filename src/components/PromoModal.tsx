@@ -55,21 +55,42 @@ export const PromoModal: React.FC<PromoModalProps> = ({
       return;
     }
 
-    if (foundCode.usedCount >= foundCode.maxUses) {
+    const isUnlim = Boolean(foundCode.isUnlimited || foundCode.maxUses >= 999999);
+    if (!isUnlim && (foundCode.usedCount || 0) >= (foundCode.maxUses || 50)) {
       setError('Dieser Code hat das Nutzungslimit erreicht.');
       return;
     }
 
-    if (currentUser && foundCode.usedByEmails.includes(currentUser.email)) {
+    const cleanUserEmail = currentUser?.email?.trim().toLowerCase();
+    if (
+      cleanUserEmail &&
+      !cleanUserEmail.startsWith('anon-') &&
+      cleanUserEmail !== 'gast@beruf-b2.com' &&
+      foundCode.usedByEmails &&
+      foundCode.usedByEmails.some((e) => e.toLowerCase() === cleanUserEmail)
+    ) {
       setError('Sie haben diesen Code bereits eingelöst.');
       return;
     }
 
     // Success
     onApplyPromo(foundCode);
-    const durationLabel = foundCode.durationDays >= 999 ? 'dauerhaften' : `${foundCode.durationDays} Tage`;
+    const hasFree = Boolean(foundCode.durationDays && foundCode.durationDays > 0);
+    const hasDisc = Boolean(foundCode.discountPercent && foundCode.discountPercent > 0);
     const partnerNotice = foundCode.partnerName ? ` von ${foundCode.partnerName}` : '';
-    setSuccessMsg(`Glückwunsch! Der Gutschein${partnerNotice} wurde erfolgreich für ${durationLabel} Premium aktiviert!`);
+    
+    let msg = `Glückwunsch! Der Gutschein${partnerNotice} wurde erfolgreich angewendet!`;
+    if (hasFree && hasDisc) {
+      const durationLabel = foundCode.durationDays >= 999 ? 'dauerhaftes' : `${foundCode.durationDays} Tage`;
+      msg = `Glückwunsch! Der Gutschein${partnerNotice} wurde für ${durationLabel} Premium und -${foundCode.discountPercent}% Rabatt aktiviert!`;
+    } else if (hasFree) {
+      const durationLabel = foundCode.durationDays >= 999 ? 'dauerhaften' : `${foundCode.durationDays} Tage`;
+      msg = `Glückwunsch! Der Gutschein${partnerNotice} wurde erfolgreich für ${durationLabel} Premium aktiviert!`;
+    } else if (hasDisc) {
+      msg = `Glückwunsch! Rabattcode${partnerNotice} aktiviert (-${foundCode.discountPercent}% auf alle Tarife im Shop).`;
+    }
+
+    setSuccessMsg(msg);
     confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
 
     setTimeout(() => {
