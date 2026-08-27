@@ -1,4 +1,4 @@
-import type { User, UserRole, PromoCode, Modelltest, ForumsbeitragTopic, WrittenEssayRecord, FullExamResult, TileResult, WortschatzItem } from '../types';
+import type { User, UserRole, PromoCode, Modelltest, ForumsbeitragTopic, WrittenEssayRecord, FullExamResult, TileResult, WortschatzItem, StreakState } from '../types';
 import { INITIAL_PROMO_CODES, INITIAL_FORUMSBEITRAG_TOPICS, INITIAL_MODELLTESTS, INITIAL_SPRECHEN_TOPICS } from '../data/initialData';
 import { DEFAULT_WORTSCHATZ_ITEMS } from '../data/defaultWortschatz';
 import { supabase, isSupabaseConfigured } from './supabase';
@@ -14,6 +14,7 @@ const KEYS = {
   FULL_EXAM_RESULTS: 'b2_full_exam_results',
   TILE_RESULTS: 'b2_tile_results',
   WORTSCHATZ_ITEMS: 'b2_wortschatz_items',
+  STREAK: 'b2_user_streak',
 };
 
 export const ADMIN_EMAILS = ['luck34y@yahoo.com'];
@@ -741,6 +742,7 @@ export function saveWrittenEssay(essay: WrittenEssayRecord): void {
   const essays = getWrittenEssays();
   essays.unshift(essay);
   localStorage.setItem(KEYS.WRITTEN_ESSAYS, JSON.stringify(essays));
+  recordStreakActivity();
   if (isSupabaseConfigured) {
     (async () => {
       try {
@@ -818,6 +820,7 @@ export function saveTileResult(result: TileResult): void {
   const results = getTileResults();
   results.unshift(result);
   localStorage.setItem(KEYS.TILE_RESULTS, JSON.stringify(results));
+  recordStreakActivity();
   if (isSupabaseConfigured) {
     (async () => {
       try {
@@ -855,6 +858,7 @@ export function saveFullExamResult(result: FullExamResult): void {
   const results = getFullExamResults();
   results.unshift(result);
   localStorage.setItem(KEYS.FULL_EXAM_RESULTS, JSON.stringify(results));
+  recordStreakActivity();
   if (isSupabaseConfigured) {
     (async () => {
       try {
@@ -1089,4 +1093,88 @@ export async function deleteWortschatzItemAsync(id: string): Promise<void> {
     }
   }
 }
+
+/* ==============================================================================
+   STREAK & DAILY LEARNING HABIT SYSTEM
+   ============================================================================== */
+
+export function getTodayDateStr(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+export function getYesterdayDateStr(): string {
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+const DEFAULT_STREAK: StreakState = {
+  currentStreak: 0,
+  bestStreak: 0,
+  lastActivityDate: '',
+  activeDates: [],
+};
+
+export function getStreakState(): StreakState {
+  try {
+    const raw = localStorage.getItem(KEYS.STREAK);
+    if (!raw) return DEFAULT_STREAK;
+    const data: StreakState = JSON.parse(raw);
+    const today = getTodayDateStr();
+    const yesterday = getYesterdayDateStr();
+
+    // Check if streak broke (more than 1 day missed)
+    if (data.lastActivityDate && data.lastActivityDate !== today && data.lastActivityDate !== yesterday) {
+      data.currentStreak = 0;
+    }
+    return data;
+  } catch {
+    return DEFAULT_STREAK;
+  }
+}
+
+export function recordStreakActivity(): StreakState {
+  try {
+    const current = getStreakState();
+    const today = getTodayDateStr();
+    const yesterday = getYesterdayDateStr();
+
+    if (current.lastActivityDate === today) {
+      return current; // already recorded for today
+    }
+
+    let nextStreak = current.currentStreak;
+    if (current.lastActivityDate === yesterday) {
+      nextStreak += 1;
+    } else {
+      nextStreak = 1;
+    }
+
+    const nextBest = Math.max(current.bestStreak || 0, nextStreak);
+    const activeDatesSet = new Set(current.activeDates || []);
+    activeDatesSet.add(today);
+
+    const updated: StreakState = {
+      currentStreak: nextStreak,
+      bestStreak: nextBest,
+      lastActivityDate: today,
+      activeDates: Array.from(activeDatesSet).slice(-60), // keep last 60 days
+    };
+
+    localStorage.setItem(KEYS.STREAK, JSON.stringify(updated));
+    window.dispatchEvent(new CustomEvent('b2-streak-updated', { detail: updated }));
+    return updated;
+  } catch (e) {
+    console.warn('Could not record streak:', e);
+    return DEFAULT_STREAK;
+  }
+}
+
 

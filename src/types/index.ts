@@ -49,6 +49,13 @@ export interface TaskComment {
   createdAt: string;
 }
 
+export interface StreakState {
+  currentStreak: number;
+  bestStreak: number;
+  lastActivityDate: string; // YYYY-MM-DD
+  activeDates: string[]; // YYYY-MM-DD array
+}
+
 export type TileType = 
   | 'lesen_1'
   | 'lesen_2'

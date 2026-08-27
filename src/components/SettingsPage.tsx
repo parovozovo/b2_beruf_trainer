@@ -23,7 +23,9 @@ import {
   ShieldCheck,
   FileText,
   Cookie,
-  Landmark
+  Landmark,
+  Bell,
+  BellRing,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import type { User, PromoCode, TileResult, FullExamResult } from '../types';
@@ -67,10 +69,56 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   const [fontScale, setFontScale] = useState<string>(() => localStorage.getItem('b2_font_scale') || '100%');
   const [audioSpeed, setAudioSpeed] = useState<string>(() => localStorage.getItem('b2_audio_speed') || '1.0');
 
-  // PWA Install & Update State
   const [isPwaInstalled, setIsPwaInstalled] = useState(() => isRunningStandalone());
   const [checkingUpdate, setCheckingUpdate] = useState(false);
   const [updateMsg, setUpdateMsg] = useState<string | null>(null);
+
+  // Push / Reminder State
+  const [remindersEnabled, setRemindersEnabled] = useState<boolean>(() => {
+    return localStorage.getItem('b2_reminders_enabled') === 'true';
+  });
+  const [reminderTime] = useState<string>(() => {
+    return localStorage.getItem('b2_reminder_time') || '19:00';
+  });
+
+  const handleToggleReminders = async () => {
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+      alert('Ihr Browser unterstützt leider keine Web-Benachrichtigungen.');
+      return;
+    }
+
+    if (!remindersEnabled) {
+      const perm = await Notification.requestPermission();
+      if (perm === 'granted') {
+        setRemindersEnabled(true);
+        localStorage.setItem('b2_reminders_enabled', 'true');
+        try {
+          new Notification('🔥 Beruf B2+ Lernerinnerung aktiviert!', {
+            body: `Täglich um ${reminderTime} Uhr erinnern wir Sie an Ihre B2-Prüfungsvorbereitung.`,
+            icon: '/pwa-192x192.png',
+          });
+        } catch {}
+      } else {
+        alert('Benachrichtigungen wurden im Browser blockiert. Bitte erlauben Sie diese in den Browser-Einstellungen.');
+      }
+    } else {
+      setRemindersEnabled(false);
+      localStorage.setItem('b2_reminders_enabled', 'false');
+    }
+  };
+
+  const handleSendTestNotification = () => {
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+      try {
+        new Notification('🔥 Beruf B2+ Trainer: Streak halten!', {
+          body: 'Zeit für Ihre 15-Minuten B2-Übung! Schließen Sie heute 1 Aufgabe ab.',
+          icon: '/pwa-192x192.png',
+        });
+      } catch {}
+    } else {
+      handleToggleReminders();
+    }
+  };
 
   useEffect(() => {
     const handleInstalled = () => setIsPwaInstalled(true);
@@ -538,6 +586,51 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 </button>
               </div>
             )}
+
+            {/* Daily Push Reminder & Notification Card */}
+            <div className="p-4 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className={`p-2.5 rounded-xl shrink-0 ${remindersEnabled ? 'bg-amber-500/15 text-amber-500' : 'bg-slate-200 dark:bg-slate-800 text-slate-400'}`}>
+                  {remindersEnabled ? <BellRing className="w-5 h-5" /> : <Bell className="w-5 h-5" />}
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <span>Tägliche Lernerinnerung (Push)</span>
+                    {remindersEnabled && (
+                      <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold text-[10px]">
+                        Aktiv
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-[11px] text-slate-500">
+                    Erinnert Sie täglich an Ihre B2-Übung, damit Ihr Lern-Streak nicht abreißt.
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                {remindersEnabled && (
+                  <button
+                    type="button"
+                    onClick={handleSendTestNotification}
+                    className="px-3 py-1.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+                  >
+                    Test
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={handleToggleReminders}
+                  className={`px-4 py-2 rounded-xl font-bold text-xs shadow transition-all cursor-pointer ${
+                    remindersEnabled
+                      ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 hover:bg-rose-500/25 border border-rose-500/30'
+                      : 'bg-indigo-600 hover:bg-indigo-500 text-white'
+                  }`}
+                >
+                  {remindersEnabled ? 'Deaktivieren' : 'Aktivieren'}
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Security & Password Change */}

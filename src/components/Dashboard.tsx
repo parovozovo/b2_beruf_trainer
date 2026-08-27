@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import type { User, TileResult, TileType } from '../types';
 import {
   Dumbbell,
@@ -10,7 +10,10 @@ import {
   TrendingUp,
   Award,
   ArrowRight,
+  Flame,
+  Target,
 } from 'lucide-react';
+import { getStreakState, getTodayDateStr } from '../utils/storage';
 
 interface DashboardProps {
   currentUser: User | null;
@@ -40,6 +43,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
   tileResults,
   onResetTrainingStats,
 }) => {
+  const [streakState, setStreakState] = useState(() => getStreakState());
+
+  useEffect(() => {
+    const handleStreakUpdate = () => {
+      setStreakState(getStreakState());
+    };
+    window.addEventListener('b2-streak-updated', handleStreakUpdate);
+    return () => {
+      window.removeEventListener('b2-streak-updated', handleStreakUpdate);
+    };
+  }, []);
+
   // Calculate tile statistics
   const startedCount = tileResults.length;
   const tileAccuracy: Record<string, { total: number; correct: number }> = {};
@@ -50,6 +65,39 @@ export const Dashboard: React.FC<DashboardProps> = ({
     }
     tileAccuracy[r.tileType].total += r.maxScore;
     tileAccuracy[r.tileType].correct += r.score;
+  });
+
+  // Calculate weakest tile for Smart Practice recommendation
+  const allTileTypes = Object.keys(TILE_NAMES) as TileType[];
+  const tileStatsList = allTileTypes.map((tType) => {
+    const stat = tileAccuracy[tType];
+    const pct = stat && stat.total > 0 ? Math.round((stat.correct / stat.total) * 100) : null;
+    return { type: tType, label: TILE_NAMES[tType], pct, attempts: stat ? stat.total : 0 };
+  });
+
+  const triedTiles = tileStatsList.filter((t) => t.pct !== null);
+  const weakestTile = triedTiles.length > 0
+    ? [...triedTiles].sort((a, b) => (a.pct || 0) - (b.pct || 0))[0]
+    : null;
+
+  const todayStr = getTodayDateStr();
+  const hasPracticedToday = streakState.lastActivityDate === todayStr;
+
+  // Generate 7 days of current week (Mon-Sun)
+  const now = new Date();
+  const currentDayOfWeek = now.getDay();
+  const mondayOffset = currentDayOfWeek === 0 ? -6 : 1 - currentDayOfWeek;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + mondayOffset);
+
+  const dayLabels = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+  const weekDays = dayLabels.map((lbl, i) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const isToday = dateStr === todayStr;
+    const isActive = streakState.activeDates?.includes(dateStr);
+    return { label: lbl, dateStr, isToday, isActive };
   });
 
   const userName = currentUser ? currentUser.name : 'Gast';
@@ -85,6 +133,93 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <Dumbbell className="w-4 h-4 text-indigo-600 dark:text-indigo-400" /> Einzelteile trainieren
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* ================= SECTION 1.5: STREAK & SMART RECOMMENDATION GRID ================= */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* Streak & Habit Card (2 Cols) */}
+        <div className="lg:col-span-2 glass-panel p-5 sm:p-6 rounded-3xl border border-amber-500/30 shadow-md relative overflow-hidden flex flex-col justify-between space-y-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 text-slate-950 flex items-center justify-center shadow-lg shadow-orange-500/20 font-black text-xl shrink-0">
+                <Flame className="w-7 h-7 text-white fill-white animate-pulse" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+                    {streakState.currentStreak} {streakState.currentStreak === 1 ? 'Tag' : 'Tage'} Lernserie 🔥
+                  </h3>
+                </div>
+                <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
+                  {hasPracticedToday
+                    ? '🎉 Großartig! Sie haben heute bereits geübt. Ihr Streak ist gesichert!'
+                    : '⚡ Machen Sie heute 1 kurze Übung, um Ihren Streak nicht zu verlieren!'}
+                </p>
+              </div>
+            </div>
+
+            {streakState.bestStreak > 0 && (
+              <div className="hidden sm:flex flex-col items-end text-right">
+                <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Rekord</span>
+                <span className="text-xs font-black text-amber-500">🏆 {streakState.bestStreak} Tage</span>
+              </div>
+            )}
+          </div>
+
+          {/* 7-Day Week Calendar Strip */}
+          <div className="pt-2 border-t border-slate-200 dark:border-slate-800/80">
+            <div className="flex items-center justify-between gap-2">
+              {weekDays.map((day, idx) => (
+                <div
+                  key={idx}
+                  className={`flex-1 py-2 rounded-xl flex flex-col items-center gap-1 text-center transition-all ${
+                    day.isActive
+                      ? 'bg-amber-500/20 border border-amber-500/40 text-amber-500 shadow-sm'
+                      : day.isToday
+                      ? 'bg-indigo-500/15 border border-indigo-500/40 text-indigo-400 font-black ring-2 ring-indigo-500/20'
+                      : 'bg-slate-100 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-slate-400'
+                  }`}
+                >
+                  <span className="text-[10px] font-bold uppercase">{day.label}</span>
+                  <div className="w-5 h-5 flex items-center justify-center">
+                    {day.isActive ? (
+                      <Flame className="w-4 h-4 text-orange-500 fill-orange-500" />
+                    ) : day.isToday ? (
+                      <div className="w-2 h-2 rounded-full bg-indigo-500 animate-ping" />
+                    ) : (
+                      <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700" />
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Smart Recommended Practice Card (1 Col) */}
+        <div className="glass-panel p-5 sm:p-6 rounded-3xl border border-indigo-500/30 shadow-md flex flex-col justify-between space-y-4">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 text-[10px] font-bold">
+              <Target className="w-3 h-3 text-indigo-500" /> Empfohlenes Training
+            </div>
+            <h4 className="text-base font-black text-slate-900 dark:text-white">
+              {weakestTile ? weakestTile.label : 'Wortschatz & NVV'}
+            </h4>
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
+              {weakestTile
+                ? `Ihre aktuelle Genauigkeit liegt bei ${weakestTile.pct}%. Trainieren Sie diesen Teil gezielt für maximale Punkte!`
+                : 'Festigen Sie Nomen-Verb-Verbindungen für mehr Ausdruckskraft im mündlichen & schriftlichen Teil.'}
+            </p>
+          </div>
+
+          <button
+            onClick={() => onSelectMode(weakestTile ? 'tile_practice' : 'wortschatz')}
+            className="w-full py-2.5 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+          >
+            <span>Jetzt trainieren</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
 
