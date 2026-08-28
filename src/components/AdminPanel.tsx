@@ -350,40 +350,45 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const handleUpdateUserRole = async (userId: string, newRole: UserRole) => {
     const target = usersList.find((u) => u.id === userId);
     if (!target) return;
-    const updatedUser: User = { ...target, role: newRole };
+    const cleanEmail = (target.email || '').toLowerCase().trim();
+    const updatedUser: User = { ...target, email: cleanEmail, role: newRole };
+    
+    // Save locally
     syncUserToRegisteredList(updatedUser);
+    setUsersList((prev) =>
+      prev.map((u) => (u.id === target.id || u.email.toLowerCase().trim() === cleanEmail ? updatedUser : u))
+    );
 
-    if (isSupabaseConfigured) {
+    // Save in Supabase Cloud
+    if (isSupabaseConfigured && cleanEmail) {
       try {
-        await supabase.from('registered_users').upsert(
-          {
-            id: updatedUser.id,
-            name: updatedUser.name,
-            email: updatedUser.email.toLowerCase(),
-            role: updatedUser.role,
-            is_premium: updatedUser.isPremium,
-            premium_expires_at: updatedUser.premiumExpiresAt,
-            is_banned: Boolean(updatedUser.isBanned),
-            applied_promo_code: updatedUser.appliedPromoCode || null,
-            created_at: updatedUser.createdAt || new Date().toISOString(),
-            last_login_at: updatedUser.lastLoginAt || new Date().toISOString(),
-          },
-          { onConflict: 'email' }
-        );
+        const { data: updatedReg, error: regErr } = await supabase
+          .from('registered_users')
+          .update({ role: newRole })
+          .ilike('email', cleanEmail)
+          .select();
 
-        await supabase.from('profiles').upsert(
-          {
-            id: updatedUser.id,
-            name: updatedUser.name,
-            email: updatedUser.email.toLowerCase(),
-            role: updatedUser.role,
-            is_premium: updatedUser.isPremium,
-            premium_expires_at: updatedUser.premiumExpiresAt,
-          },
-          { onConflict: 'email' }
-        );
+        if (!regErr && (!updatedReg || updatedReg.length === 0)) {
+          await supabase.from('registered_users').insert({
+            id: target.id,
+            name: target.name,
+            email: cleanEmail,
+            role: newRole,
+            is_premium: target.isPremium,
+            premium_expires_at: target.premiumExpiresAt,
+            is_banned: Boolean(target.isBanned),
+            applied_promo_code: target.appliedPromoCode || null,
+            created_at: target.createdAt || new Date().toISOString(),
+            last_login_at: target.lastLoginAt || new Date().toISOString(),
+          });
+        }
+
+        await supabase
+          .from('profiles')
+          .update({ role: newRole })
+          .ilike('email', cleanEmail);
       } catch (e) {
-        console.warn('Direct upsert role in AdminPanel error:', e);
+        console.warn('Direct role update in Supabase error:', e);
       }
     }
 

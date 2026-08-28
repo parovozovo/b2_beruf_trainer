@@ -189,7 +189,7 @@ export const TrainerApp: React.FC<TrainerAppProps> = ({ theme, onToggleTheme }) 
           const { data: dbUser } = await supabase
             .from('registered_users')
             .select('*')
-            .eq('email', uEmail)
+            .ilike('email', uEmail)
             .maybeSingle();
 
           if (dbUser) {
@@ -204,7 +204,7 @@ export const TrainerApp: React.FC<TrainerAppProps> = ({ theme, onToggleTheme }) 
               isPrem = true;
             }
             promoCode = dbUser.applied_promo_code || undefined;
-            if (!isAdmin && dbUser.role) {
+            if (!isAdmin && dbUser.role && dbUser.role !== 'user') {
               userRole = dbUser.role as UserRole;
             }
           }
@@ -215,8 +215,12 @@ export const TrainerApp: React.FC<TrainerAppProps> = ({ theme, onToggleTheme }) 
         // Also check profiles table if registered_users didn't specify teacher role
         if (!isAdmin && userRole === 'user') {
           try {
-            const { data: pUser } = await supabase.from('profiles').select('role').eq('email', uEmail).maybeSingle();
-            if (pUser?.role) {
+            const { data: pUser } = await supabase
+              .from('profiles')
+              .select('role')
+              .ilike('email', uEmail)
+              .maybeSingle();
+            if (pUser?.role && pUser.role !== 'user') {
               userRole = pUser.role as UserRole;
             }
           } catch (e) {
@@ -224,8 +228,8 @@ export const TrainerApp: React.FC<TrainerAppProps> = ({ theme, onToggleTheme }) 
           }
         }
 
-        const localUser = getRegisteredUsersLocal().find((usr) => usr.email.toLowerCase() === uEmail);
-        if (!isAdmin && userRole === 'user' && localUser?.role) {
+        const localUser = getRegisteredUsersLocal().find((usr) => usr.email.toLowerCase().trim() === uEmail);
+        if (!isAdmin && userRole === 'user' && localUser?.role && localUser.role !== 'user') {
           userRole = localUser.role;
         }
 

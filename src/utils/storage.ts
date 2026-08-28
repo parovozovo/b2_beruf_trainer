@@ -67,6 +67,13 @@ export function getCurrentUser(): User | null {
   if (!data) return null;
   try {
     const u: User = JSON.parse(data);
+    // Also cross check with registered users list to ensure teacher/admin role is always preserved
+    const list = getRegisteredUsersLocal();
+    const match = list.find((item) => item.email.toLowerCase() === (u.email || '').toLowerCase());
+    if (match?.role && match.role !== 'user' && u.role === 'user') {
+      u.role = match.role;
+      localStorage.setItem(KEYS.CURRENT_USER, JSON.stringify(u));
+    }
     // Check if premium expired
     if (u.isPremium && u.premiumExpiresAt) {
       if (new Date(u.premiumExpiresAt).getTime() < Date.now()) {
@@ -113,14 +120,21 @@ export function saveRegisteredUsersLocal(users: User[]): void {
   localStorage.setItem(KEYS.REGISTERED_USERS, JSON.stringify(users));
 }
 
+/**
+ * Fetch all registered users from both Supabase Cloud and Local Storage
+ */
 export async function fetchRegisteredUsersAsync(): Promise<User[]> {
   const mergedMap = new Map<string, User>();
 
-  // 1. Fetch from Supabase registered_users or profiles table (Cloud primary source of truth)
+  // 1. Fetch from Supabase Cloud registered_users table
   if (isSupabaseConfigured) {
     try {
-      const { data, error } = await supabase.from('registered_users').select('*');
-      if (!error && data && data.length > 0) {
+      const { data, error } = await supabase
+        .from('registered_users')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
         data.forEach((item: Record<string, unknown>) => {
           const uEmail = String(item.email || '').toLowerCase();
           if (!uEmail) return;
@@ -144,7 +158,7 @@ export async function fetchRegisteredUsersAsync(): Promise<User[]> {
       console.warn('Could not fetch registered_users table from Supabase:', e);
     }
 
-    // 1b. Also query profiles table from Supabase
+    // 1b. Also query profiles table from Supabase to preserve teacher role if set there
     try {
       const { data: profileRows } = await supabase.from('profiles').select('*');
       if (profileRows && profileRows.length > 0) {
@@ -164,6 +178,8 @@ export async function fetchRegisteredUsersAsync(): Promise<User[]> {
               createdAt: item.created_at ? String(item.created_at) : undefined,
               lastLoginAt: item.updated_at ? String(item.updated_at) : undefined,
             });
+          } else if (!isSuperAdmin && item.role && item.role !== 'user') {
+            existing.role = item.role as UserRole;
           }
         });
       }
@@ -245,20 +261,29 @@ export async function fetchRegisteredUsersAsync(): Promise<User[]> {
 
 export function syncUserToRegisteredList(user: User): void {
   const list = getRegisteredUsersLocal();
-  const idx = list.findIndex((u) => u.id === user.id || u.email.toLowerCase() === user.email.toLowerCase());
+  const cleanEmail = (user.email || '').toLowerCase().trim();
+  const idx = list.findIndex((u) => u.id === user.id || u.email.toLowerCase().trim() === cleanEmail);
   const now = new Date().toISOString();
+
   let updatedUser: User = {
     ...user,
+    email: cleanEmail,
     createdAt: user.createdAt || (idx >= 0 ? list[idx].createdAt : now),
     lastLoginAt: now,
   };
 
   if (idx >= 0) {
+    // Preserve teacher role: if either user has teacher or list has teacher, don't downgrade
+    const existingRole = list[idx].role || 'user';
+    const newRole = user.role || 'user';
+    const finalRole: UserRole = (newRole !== 'user') ? newRole : existingRole;
+
     updatedUser = {
       ...list[idx],
       ...user,
+      email: cleanEmail,
       name: user.name || list[idx].name,
-      role: user.role !== undefined ? user.role : list[idx].role,
+      role: finalRole,
       isPremium: user.isPremium !== undefined ? user.isPremium : list[idx].isPremium,
       premiumExpiresAt: user.premiumExpiresAt !== undefined ? user.premiumExpiresAt : list[idx].premiumExpiresAt,
       appliedPromoCode: user.appliedPromoCode !== undefined ? user.appliedPromoCode : list[idx].appliedPromoCode,
@@ -273,14 +298,28 @@ export function syncUserToRegisteredList(user: User): void {
 
   saveRegisteredUsersLocal(list);
 
-  if (isSupabaseConfigured) {
+  if (isSupabaseConfigured && cleanEmail) {
     (async () => {
       try {
-        await supabase.from('registered_users').upsert(
-          {
+        const { data: updatedRows, error: upErr } = await supabase
+          .from('registered_users')
+          .update({
+            name: updatedUser.name,
+            role: updatedUser.role,
+            is_premium: updatedUser.isPremium,
+            premium_expires_at: updatedUser.premiumExpiresAt,
+            is_banned: Boolean(updatedUser.isBanned),
+            applied_promo_code: updatedUser.appliedPromoCode || null,
+            last_login_at: updatedUser.lastLoginAt || now,
+          })
+          .ilike('email', cleanEmail)
+          .select();
+
+        if (!upErr && (!updatedRows || updatedRows.length === 0)) {
+          await supabase.from('registered_users').insert({
             id: updatedUser.id,
             name: updatedUser.name,
-            email: updatedUser.email.toLowerCase(),
+            email: cleanEmail,
             role: updatedUser.role,
             is_premium: updatedUser.isPremium,
             premium_expires_at: updatedUser.premiumExpiresAt,
@@ -288,27 +327,22 @@ export function syncUserToRegisteredList(user: User): void {
             applied_promo_code: updatedUser.appliedPromoCode || null,
             created_at: updatedUser.createdAt || now,
             last_login_at: updatedUser.lastLoginAt || now,
-          },
-          { onConflict: 'email' }
-        );
+          });
+        }
       } catch (e) {
         console.warn('Could not sync user to registered_users in Supabase:', e);
       }
 
       try {
-        await supabase.from('profiles').upsert(
-          {
-            id: updatedUser.id,
+        await supabase
+          .from('profiles')
+          .update({
             name: updatedUser.name,
-            email: updatedUser.email.toLowerCase(),
             role: updatedUser.role,
             is_premium: updatedUser.isPremium,
             premium_expires_at: updatedUser.premiumExpiresAt,
-            created_at: updatedUser.createdAt || now,
-            updated_at: now,
-          },
-          { onConflict: 'email' }
-        );
+          })
+          .ilike('email', cleanEmail);
       } catch (e) {
         console.warn('Could not sync user to profiles in Supabase:', e);
       }
