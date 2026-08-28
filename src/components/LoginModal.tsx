@@ -231,10 +231,17 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
             const dbExp = existingInDb?.premium_expires_at ? String(existingInDb.premium_expires_at) : null;
             const localExp = existingLocal?.premiumExpiresAt || null;
-            const exp = dbExp || localExp;
+            const exp = existingInDb ? dbExp : localExp;
             const isExpValid = exp ? new Date(exp).getTime() > Date.now() : false;
 
-            const isPrem = isAdmin ? true : (isExpValid || Boolean(existingInDb?.is_premium) || Boolean(existingLocal?.isPremium));
+            let isPrem = false;
+            if (isAdmin) {
+              isPrem = true;
+            } else if (existingInDb) {
+              isPrem = exp ? isExpValid : Boolean(existingInDb.is_premium);
+            } else if (existingLocal) {
+              isPrem = exp ? isExpValid : Boolean(existingLocal.isPremium);
+            }
             let promo = (existingInDb?.applied_promo_code ? String(existingInDb.applied_promo_code) : undefined) || existingLocal?.appliedPromoCode;
 
             // If user did not have a promo attached, but has a pending promo from URL

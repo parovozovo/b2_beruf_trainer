@@ -338,6 +338,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           },
           { onConflict: 'email' }
         );
+
+        await supabase
+          .from('profiles')
+          .update({
+            is_premium: updatedUser.isPremium,
+            premium_expires_at: updatedUser.premiumExpiresAt,
+          })
+          .ilike('email', updatedUser.email.toLowerCase());
       } catch (e) {
         console.warn('Direct upsert in AdminPanel error:', e);
       }

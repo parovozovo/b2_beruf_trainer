@@ -197,12 +197,11 @@ export const TrainerApp: React.FC<TrainerAppProps> = ({ theme, onToggleTheme }) 
             dbUserRecord = dbUser;
             if (dbUser.premium_expires_at) {
               const isStillValid = new Date(dbUser.premium_expires_at).getTime() > Date.now();
-              if (isStillValid) {
-                isPrem = true;
-                expAt = dbUser.premium_expires_at;
-              }
-            } else if (dbUser.is_premium) {
-              isPrem = true;
+              isPrem = isStillValid;
+              expAt = isStillValid ? dbUser.premium_expires_at : null;
+            } else {
+              isPrem = Boolean(dbUser.is_premium);
+              expAt = null;
             }
             promoCode = dbUser.applied_promo_code || undefined;
             if (!isAdmin && dbUser.role && dbUser.role !== 'user') {
@@ -234,15 +233,15 @@ export const TrainerApp: React.FC<TrainerAppProps> = ({ theme, onToggleTheme }) 
           userRole = localUser.role;
         }
 
-        // Fallback to local storage if DB query had no active record yet
-        if (!isPrem && localUser?.isPremium) {
+        // Fallback to local storage ONLY if DB query returned no record (e.g. offline)
+        if (!dbUserRecord && localUser) {
           if (localUser.premiumExpiresAt) {
             if (new Date(localUser.premiumExpiresAt).getTime() > Date.now()) {
               isPrem = true;
               expAt = localUser.premiumExpiresAt;
             }
           } else {
-            isPrem = true;
+            isPrem = Boolean(localUser.isPremium);
           }
           promoCode = localUser.appliedPromoCode;
         }
