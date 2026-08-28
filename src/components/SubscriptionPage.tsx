@@ -11,13 +11,15 @@ import {
   BookOpen,
   Award,
   Layers,
-  Clock,
   Check,
-  CreditCard
+  CreditCard,
+  AlertCircle,
 } from 'lucide-react';
+import confetti from 'canvas-confetti';
 import type { User } from '../types';
 import { getRemainingPremiumTimeLabel, getPromoCodesLocal, recordPromoStudentPurchase } from '../utils/storage';
 import { openLegalModal } from './legal/LegalModal';
+import { openWayForPayWidget } from '../utils/wayforpay';
 
 export interface SubscriptionPlan {
   id: string;
@@ -128,8 +130,8 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({
     return 'standard_30d';
   });
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
-  const [showComingSoonModal, setShowComingSoonModal] = useState<boolean>(false);
-  const [justPurchasedPlan] = useState<SubscriptionPlan | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string>('');
+  const [justPurchasedPlan, setJustPurchasedPlan] = useState<SubscriptionPlan | null>(null);
 
   // Check for applied promo code or URL param or persisted pending promo
   const appliedCodeStr = useMemo(() => {
@@ -184,30 +186,62 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({
   const isAlreadyPremium = Boolean(currentUser?.isPremium);
   const remainingTime = getRemainingPremiumTimeLabel(currentUser);
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (!currentUser) {
       onOpenLoginModal();
       return;
     }
 
+    setErrorMessage('');
     setIsProcessing(true);
 
-    if (activePromo && currentUser.email) {
-      const planPrices = getPlanPrices(selectedPlan);
-      recordPromoStudentPurchase(
-        activePromo.code,
-        currentUser.email,
-        selectedPlan.id,
-        selectedPlan.name,
-        planPrices.numericPrice
-      );
-    }
+    const planPrices = getPlanPrices(selectedPlan);
 
-    // Provide immediate user feedback and explain payment integration status
-    setTimeout(() => {
+    try {
+      await openWayForPayWidget({
+        planId: selectedPlan.id,
+        planName: selectedPlan.name,
+        amount: planPrices.numericPrice,
+        currency: 'EUR',
+        userEmail: currentUser.email || 'kunde@beruf-b2.com',
+        userName: currentUser.name || 'Kunde',
+        language: 'DE',
+        onApproved: async (_response) => {
+          setIsProcessing(false);
+          setJustPurchasedPlan(selectedPlan);
+          confetti({ particleCount: 160, spread: 80, origin: { y: 0.5 } });
+
+          if (activePromo && currentUser.email) {
+            recordPromoStudentPurchase(
+              activePromo.code,
+              currentUser.email,
+              selectedPlan.id,
+              selectedPlan.name,
+              planPrices.numericPrice
+            );
+          }
+
+          if (_onActivateSubscription) {
+            await _onActivateSubscription(selectedPlan.id, selectedPlan.durationDays);
+          }
+        },
+        onDeclined: () => {
+          setIsProcessing(false);
+          setErrorMessage('Die Zahlung wurde abgebrochen oder von der Bank abgelehnt.');
+        },
+        onPending: async () => {
+          setIsProcessing(false);
+          setJustPurchasedPlan(selectedPlan);
+          if (_onActivateSubscription) {
+            await _onActivateSubscription(selectedPlan.id, selectedPlan.durationDays);
+          }
+        },
+      });
+    } catch (err: any) {
       setIsProcessing(false);
-      setShowComingSoonModal(true);
-    }, 600);
+      console.error('WayForPay error:', err);
+      setErrorMessage(err?.message || 'Fehler beim Laden des Zahlungsmoduls.');
+    }
   };
 
   // IF USER ALREADY HAS ACTIVE PREMIUM AND NOT IN SUCCESS PURCHASE STATE
@@ -526,6 +560,13 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({
 
         {/* Primary Checkout Button */}
         <div className="space-y-3">
+          {errorMessage && (
+            <div className="p-3.5 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-700 dark:text-rose-300 text-xs font-bold flex items-center gap-2 animate-fadeIn">
+              <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
+              <span>{errorMessage}</span>
+            </div>
+          )}
+
           <button
             type="button"
             onClick={handleCheckout}
@@ -535,12 +576,12 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({
             {isProcessing ? (
               <span className="flex items-center gap-2">
                 <RotateCcw className="w-5 h-5 animate-spin" />
-                <span>Zahlung wird verarbeitet...</span>
+                <span>Zahlung wird vorbereitet...</span>
               </span>
             ) : (
               <>
                 <Lock className="w-4 h-4" />
-                <span>Jetzt sicher freischalten ({selectedPlan.price})</span>
+                <span>Jetzt sicher freischalten ({getPlanPrices(selectedPlan).displayPrice})</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}
@@ -598,19 +639,19 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           <div className="p-4 bg-white dark:bg-slate-950/60 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2">
             <div className="w-8 h-8 rounded-xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold">
-              <Layers className="w-4 h-4" />
+              <Sparkles className="w-4 h-4" />
             </div>
-            <h4 className="text-xs font-black text-slate-900 dark:text-white">Alle 12 DTB-Prüfungsmodule</h4>
+            <h4 className="text-xs font-black text-slate-900 dark:text-white">KI-Korrektur in Echtzeit</h4>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-              Lesen 1–4, Hören 1–4, Lesen & Schreiben, Hören & Schreiben sowie Sprachbausteine 1 & 2 im Original-Prüfungsformat.
+              Detaillierte Analyse Ihrer Schreibaufgaben (Beschwerdebrief & Forumsbeitrag) nach offiziellen telc B2-Kriterien.
             </p>
           </div>
 
           <div className="p-4 bg-white dark:bg-slate-950/60 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2">
             <div className="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold">
-              <Clock className="w-4 h-4" />
+              <Award className="w-4 h-4" />
             </div>
-            <h4 className="text-xs font-black text-slate-900 dark:text-white">Echte Simulation mit Timer</h4>
+            <h4 className="text-xs font-black text-slate-900 dark:text-white">Echte Prüfungssimulation</h4>
             <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
               Üben Sie das 130-Minuten-Zeitmanagement unter realen Prüfungsbedingungen inklusive automatischer Punkteauswertung.
             </p>
@@ -627,60 +668,6 @@ export const SubscriptionPage: React.FC<SubscriptionPageProps> = ({
           </div>
         </div>
       </div>
-
-      {/* ================= PAYMENT INTEGRATION IN PROGRESS MODAL ================= */}
-      {showComingSoonModal && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl max-w-md w-full p-6 sm:p-8 space-y-6 shadow-2xl text-center">
-            <div className="w-16 h-16 mx-auto rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-500/30">
-              <CreditCard className="w-8 h-8" />
-            </div>
-
-            <div className="space-y-2">
-              <span className="px-3 py-1 bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30 rounded-full text-xs font-black inline-flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5" /> In Vorbereitung
-              </span>
-              <h3 className="text-xl font-black text-slate-900 dark:text-white">
-                Online-Zahlung in Kürze verfügbar! 🚀
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
-                Vielen Dank für Ihr Interesse am <strong>{selectedPlan.name}</strong> ({selectedPlan.price})! Die automatische Zahlungsabwicklung wird aktuell eingerichtet.
-              </p>
-            </div>
-
-            <div className="p-4 bg-slate-50 dark:bg-slate-950/60 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs text-left space-y-2 text-slate-600 dark:text-slate-400">
-              <div className="flex items-start gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                <span>Alle freien Modelltests und Übungen stehen Ihnen <strong>sofort kostenlos</strong> zur Verfügung.</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <CheckCircle2 className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
-                <span>Haben Sie einen Promo-Gutschein? Diesen können Sie direkt in den <strong>Einstellungen</strong> aktivieren.</span>
-              </div>
-            </div>
-
-            <div className="pt-2 flex flex-col sm:flex-row gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowComingSoonModal(false);
-                  onNavigateToTab?.('tile_practice');
-                }}
-                className="flex-1 py-3 px-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black text-xs shadow-md transition-all cursor-pointer"
-              >
-                Zum kostenlosen Training
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowComingSoonModal(false)}
-                className="py-3 px-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-2xl font-bold text-xs transition-all cursor-pointer"
-              >
-                Schließen
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
     </div>
   );
