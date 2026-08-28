@@ -1,10 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { LandingPage } from './components/landing/LandingPage';
-import { PricingPage } from './components/landing/PricingPage';
-import { BlogPage } from './components/blog/BlogPage';
-import { BlogPostReader } from './components/blog/BlogPostReader';
-import { TrainerApp } from './components/TrainerApp';
 import { getCurrentUser, setCurrentUser, getPromoCodesLocal, syncUserToRegisteredList, fetchPromoCodesAsync } from './utils/storage';
 import { supabase, isSupabaseConfigured } from './utils/supabase';
 import { LoginModal } from './components/LoginModal';
@@ -12,6 +7,28 @@ import { PromoModal } from './components/PromoModal';
 import { ResetPasswordModal } from './components/ResetPasswordModal';
 import { PartnerPromoBannerModal } from './components/PartnerPromoBannerModal';
 import type { User, PromoCode } from './types';
+
+// Lazy loaded page components for optimal code-splitting and fast initial load
+const LandingPage = lazy(() => import('./components/landing/LandingPage').then((m) => ({ default: m.LandingPage })));
+const PricingPage = lazy(() => import('./components/landing/PricingPage').then((m) => ({ default: m.PricingPage })));
+const BlogPage = lazy(() => import('./components/blog/BlogPage').then((m) => ({ default: m.BlogPage })));
+const BlogPostReader = lazy(() => import('./components/blog/BlogPostReader').then((m) => ({ default: m.BlogPostReader })));
+const TrainerApp = lazy(() => import('./components/TrainerApp').then((m) => ({ default: m.TrainerApp })));
+
+function PageLoadingFallback() {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-12 h-12 rounded-2xl bg-indigo-600/20 border-2 border-indigo-600 flex items-center justify-center animate-pulse shadow-lg shadow-indigo-600/20">
+          <div className="w-5 h-5 rounded-full border-2 border-indigo-600 border-t-transparent animate-spin" />
+        </div>
+        <div className="text-xs font-bold uppercase tracking-widest text-slate-500 animate-pulse">
+          Laden...
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function App() {
   // Theme State
@@ -112,51 +129,53 @@ export function App() {
 
   return (
     <BrowserRouter>
-      <Routes>
-        {/* Landing Page */}
-        <Route
-          path="/"
-          element={
-            <LandingPage
-              theme={theme}
-              onToggleTheme={handleToggleTheme}
-              pendingPromo={detectedPartnerPromo}
-              onOpenLoginModal={(mode) => {
-                setLoginModalMode(mode || 'signin');
-                setIsLoginModalOpen(true);
-              }}
-              onOpenPromoBanner={() => setIsPartnerPromoModalOpen(true)}
-            />
-          }
-        />
+      <Suspense fallback={<PageLoadingFallback />}>
+        <Routes>
+          {/* Landing Page */}
+          <Route
+            path="/"
+            element={
+              <LandingPage
+                theme={theme}
+                onToggleTheme={handleToggleTheme}
+                pendingPromo={detectedPartnerPromo}
+                onOpenLoginModal={(mode) => {
+                  setLoginModalMode(mode || 'signin');
+                  setIsLoginModalOpen(true);
+                }}
+                onOpenPromoBanner={() => setIsPartnerPromoModalOpen(true)}
+              />
+            }
+          />
 
-        {/* Pricing Page */}
-        <Route
-          path="/pricing"
-          element={
-            <PricingPage
-              onOpenPromoModal={() => setIsPromoModalOpen(true)}
-              pendingPromo={detectedPartnerPromo}
-            />
-          }
-        />
+          {/* Pricing Page */}
+          <Route
+            path="/pricing"
+            element={
+              <PricingPage
+                onOpenPromoModal={() => setIsPromoModalOpen(true)}
+                pendingPromo={detectedPartnerPromo}
+              />
+            }
+          />
 
-        {/* Blog Directory & Single Post Reader */}
-        <Route path="/blog" element={<BlogPage />} />
-        <Route path="/blog/:slug" element={<BlogPostReader />} />
+          {/* Blog Directory & Single Post Reader */}
+          <Route path="/blog" element={<BlogPage />} />
+          <Route path="/blog/:slug" element={<BlogPostReader />} />
 
-        {/* The Main B2 Beruf Trainer Platform */}
-        <Route
-          path="/app/*"
-          element={<TrainerApp theme={theme} onToggleTheme={handleToggleTheme} />}
-        />
+          {/* The Main B2 Beruf Trainer Platform */}
+          <Route
+            path="/app/*"
+            element={<TrainerApp theme={theme} onToggleTheme={handleToggleTheme} />}
+          />
 
-        {/* Legacy Admin Redirects */}
-        <Route path="/admin-beruf" element={<Navigate to="/app/admin" replace />} />
+          {/* Legacy Admin Redirects */}
+          <Route path="/admin-beruf" element={<Navigate to="/app/admin" replace />} />
 
-        {/* Catch-all Fallback */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+          {/* Catch-all Fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
 
       {/* Global Modals accessible across public pages */}
       <LoginModal

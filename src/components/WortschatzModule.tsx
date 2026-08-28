@@ -27,10 +27,20 @@ import {
   Shuffle,
   ListOrdered,
   Trophy,
-  Filter,
+  Clock,
+  Layers,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import type { WortschatzItem, WortschatzCategory, User } from '../types';
+import type { WortschatzItem, WortschatzCategory, User, FlashcardSrsRecord, SrsRating } from '../types';
+import {
+  getFlashcardSrsRecords,
+  saveFlashcardSrsRecords,
+  calculateNextSrsState,
+  isCardDueToday,
+  getNextIntervalPreview,
+  getScheduleStatusLabel,
+} from '../utils/srs';
+import { recordStreakActivity } from '../utils/storage';
 
 interface WortschatzModuleProps {
   items: WortschatzItem[];
@@ -121,7 +131,7 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
   const speakGerman = (text: string) => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
-      const cleanText = text.replace(/[\[\]_⸚-]/g, ' ').trim();
+      const cleanText = text.replace(/[[\]_⸚-]/g, ' ').trim();
       const utterance = new SpeechSynthesisUtterance(cleanText);
       utterance.lang = 'de-DE';
       utterance.rate = 0.9;
@@ -183,15 +193,18 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
   const konnektorenCount = useMemo(() => items.filter((i) => i.category === 'konnektoren').length, [items]);
   const kollokationenCount = useMemo(() => items.filter((i) => i.category === 'kollokationen').length, [items]);
 
-  // ================= 2. FLASHCARDS (SRS) STATE =================
+  // ================= 2. FLASHCARDS (SPACED REPETITION SRS) STATE =================
   const [flashcardCategory, setFlashcardCategory] = useState<string>('all');
   const [cardIndex, setCardIndex] = useState<number>(0);
   const [isFlipped, setIsFlipped] = useState<boolean>(false);
   const [showFlashcardHint, setShowFlashcardHint] = useState<boolean>(false);
 
-  // Filter mode: only unlearned vs all cards
-  const [hideLearnedCards, setHideLearnedCards] = useState<boolean>(() => {
-    return localStorage.getItem('b2_flashcards_hide_learned') !== 'false';
+  // SRS Records Map (id -> FlashcardSrsRecord)
+  const [srsRecords, setSrsRecords] = useState<Record<string, FlashcardSrsRecord>>(() => getFlashcardSrsRecords());
+
+  // Filter mode: 'due' | 'learning' | 'mastered' | 'all'
+  const [srsFilter, setSrsFilter] = useState<'due' | 'learning' | 'mastered' | 'all'>(() => {
+    return (localStorage.getItem('b2_flashcards_srs_filter') as 'due' | 'learning' | 'mastered' | 'all') || 'due';
   });
 
   // Order mode: random shuffle vs sequential order
@@ -199,16 +212,7 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
     return localStorage.getItem('b2_flashcards_random') !== 'false';
   });
 
-  const [learnedIds, setLearnedIds] = useState<string[]>(() => {
-    try {
-      const raw = localStorage.getItem('b2_flashcards_learned');
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
-    }
-  });
-
-  // Full category items (unfiltered by learned state)
+  // Full category items (unfiltered by SRS state)
   const fullCategoryItems = useMemo(() => {
     if (flashcardCategory === 'all') return items;
     if (flashcardCategory === 'favorites') return items.filter((i) => favorites.includes(i.id));
@@ -216,141 +220,174 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
   }, [items, flashcardCategory, favorites]);
 
   const catTotalCount = fullCategoryItems.length;
-  const catLearnedCount = useMemo(() => {
-    return fullCategoryItems.filter((i) => learnedIds.includes(i.id)).length;
-  }, [fullCategoryItems, learnedIds]);
-  const catRemainingCount = Math.max(catTotalCount - catLearnedCount, 0);
-  const catProgressPercent = catTotalCount > 0 ? Math.round((catLearnedCount / catTotalCount) * 100) : 0;
+
+  const catDueCount = useMemo(() => {
+    return fullCategoryItems.filter((i) => isCardDueToday(srsRecords[i.id])).length;
+  }, [fullCategoryItems, srsRecords]);
+
+  const catLearningCount = useMemo(() => {
+    return fullCategoryItems.filter((i) => {
+      const rec = srsRecords[i.id];
+      return rec && (rec.status === 'learning' || rec.status === 'review') && !isCardDueToday(rec);
+    }).length;
+  }, [fullCategoryItems, srsRecords]);
+
+  const catMasteredCount = useMemo(() => {
+    return fullCategoryItems.filter((i) => srsRecords[i.id]?.status === 'mastered' && !isCardDueToday(srsRecords[i.id])).length;
+  }, [fullCategoryItems, srsRecords]);
+
+  const catProgressPercent = catTotalCount > 0 ? Math.round((catMasteredCount / catTotalCount) * 100) : 0;
 
   // Active flashcard deck
   const [flashcardDeck, setFlashcardDeck] = useState<WortschatzItem[]>([]);
   const prevItemsLengthRef = React.useRef<number>(0);
 
-  const rebuildDeck = (
-    cat: string,
-    allItems: WortschatzItem[],
-    favs: string[],
-    currentLearned: string[],
-    onlyUnlearned: boolean,
-    random: boolean
-  ) => {
-    let list: WortschatzItem[];
-    if (cat === 'all') list = [...allItems];
-    else if (cat === 'favorites') list = allItems.filter((i) => favs.includes(i.id));
-    else list = allItems.filter((i) => i.category === cat);
+  const rebuildDeck = React.useCallback(
+    (
+      cat: string,
+      allItems: WortschatzItem[],
+      favs: string[],
+      records: Record<string, FlashcardSrsRecord>,
+      filter: 'due' | 'learning' | 'mastered' | 'all',
+      random: boolean
+    ) => {
+      let list: WortschatzItem[];
+      if (cat === 'all') list = [...allItems];
+      else if (cat === 'favorites') list = allItems.filter((i) => favs.includes(i.id));
+      else list = allItems.filter((i) => i.category === cat);
 
-    // If onlyUnlearned is active, filter out already learned cards
-    if (onlyUnlearned) {
-      list = list.filter((i) => !currentLearned.includes(i.id));
-    }
-
-    if (random && list.length > 1) {
-      const shuffled = [...list];
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      if (filter === 'due') {
+        list = list.filter((i) => isCardDueToday(records[i.id]));
+      } else if (filter === 'learning') {
+        list = list.filter((i) => records[i.id]?.status === 'learning' || records[i.id]?.status === 'review');
+      } else if (filter === 'mastered') {
+        list = list.filter((i) => records[i.id]?.status === 'mastered');
       }
-      setFlashcardDeck(shuffled);
-    } else {
-      // Sequential sort by orderIndex or original list order
-      const sorted = [...list].sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
-      setFlashcardDeck(sorted);
-    }
-    setCardIndex(0);
-    setIsFlipped(false);
-    setShowFlashcardHint(false);
-  };
 
-  // Only auto-initialize on first mount or when items length genuinely changes (e.g. after DB load)
+      if (random && list.length > 1) {
+        const shuffled = [...list];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        setFlashcardDeck(shuffled);
+      } else {
+        const sorted = [...list].sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
+        setFlashcardDeck(sorted);
+      }
+      setCardIndex(0);
+      setIsFlipped(false);
+      setShowFlashcardHint(false);
+    },
+    []
+  );
+
+  // Auto-initialize flashcard deck
   useEffect(() => {
     if (items.length > 0 && (flashcardDeck.length === 0 || items.length !== prevItemsLengthRef.current)) {
       prevItemsLengthRef.current = items.length;
-      rebuildDeck(flashcardCategory, items, favorites, learnedIds, hideLearnedCards, isRandomOrder);
+      rebuildDeck(flashcardCategory, items, favorites, srsRecords, srsFilter, isRandomOrder);
     }
-  }, [items.length]);
+  }, [items, flashcardCategory, favorites, srsRecords, srsFilter, isRandomOrder, flashcardDeck.length, rebuildDeck]);
 
   const safeIndex = flashcardDeck.length > 0 ? Math.min(Math.max(0, cardIndex), flashcardDeck.length - 1) : 0;
   const currentFlashcard = flashcardDeck[safeIndex];
 
   const handleSelectFlashcardCategory = (cat: string) => {
     setFlashcardCategory(cat);
-    rebuildDeck(cat, items, favorites, learnedIds, hideLearnedCards, isRandomOrder);
+    rebuildDeck(cat, items, favorites, srsRecords, srsFilter, isRandomOrder);
   };
 
-  const handleToggleHideLearned = () => {
-    const next = !hideLearnedCards;
-    setHideLearnedCards(next);
-    localStorage.setItem('b2_flashcards_hide_learned', String(next));
-    rebuildDeck(flashcardCategory, items, favorites, learnedIds, next, isRandomOrder);
+  const handleSelectSrsFilter = (filter: 'due' | 'learning' | 'mastered' | 'all') => {
+    setSrsFilter(filter);
+    localStorage.setItem('b2_flashcards_srs_filter', filter);
+    rebuildDeck(flashcardCategory, items, favorites, srsRecords, filter, isRandomOrder);
   };
 
   const handleToggleRandomOrder = () => {
     const next = !isRandomOrder;
     setIsRandomOrder(next);
     localStorage.setItem('b2_flashcards_random', String(next));
-    rebuildDeck(flashcardCategory, items, favorites, learnedIds, hideLearnedCards, next);
+    rebuildDeck(flashcardCategory, items, favorites, srsRecords, srsFilter, next);
   };
 
   const handleReshuffleDeck = () => {
-    rebuildDeck(flashcardCategory, items, favorites, learnedIds, hideLearnedCards, true);
+    rebuildDeck(flashcardCategory, items, favorites, srsRecords, srsFilter, true);
   };
 
   const handleResetCategoryProgress = (cat: string) => {
-    const idsInCat = new Set(
-      (cat === 'all'
-        ? items
-        : cat === 'favorites'
-        ? items.filter((i) => favorites.includes(i.id))
-        : items.filter((i) => i.category === cat)
-      ).map((i) => i.id)
-    );
+    const idsInCat = (cat === 'all'
+      ? items
+      : cat === 'favorites'
+      ? items.filter((i) => favorites.includes(i.id))
+      : items.filter((i) => i.category === cat)
+    ).map((i) => i.id);
 
-    const nextLearned = learnedIds.filter((id) => !idsInCat.has(id));
-    setLearnedIds(nextLearned);
-    localStorage.setItem('b2_flashcards_learned', JSON.stringify(nextLearned));
-    rebuildDeck(cat, items, favorites, nextLearned, hideLearnedCards, isRandomOrder);
+    const updatedRecords = { ...srsRecords };
+    idsInCat.forEach((id) => {
+      delete updatedRecords[id];
+    });
+
+    setSrsRecords(updatedRecords);
+    saveFlashcardSrsRecords(updatedRecords);
+    rebuildDeck(cat, items, favorites, updatedRecords, srsFilter, isRandomOrder);
   };
 
-  const handleNextCard = () => {
+  const handleNextCard = React.useCallback(() => {
     setIsFlipped(false);
     setShowFlashcardHint(false);
     setCardIndex((prev) => (prev + 1 < flashcardDeck.length ? prev + 1 : 0));
-  };
+  }, [flashcardDeck.length]);
 
-  const handlePrevCard = () => {
+  const handlePrevCard = React.useCallback(() => {
     setIsFlipped(false);
     setShowFlashcardHint(false);
     setCardIndex((prev) => (prev - 1 >= 0 ? prev - 1 : Math.max(flashcardDeck.length - 1, 0)));
-  };
+  }, [flashcardDeck.length]);
 
-  const handleMarkLearned = (id: string) => {
-    const nextLearned = learnedIds.includes(id) ? learnedIds : [...learnedIds, id];
-    setLearnedIds(nextLearned);
-    localStorage.setItem('b2_flashcards_learned', JSON.stringify(nextLearned));
+  // SM-2 Spaced Repetition Rating Action
+  const handleRateCard = React.useCallback(
+    (rating: SrsRating) => {
+      if (!currentFlashcard) return;
+      const cardId = currentFlashcard.id;
+      const currentRec = srsRecords[cardId];
+      const nextRec = calculateNextSrsState(currentRec, rating);
 
-    if (hideLearnedCards) {
-      // Remove this card from active deck
-      const nextDeck = flashcardDeck.filter((c) => c.id !== id);
-      setFlashcardDeck(nextDeck);
-      setIsFlipped(false);
-      setShowFlashcardHint(false);
-      if (cardIndex >= nextDeck.length) {
-        setCardIndex(Math.max(nextDeck.length - 1, 0));
+      const nextRecords = { ...srsRecords, [cardId]: nextRec };
+      setSrsRecords(nextRecords);
+      saveFlashcardSrsRecords(nextRecords);
+
+      // Record streak activity
+      recordStreakActivity();
+
+      if (srsFilter === 'due') {
+        if (rating === 'again') {
+          // Re-queue card to the end of current session deck so learner practices it again today
+          const currentItem = currentFlashcard;
+          const withoutCurrent = flashcardDeck.filter((_, idx) => idx !== cardIndex);
+          const nextDeck = [...withoutCurrent, currentItem];
+          setFlashcardDeck(nextDeck);
+          setIsFlipped(false);
+          setShowFlashcardHint(false);
+        } else {
+          // Graduated/postponed from today's due batch
+          const nextDeck = flashcardDeck.filter((c) => c.id !== cardId);
+          setFlashcardDeck(nextDeck);
+          setIsFlipped(false);
+          setShowFlashcardHint(false);
+          if (cardIndex >= nextDeck.length) {
+            setCardIndex(Math.max(nextDeck.length - 1, 0));
+          }
+          if (nextDeck.length === 0) {
+            confetti({ particleCount: 130, spread: 80, origin: { y: 0.6 } });
+          }
+        }
+      } else {
+        handleNextCard();
       }
-      if (nextDeck.length === 0 && catTotalCount > 0) {
-        confetti({ particleCount: 60, spread: 70, origin: { y: 0.6 } });
-      }
-    } else {
-      handleNextCard();
-    }
-  };
-
-  const handleMarkNeedReview = (id: string) => {
-    const nextLearned = learnedIds.filter((x) => x !== id);
-    setLearnedIds(nextLearned);
-    localStorage.setItem('b2_flashcards_learned', JSON.stringify(nextLearned));
-    handleNextCard();
-  };
+    },
+    [currentFlashcard, srsRecords, srsFilter, flashcardDeck, cardIndex, handleNextCard]
+  );
 
   // Keyboard Navigation for Flashcards
   useEffect(() => {
@@ -370,10 +407,16 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
         handlePrevCard();
       } else if (e.key === '1' || e.key.toLowerCase() === 'r') {
         e.preventDefault();
-        if (currentFlashcard) handleMarkNeedReview(currentFlashcard.id);
-      } else if (e.key === '2' || e.key.toLowerCase() === 'g') {
+        handleRateCard('again');
+      } else if (e.key === '2' || e.key.toLowerCase() === 's') {
         e.preventDefault();
-        if (currentFlashcard) handleMarkLearned(currentFlashcard.id);
+        handleRateCard('hard');
+      } else if (e.key === '3' || e.key.toLowerCase() === 'g') {
+        e.preventDefault();
+        handleRateCard('good');
+      } else if (e.key === '4' || e.key.toLowerCase() === 'e') {
+        e.preventDefault();
+        handleRateCard('easy');
       } else if (e.key.toLowerCase() === 't') {
         e.preventDefault();
         setShowFlashcardHint((prev) => !prev);
@@ -385,7 +428,7 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeTab, flashcardDeck, cardIndex, currentFlashcard, hideLearnedCards]);
+  }, [activeTab, flashcardDeck.length, currentFlashcard, handleNextCard, handlePrevCard, handleRateCard]);
 
   // ================= 3. COLLOCATIONS QUIZ STATE =================
   const [quizCategory, setQuizCategory] = useState<string>('all');
@@ -398,7 +441,7 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
   const [quizMistakesList, setQuizMistakesList] = useState<Array<{ item: WortschatzItem; userAnswer: string }>>([]);
   const [quizFinished, setQuizFinished] = useState<boolean>(false);
 
-  const startNewQuiz = (customPool?: WortschatzItem[], customLimit?: number) => {
+  const startNewQuiz = React.useCallback((customPool?: WortschatzItem[], customLimit?: number) => {
     let pool = customPool;
     if (!pool) {
       const eligible = items.filter((i) => i.gapOptions && i.gapOptions.length >= 2 && i.gapAnswer);
@@ -418,7 +461,7 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
     setQuizMistakes(0);
     setQuizMistakesList([]);
     setQuizFinished(false);
-  };
+  }, [items, quizCategory, quizQuestionCount]);
 
   const handleRetryMistakes = () => {
     const mistakeItems = quizMistakesList.map((m) => m.item);
@@ -431,7 +474,7 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
     if (activeTab === 'quiz' && quizQuestions.length === 0) {
       startNewQuiz();
     }
-  }, [activeTab]);
+  }, [activeTab, quizQuestions.length, startNewQuiz]);
 
   const currentQuizQuestion = quizQuestions[quizIndex];
 
@@ -444,7 +487,7 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
       [opts[i], opts[j]] = [opts[j], opts[i]];
     }
     return opts;
-  }, [currentQuizQuestion?.id, quizIndex]);
+  }, [currentQuizQuestion]);
 
   const handleSelectQuizOption = (option: string) => {
     if (quizAnswers[quizIndex] !== undefined) return;
@@ -492,7 +535,7 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
   const [shuffledLeftCards, setShuffledLeftCards] = useState<Array<{ id: string; text: string; meaning: string }>>([]);
   const [shuffledRightCards, setShuffledRightCards] = useState<Array<{ id: string; text: string }>>([]);
 
-  const startNewMatchGame = () => {
+  const startNewMatchGame = React.useCallback(() => {
     const selected = [...eligibleMatchPool].sort(() => 0.5 - Math.random()).slice(0, matchPairCount);
     setActiveMatchItems(selected);
 
@@ -524,13 +567,13 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
     setMatchWrongPair(null);
     setMatchAttempts(0);
     setMatchFinished(false);
-  };
+  }, [eligibleMatchPool, matchPairCount]);
 
   useEffect(() => {
     if (activeTab === 'match') {
       startNewMatchGame();
     }
-  }, [activeTab, matchCategory, matchPairCount]);
+  }, [activeTab, startNewMatchGame]);
 
   const handleSelectLeftCard = (id: string) => {
     if (matchedItemIds.includes(id)) return;
@@ -583,9 +626,10 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
 
   const handleExecuteReset = () => {
     if (resetTarget === 'all') {
+      localStorage.removeItem('b2_flashcards_srs_data');
       localStorage.removeItem('b2_flashcards_learned');
       localStorage.removeItem('b2_wortschatz_favorites');
-      setLearnedIds([]);
+      setSrsRecords({});
       setFavorites([]);
       setQuizScore(0);
       setQuizMistakes(0);
@@ -593,10 +637,13 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
       setQuizAnswers({});
       setQuizFinished(false);
       setMatchedItemIds([]);
+      rebuildDeck(flashcardCategory, items, [], {}, srsFilter, isRandomOrder);
     } else if (resetTarget === 'flashcards') {
+      localStorage.removeItem('b2_flashcards_srs_data');
       localStorage.removeItem('b2_flashcards_learned');
-      setLearnedIds([]);
+      setSrsRecords({});
       setCardIndex(0);
+      rebuildDeck(flashcardCategory, items, favorites, {}, srsFilter, isRandomOrder);
     } else if (resetTarget === 'quiz') {
       setQuizScore(0);
       setQuizMistakes(0);
@@ -610,7 +657,15 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
     setResetTarget(null);
   };
 
-  const learnedPercent = Math.round((learnedIds.length / (items.length || 1)) * 100);
+  const totalMasteredCount = useMemo(() => {
+    return Object.values(srsRecords).filter((r) => r.status === 'mastered').length;
+  }, [srsRecords]);
+
+  const totalDueCount = useMemo(() => {
+    return items.filter((i) => isCardDueToday(srsRecords[i.id])).length;
+  }, [items, srsRecords]);
+
+  const masteredPercent = Math.round((totalMasteredCount / (items.length || 1)) * 100);
 
   return (
     <div className="space-y-6 pb-16">
@@ -626,7 +681,7 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
             <div className="flex flex-wrap items-center gap-2">
               <div className="flex items-center gap-2 px-3 py-1 bg-slate-100 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 text-xs font-black text-slate-800 dark:text-slate-200">
                 <Flame className="w-3.5 h-3.5 text-amber-500" />
-                <span>{learnedIds.length} / {items.length} gelernt ({learnedPercent}%)</span>
+                <span>{totalDueCount} fällig · {totalMasteredCount} / {items.length} gemeistert ({masteredPercent}%)</span>
               </div>
 
               <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300">
@@ -708,7 +763,7 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
                         Aktiv
                       </span>
                     )}
-                    {learnedIds.length > 0 && (
+                    {totalMasteredCount > 0 && (
                       <button
                         type="button"
                         onClick={(e) => {
@@ -725,12 +780,12 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
                 </div>
                 <h3 className="font-black text-sm text-slate-900 dark:text-white">2. Karteikarten (SRS)</h3>
                 <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-snug">
-                  Spaced Repetition zum Einprägen mit Lückentext & Übersetzung.
+                  Spaced Repetition (SuperMemo-2) zum Einprägen mit Lückentext & Intervall-Planung.
                 </p>
               </div>
               <div className="pt-2 border-t border-slate-200/80 dark:border-slate-800/80 flex items-center justify-between text-[11px] font-bold">
-                <span className="text-emerald-700 dark:text-emerald-400">🔥 {learnedIds.length} / {items.length} gelernt</span>
-                <span className="text-slate-500 dark:text-slate-400">{learnedPercent}%</span>
+                <span className="text-amber-700 dark:text-amber-400">🔥 {totalDueCount} fällig</span>
+                <span className="text-emerald-700 dark:text-emerald-400">🏆 {totalMasteredCount} gemeistert ({masteredPercent}%)</span>
               </div>
             </div>
 
@@ -1097,12 +1152,12 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
       </div>
     )}
 
-      {/* ================= TAB 2: KARTEIKARTEN (FLASHCARDS SRS) ================= */}
+      {/* ================= TAB 2: KARTEIKARTEN (SPACED REPETITION SRS) ================= */}
       {activeTab === 'flashcards' && (
         <div className="max-w-2xl mx-auto space-y-6 animate-fadeIn">
           {/* Deck selector, Mode toggles, Language & SRS Progress Banner */}
           <div className="glass-panel p-4 sm:p-5 rounded-2xl border border-slate-300 dark:border-slate-800 space-y-4 shadow-sm">
-            {/* Row 1: Deck, Order mode, Filter mode, Language */}
+            {/* Row 1: Deck, Order mode, Language */}
             <div className="flex flex-wrap items-center justify-between gap-2.5">
               <div className="flex flex-wrap items-center gap-2">
                 {/* Category selector */}
@@ -1133,7 +1188,7 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
                       ? 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/40'
                       : 'bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700'
                   }`}
-                  title={isRandomOrder ? 'Zufallsmodus aktiv (Klicken für normale Reihenfolge)' : 'Reihenfolge 1, 2, 3... (Klicken für Zufallsmodus)'}
+                  title={isRandomOrder ? 'Zufallsmodus aktiv' : 'Reihenfolge 1, 2, 3...'}
                 >
                   {isRandomOrder ? (
                     <>
@@ -1159,21 +1214,6 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
                     <RotateCcw className="w-3.5 h-3.5" />
                   </button>
                 )}
-
-                {/* Filter Mode Toggle: Unlearned only vs All */}
-                <button
-                  type="button"
-                  onClick={handleToggleHideLearned}
-                  className={`px-2.5 py-1.5 rounded-xl text-xs font-extrabold border flex items-center gap-1.5 transition-all cursor-pointer ${
-                    hideLearnedCards
-                      ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/40'
-                      : 'bg-slate-100 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700'
-                  }`}
-                  title={hideLearnedCards ? 'Gelernte Karten werden ausgeblendet' : 'Alle Karten inklusive gelernte anzeigen'}
-                >
-                  <Filter className="w-3.5 h-3.5 text-amber-500" />
-                  <span>{hideLearnedCards ? `Nur ungelernte (${catRemainingCount})` : `Alle (${catTotalCount})`}</span>
-                </button>
               </div>
 
               {/* Flashcard Language Selector */}
@@ -1193,15 +1233,78 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
               </div>
             </div>
 
-            {/* Row 2: Live Category SRS Stats Bar & Reset Progress */}
-            <div className="pt-2 border-t border-slate-200 dark:border-slate-800/80 space-y-2">
-              <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-bold">
-                <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-0.5 rounded-lg bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30">
-                    ⏳ Noch zu lernen: <strong>{catRemainingCount}</strong> von {catTotalCount}
+            {/* Row 2: SRS Smart Learning Filter Tabs */}
+            <div className="pt-2 border-t border-slate-200 dark:border-slate-800/80 space-y-2.5">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => handleSelectSrsFilter('due')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+                    srsFilter === 'due'
+                      ? 'bg-amber-500 text-slate-950 shadow-md font-black ring-2 ring-amber-400/40'
+                      : 'glass-card text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border-slate-300 dark:border-slate-700'
+                  }`}
+                >
+                  <Flame className="w-3.5 h-3.5" />
+                  <span>Heute fällig</span>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-black ${
+                    srsFilter === 'due' ? 'bg-black/20 text-slate-950' : 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
+                  }`}>
+                    {catDueCount}
                   </span>
-                  <span className="px-2.5 py-0.5 rounded-lg bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
-                    ✓ Gelernt: <strong>{catLearnedCount}</strong> ({catProgressPercent}%)
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSelectSrsFilter('learning')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+                    srsFilter === 'learning'
+                      ? 'bg-indigo-600 text-white shadow-md font-black'
+                      : 'glass-card text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border-slate-300 dark:border-slate-700'
+                  }`}
+                >
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>In Wiederholung</span>
+                  <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 dark:bg-slate-800">
+                    {catLearningCount}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSelectSrsFilter('mastered')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+                    srsFilter === 'mastered'
+                      ? 'bg-emerald-600 text-white shadow-md font-black'
+                      : 'glass-card text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border-slate-300 dark:border-slate-700'
+                  }`}
+                >
+                  <Trophy className="w-3.5 h-3.5" />
+                  <span>Gemeistert</span>
+                  <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-emerald-500/20 text-emerald-600 dark:text-emerald-400">
+                    {catMasteredCount}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSelectSrsFilter('all')}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer ${
+                    srsFilter === 'all'
+                      ? 'bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900 shadow-md font-black'
+                      : 'glass-card text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border-slate-300 dark:border-slate-700'
+                  }`}
+                >
+                  <Layers className="w-3.5 h-3.5" />
+                  <span>Alle ({catTotalCount})</span>
+                </button>
+              </div>
+
+              {/* Progress and card counter info */}
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-bold pt-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-500">
+                    Fortschritt: <strong className="text-emerald-600 dark:text-emerald-400">{catMasteredCount}</strong> von {catTotalCount} gemeistert ({catProgressPercent}%)
                   </span>
                 </div>
 
@@ -1211,7 +1314,7 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
                       Karte {cardIndex + 1} / {flashcardDeck.length}
                     </span>
                   )}
-                  {catLearnedCount > 0 && (
+                  {catMasteredCount > 0 && (
                     <button
                       type="button"
                       onClick={() => handleResetCategoryProgress(flashcardCategory)}
@@ -1219,7 +1322,7 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
                       title="Lernfortschritt für dieses Deck zurücksetzen"
                     >
                       <RotateCcw className="w-3 h-3" />
-                      <span>Deck zurücksetzen</span>
+                      <span>Zurücksetzen</span>
                     </button>
                   )}
                 </div>
@@ -1228,7 +1331,7 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
               {/* Category Progress Bar */}
               <div className="w-full bg-slate-200 dark:bg-slate-800 rounded-full h-2 overflow-hidden">
                 <div
-                  className="bg-gradient-to-r from-indigo-500 to-emerald-500 h-2 transition-all duration-300 rounded-full"
+                  className="bg-gradient-to-r from-amber-500 via-indigo-500 to-emerald-500 h-2 transition-all duration-300 rounded-full"
                   style={{ width: `${catProgressPercent}%` }}
                 />
               </div>
@@ -1238,51 +1341,47 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
           {/* Flashcard Body */}
           {flashcardDeck.length === 0 ? (
             <div className="glass-panel p-8 sm:p-12 rounded-3xl border border-slate-300 dark:border-slate-800 text-center space-y-5 animate-fadeIn">
-              {catTotalCount > 0 && catRemainingCount === 0 ? (
+              {srsFilter === 'due' ? (
                 <>
-                  <div className="w-16 h-16 mx-auto rounded-2xl bg-amber-500/20 text-amber-500 border border-amber-500/30 flex items-center justify-center">
+                  <div className="w-16 h-16 mx-auto rounded-2xl bg-emerald-500/20 text-emerald-500 border border-emerald-500/30 flex items-center justify-center shadow-lg shadow-emerald-500/10">
                     <Trophy className="w-9 h-9" />
                   </div>
                   <div className="space-y-1.5">
                     <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
-                      Glückwunsch! Alle {catTotalCount} Begriffe gemeistert! 🎉
+                      Großartig! Alle fälligen Karten für heute gelernt! 🎉
                     </h3>
                     <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 max-w-md mx-auto">
-                      Sie haben alle Karten in diesem Deck erfolgreich als "Gelernt" markiert.
+                      Das Intervall-System (SRS) plant die nächsten Wiederholungen automatisch für morgen und die kommenden Tage.
                     </p>
                   </div>
 
                   <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
                     <button
                       type="button"
-                      onClick={() => handleResetCategoryProgress(flashcardCategory)}
+                      onClick={() => handleSelectSrsFilter('all')}
                       className="px-5 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs shadow-md transition-all flex items-center gap-2 cursor-pointer"
                     >
-                      <RotateCcw className="w-4 h-4" />
-                      <span>Deck zurücksetzen & erneut üben</span>
+                      <BookOpen className="w-4 h-4" />
+                      <span>Alle {catTotalCount} Karten ansehen / freies Üben</span>
                     </button>
-
-                    {hideLearnedCards && (
-                      <button
-                        type="button"
-                        onClick={handleToggleHideLearned}
-                        className="px-5 py-3 rounded-2xl glass-card text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-800 font-extrabold text-xs transition-all flex items-center gap-2 cursor-pointer"
-                      >
-                        <BookOpen className="w-4 h-4" />
-                        <span>Alle {catTotalCount} Karten zur Wiederholung anzeigen</span>
-                      </button>
-                    )}
                   </div>
                 </>
               ) : (
                 <>
                   <BookOpen className="w-12 h-12 text-slate-400 mx-auto" />
                   <h3 className="text-lg font-black text-slate-900 dark:text-white">
-                    Keine Karten in diesem Deck
+                    Keine Karten in dieser Ansicht
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Wählen Sie eine andere Kategorie oder fügen Sie Ausdrücke zu Ihren Favoriten hinzu.
+                    Wählen Sie einen anderen Filter oder fügen Sie neue Ausdrücke hinzu.
                   </p>
+                  <button
+                    type="button"
+                    onClick={() => handleSelectSrsFilter('all')}
+                    className="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold text-xs"
+                  >
+                    Alle Karten anzeigen
+                  </button>
                 </>
               )}
             </div>
@@ -1294,16 +1393,28 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
                 onClick={() => setIsFlipped(!isFlipped)}
                 className="relative min-h-[340px] sm:min-h-[380px] p-6 sm:p-8 rounded-3xl glass-panel border-2 border-indigo-500/40 shadow-xl cursor-pointer select-none flex flex-col justify-between transition-all hover:border-indigo-500 group"
               >
-                {/* Header info */}
+                {/* Header info: Category badge & SRS Interval status badge */}
                 <div className="flex items-center justify-between gap-2">
-                  <span
-                    className={`px-3 py-1 rounded-xl text-xs font-black uppercase tracking-wider border ${
-                      CATEGORY_LABELS[currentFlashcard.category]?.color || ''
-                    }`}
-                  >
-                    {CATEGORY_LABELS[currentFlashcard.category]?.icon}{' '}
-                    {CATEGORY_LABELS[currentFlashcard.category]?.label}
-                  </span>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span
+                      className={`px-3 py-1 rounded-xl text-xs font-black uppercase tracking-wider border ${
+                        CATEGORY_LABELS[currentFlashcard.category]?.color || ''
+                      }`}
+                    >
+                      {CATEGORY_LABELS[currentFlashcard.category]?.icon}{' '}
+                      {CATEGORY_LABELS[currentFlashcard.category]?.label}
+                    </span>
+
+                    {/* Dynamic SRS Badge */}
+                    {(() => {
+                      const srsStatus = getScheduleStatusLabel(srsRecords[currentFlashcard.id]);
+                      return (
+                        <span className={`px-2.5 py-0.5 rounded-xl text-[11px] font-black border flex items-center gap-1 ${srsStatus.colorClass}`}>
+                          {srsStatus.label}
+                        </span>
+                      );
+                    })()}
+                  </div>
 
                   <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                     <button
@@ -1433,40 +1544,96 @@ export const WortschatzModule: React.FC<WortschatzModuleProps> = ({
                 </div>
               </div>
 
-              {/* Action Buttons: Noch üben vs Gelernt */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
-                <button
-                  onClick={handlePrevCard}
-                  className="px-4 py-3 rounded-2xl glass-card text-slate-700 dark:text-slate-300 font-extrabold text-xs flex items-center justify-center gap-1.5 border border-slate-300 dark:border-slate-700 hover:bg-slate-200 dark:hover:bg-slate-800 transition-all cursor-pointer"
-                >
-                  <ArrowLeft className="w-4 h-4" /> Vorherige (←)
-                </button>
+              {/* SM-2 Spaced Repetition Rating Buttons */}
+              <div className="space-y-2 pt-1">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {/* Rating 1: Nochmal (< 1 Min) */}
+                  <button
+                    type="button"
+                    onClick={() => handleRateCard('again')}
+                    className="p-3 rounded-2xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-700 dark:text-rose-300 border border-rose-500/40 font-black text-xs flex flex-col items-center justify-center gap-1 transition-all cursor-pointer group"
+                    title="Nicht gewusst (Taste 1 oder R)"
+                  >
+                    <div className="flex items-center gap-1 text-rose-600 dark:text-rose-400">
+                      <XCircle className="w-4 h-4" />
+                      <span>Nochmal (1)</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-rose-500 opacity-90">
+                      {getNextIntervalPreview(srsRecords[currentFlashcard.id], 'again')}
+                    </span>
+                  </button>
 
-                <button
-                  onClick={() => handleMarkNeedReview(currentFlashcard.id)}
-                  className="px-4 py-3 rounded-2xl bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/40 font-black text-xs flex items-center justify-center gap-1.5 hover:bg-rose-500/30 transition-all cursor-pointer"
-                >
-                  <XCircle className="w-4 h-4 text-rose-500" /> Noch üben (1)
-                </button>
+                  {/* Rating 2: Schwer (1 Tag) */}
+                  <button
+                    type="button"
+                    onClick={() => handleRateCard('hard')}
+                    className="p-3 rounded-2xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-800 dark:text-amber-300 border border-amber-500/40 font-black text-xs flex flex-col items-center justify-center gap-1 transition-all cursor-pointer"
+                    title="Schwer erinnert (Taste 2 oder S)"
+                  >
+                    <div className="flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                      <Clock className="w-4 h-4" />
+                      <span>Schwer (2)</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-amber-500 opacity-90">
+                      {getNextIntervalPreview(srsRecords[currentFlashcard.id], 'hard')}
+                    </span>
+                  </button>
 
-                <button
-                  onClick={() => handleMarkLearned(currentFlashcard.id)}
-                  className="px-4 py-3 rounded-2xl bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 font-black text-xs flex items-center justify-center gap-1.5 hover:bg-emerald-500/30 transition-all cursor-pointer shadow-sm"
-                >
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Gelernt! (2)
-                </button>
+                  {/* Rating 3: Gut (3-4 Tage) */}
+                  <button
+                    type="button"
+                    onClick={() => handleRateCard('good')}
+                    className="p-3 rounded-2xl bg-indigo-500/15 hover:bg-indigo-500/25 text-indigo-700 dark:text-indigo-300 border border-indigo-500/40 font-black text-xs flex flex-col items-center justify-center gap-1 transition-all cursor-pointer shadow-xs"
+                    title="Gut gewusst (Taste 3 oder G)"
+                  >
+                    <div className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400">
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>Gut (3)</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-indigo-500 opacity-90">
+                      {getNextIntervalPreview(srsRecords[currentFlashcard.id], 'good')}
+                    </span>
+                  </button>
 
-                <button
-                  onClick={handleNextCard}
-                  className="px-4 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-md transition-all cursor-pointer"
-                >
-                  Nächste (→) <ArrowRight className="w-4 h-4" />
-                </button>
-              </div>
+                  {/* Rating 4: Einfach (7+ Tage) */}
+                  <button
+                    type="button"
+                    onClick={() => handleRateCard('easy')}
+                    className="p-3 rounded-2xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 font-black text-xs flex flex-col items-center justify-center gap-1 transition-all cursor-pointer shadow-xs"
+                    title="Sofort gewusst (Taste 4 oder E)"
+                  >
+                    <div className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                      <Sparkles className="w-4 h-4" />
+                      <span>Einfach (4)</span>
+                    </div>
+                    <span className="text-[10px] font-bold text-emerald-500 opacity-90">
+                      {getNextIntervalPreview(srsRecords[currentFlashcard.id], 'easy')}
+                    </span>
+                  </button>
+                </div>
 
-              {/* Keyboard navigation helper pill */}
-              <div className="text-center text-[10px] text-slate-400 font-medium pt-1">
-                ⌨️ Tastatur: <kbd className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-mono">Leertaste</kbd> Umdrehen · <kbd className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-mono">→</kbd> Weiter · <kbd className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-mono">1</kbd> Noch üben · <kbd className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-mono">2</kbd> Gelernt
+                {/* Secondary navigation buttons: Previous / Next without rating */}
+                <div className="flex items-center justify-between gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={handlePrevCard}
+                    className="px-3 py-1.5 rounded-xl glass-card text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-bold text-xs flex items-center gap-1 border border-slate-300 dark:border-slate-700 transition-colors cursor-pointer"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5" /> Zurück (←)
+                  </button>
+
+                  <div className="text-center text-[10px] text-slate-400 font-medium">
+                    ⌨️ <kbd className="px-1 py-0.5 rounded bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-mono">Leertaste</kbd> Aufdecken · <kbd className="px-1 py-0.5 rounded bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 font-mono">1-4</kbd> Bewertung
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleNextCard}
+                    className="px-3 py-1.5 rounded-xl glass-card text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white font-bold text-xs flex items-center gap-1 border border-slate-300 dark:border-slate-700 transition-colors cursor-pointer"
+                  >
+                    Überspringen (→) <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               </div>
             </div>
           )}

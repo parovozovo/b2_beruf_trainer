@@ -320,6 +320,20 @@ export interface WortschatzItem {
   createdAt?: string;
 }
 
+export type SrsRating = 'again' | 'hard' | 'good' | 'easy';
+
+export type SrsStatus = 'new' | 'learning' | 'review' | 'mastered';
+
+export interface FlashcardSrsRecord {
+  id: string;
+  intervalDays: number;
+  easeFactor: number;
+  repetitions: number;
+  nextReviewDate: string; // YYYY-MM-DD
+  lastReviewedAt?: string;
+  status: SrsStatus;
+}
+
 export type BlogPostCategory =
   | 'Prüfungsratgeber'
   | 'Schreiben'

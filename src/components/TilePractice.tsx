@@ -76,7 +76,7 @@ export const TilePractice: React.FC<TilePracticeProps> = ({
       setSubmitted(false);
       setCurrentScore(null);
     }
-  }, [selectedModelltestId, selectedTileType, selectedVariantIndex, activeVariant?.id]);
+  }, [currentAttemptKey]);
 
   const handleSelectModelltest = (testId: string) => {
     const targetTest = (modelltests || []).find((m) => m?.id === testId);

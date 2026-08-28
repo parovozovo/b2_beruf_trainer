@@ -164,63 +164,8 @@ export const FullExamMode: React.FC<FullExamModeProps> = ({
     setFinalResult(null);
   };
 
-  // Sectional Timer countdown
-  useEffect(() => {
-    if (!examStarted || examFinished) return;
-    const interval = setInterval(() => {
-      setSecondsRemaining((prev) => {
-        if (prev <= 1) {
-          // Time expired for active section
-          if (currentSectionIdx < EXAM_SECTIONS.length - 1) {
-            const nextIdx = currentSectionIdx + 1;
-            const nextSec = EXAM_SECTIONS[nextIdx];
-            alert(
-              `⏱️ Die Zeit für "${EXAM_SECTIONS[currentSectionIdx].title}" ist abgelaufen.\n\nWeiter zum nächsten Abschnitt: "${nextSec.title}".`
-            );
-            setCurrentSectionIdx(nextIdx);
-            setActiveTileType(nextSec.tiles[0]);
-            return nextSec.durationMinutes * 60;
-          } else {
-            clearInterval(interval);
-            handleFinishExam();
-            return 0;
-          }
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [examStarted, examFinished, currentSectionIdx]);
-
-  const formatTimer = (totalSecs: number) => {
-    const mins = Math.floor(totalSecs / 60);
-    const secs = totalSecs % 60;
-    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-  };
-
-  const handleAnswerChange = (tileType: TileType, key: string, val: string) => {
-    if (examFinished) return;
-    setExamAnswers((prev) => ({
-      ...prev,
-      [tileType]: {
-        ...(prev[tileType] || {}),
-        [key]: val,
-      },
-    }));
-  };
-
-  // Cancel exam without saving
-  const handleCancelExam = () => {
-    if (window.confirm('Möchten Sie den Test wirklich abbrechen? Das Ergebnis wird NICHT gespeichert.')) {
-      setExamStarted(false);
-      setExamFinished(false);
-      setSelectedVariants([]);
-      setExamAnswers({});
-    }
-  };
-
   // Submit & finish exam with evaluation and saving
-  const handleFinishExam = () => {
+  const handleFinishExam = React.useCallback(() => {
     let totalScore = 0;
     let maxTotalScore = 0;
     const breakdown: Array<{ tileType: TileType; score: number; maxScore: number }> = [];
@@ -319,7 +264,62 @@ export const FullExamMode: React.FC<FullExamModeProps> = ({
     onSaveFullExamResult({ totalScore, maxTotalScore, passed, tileBreakdown: breakdown });
 
     if (passed) {
-      confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+      confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 } });
+    }
+  }, [selectedVariants, examAnswers, onSaveFullExamResult]);
+
+  // Sectional Timer countdown
+  useEffect(() => {
+    if (!examStarted || examFinished) return;
+    const interval = setInterval(() => {
+      setSecondsRemaining((prev) => {
+        if (prev <= 1) {
+          // Time expired for active section
+          if (currentSectionIdx < EXAM_SECTIONS.length - 1) {
+            const nextIdx = currentSectionIdx + 1;
+            const nextSec = EXAM_SECTIONS[nextIdx];
+            alert(
+              `⏱️ Die Zeit für "${EXAM_SECTIONS[currentSectionIdx].title}" ist abgelaufen.\n\nWeiter zum nächsten Abschnitt: "${nextSec.title}".`
+            );
+            setCurrentSectionIdx(nextIdx);
+            setActiveTileType(nextSec.tiles[0]);
+            return nextSec.durationMinutes * 60;
+          } else {
+            clearInterval(interval);
+            handleFinishExam();
+            return 0;
+          }
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [examStarted, examFinished, currentSectionIdx, handleFinishExam]);
+
+  const formatTimer = (totalSecs: number) => {
+    const mins = Math.floor(totalSecs / 60);
+    const secs = totalSecs % 60;
+    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+  };
+
+  const handleAnswerChange = (tileType: TileType, key: string, val: string) => {
+    if (examFinished) return;
+    setExamAnswers((prev) => ({
+      ...prev,
+      [tileType]: {
+        ...(prev[tileType] || {}),
+        [key]: val,
+      },
+    }));
+  };
+
+  // Cancel exam without saving
+  const handleCancelExam = () => {
+    if (window.confirm('Möchten Sie den Test wirklich abbrechen? Das Ergebnis wird NICHT gespeichert.')) {
+      setExamStarted(false);
+      setExamFinished(false);
+      setSelectedVariants([]);
+      setExamAnswers({});
     }
   };
 

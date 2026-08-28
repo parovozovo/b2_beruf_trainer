@@ -577,31 +577,33 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
   // Active Modelltest & Variants Lookup
   const activeTest = (modelltests || []).find((m) => m?.id === selectedModelltestId) || (modelltests || [])[0];
-  const existingVariants = ((activeTest?.variants?.[selectedTileType] || []) as unknown) as Array<{
-    id: string;
-    title: string;
-    textBlock?: string;
-    text1?: string;
-    text2?: string;
-    headingsBlock?: string;
-    optionsAtoF?: string;
-    protocolText?: string;
-    emailsText?: string;
-    scriptText?: string;
-    textWithGaps?: string;
-    audioUrl?: string;
-    correctAnswers?: Record<string, string>;
-    q6Text?: string;
-    q6Correct?: 'richtig' | 'falsch';
-    q7?: { questionText: string; options: [string, string, string]; correctIndex: number };
-    q8Text?: string;
-    q8Correct?: 'richtig' | 'falsch';
-    q9?: { questionText: string; options: [string, string, string]; correctIndex: number };
-    questions?: QuestionABC[] | Hoeren1Question[];
-    q41Correct?: 'a' | 'b' | 'c';
-    beschwerdeTopicText?: string;
-    extraDistractors?: string[];
-  }>;
+  const existingVariants = React.useMemo(() => {
+    return ((activeTest?.variants?.[selectedTileType] || []) as unknown) as Array<{
+      id: string;
+      title: string;
+      textBlock?: string;
+      text1?: string;
+      text2?: string;
+      headingsBlock?: string;
+      optionsAtoF?: string;
+      protocolText?: string;
+      emailsText?: string;
+      scriptText?: string;
+      textWithGaps?: string;
+      audioUrl?: string;
+      correctAnswers?: Record<string, string>;
+      q6Text?: string;
+      q6Correct?: 'richtig' | 'falsch';
+      q7?: { questionText: string; options: [string, string, string]; correctIndex: number };
+      q8Text?: string;
+      q8Correct?: 'richtig' | 'falsch';
+      q9?: { questionText: string; options: [string, string, string]; correctIndex: number };
+      questions?: QuestionABC[] | Hoeren1Question[];
+      q41Correct?: 'a' | 'b' | 'c';
+      beschwerdeTopicText?: string;
+      extraDistractors?: string[];
+    }>;
+  }, [activeTest, selectedTileType]);
 
   // Load selected variant data into visual form fields when selection changes
   useEffect(() => {
@@ -690,7 +692,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         if (found.extraDistractors) setVSb1DistractorsStr(found.extraDistractors.join(', '));
       }
     }
-  }, [selectedModelltestId, selectedTileType, selectedVariantId]);
+  }, [selectedModelltestId, selectedTileType, selectedVariantId, existingVariants]);
 
   // Handlers for Modelltests List & Properties
   const handleCreateModelltest = async (e: React.FormEvent) => {

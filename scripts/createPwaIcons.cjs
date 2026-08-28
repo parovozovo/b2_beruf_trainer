@@ -70,7 +70,6 @@ function createPng(width, height, renderPixel) {
 function renderIconPixel(x, y, w, h, isMaskable = false) {
   const cx = w / 2;
   const cy = h / 2;
-  const radius = isMaskable ? w * 0.49 : w * 0.38;
 
   // Squircle distance formula: (|x|^4 + |y|^4)^(1/4)
   const nx = (x - cx) / (w * 0.44);

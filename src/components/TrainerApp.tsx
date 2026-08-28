@@ -49,10 +49,11 @@ import { TilePractice } from './TilePractice';
 import { FullExamMode } from './FullExamMode';
 import { SchreibenModule } from './SchreibenModule';
 import { SprechenModule } from './SprechenModule';
-import { AdminPanel } from './AdminPanel';
 import { SettingsPage } from './SettingsPage';
 import { WortschatzModule } from './WortschatzModule';
 import { SubscriptionPage } from './SubscriptionPage';
+
+const AdminPanel = React.lazy(() => import('./AdminPanel').then((m) => ({ default: m.AdminPanel })));
 import { ErrorBoundary } from './ErrorBoundary';
 import { LoginModal } from './LoginModal';
 import { PromoModal } from './PromoModal';
@@ -687,18 +688,26 @@ export const TrainerApp: React.FC<TrainerAppProps> = ({ theme, onToggleTheme }) 
           <div>
             {currentUser && currentUser.role === 'admin' && isAdminEmail(currentUser.email) ? (
               <ErrorBoundary fallbackTitle="Admin-Bereich Anzeigefehler">
-                <AdminPanel
-                  modelltests={modelltests}
-                  onSaveModelltests={handleSaveModelltests}
-                  promoCodes={promoCodes}
-                  onSavePromoCodes={handleSavePromoCodes}
-                  forumsbeitragTopics={forumsbeitragTopics}
-                  onSaveForumsbeitragTopics={handleSaveForumsbeitragTopics}
-                  sprechenTopics={sprechenTopics}
-                  onSaveSprechenTopics={handleSaveSprechenTopics}
-                  wortschatzItems={wortschatzItems}
-                  onSaveWortschatz={handleSaveWortschatz}
-                />
+                <React.Suspense
+                  fallback={
+                    <div className="p-12 text-center text-xs font-bold text-slate-500 animate-pulse">
+                      Admin-Bereich wird geladen...
+                    </div>
+                  }
+                >
+                  <AdminPanel
+                    modelltests={modelltests}
+                    onSaveModelltests={handleSaveModelltests}
+                    promoCodes={promoCodes}
+                    onSavePromoCodes={handleSavePromoCodes}
+                    forumsbeitragTopics={forumsbeitragTopics}
+                    onSaveForumsbeitragTopics={handleSaveForumsbeitragTopics}
+                    sprechenTopics={sprechenTopics}
+                    onSaveSprechenTopics={handleSaveSprechenTopics}
+                    wortschatzItems={wortschatzItems}
+                    onSaveWortschatz={handleSaveWortschatz}
+                  />
+                </React.Suspense>
               </ErrorBoundary>
             ) : (
               <div className="glass-panel p-10 rounded-3xl text-center max-w-md mx-auto my-12 border border-rose-500/30 space-y-4">

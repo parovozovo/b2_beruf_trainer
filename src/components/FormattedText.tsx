@@ -53,7 +53,7 @@ export const formatMarkdownToHtml = (rawText?: string): string => {
 
   // Convert markdown italic: *text* or _text_ -> <em class="italic text-slate-700 dark:text-slate-300">
   // Match single asterisk not followed or preceded by another asterisk
-  html = html.replace(/(?<!\*)\*([^\*\n]+?)\*(?!\*)/g, '<em class="italic text-slate-700 dark:text-slate-300">$1</em>');
+  html = html.replace(/(?<!\*)\*([^*\n]+?)\*(?!\*)/g, '<em class="italic text-slate-700 dark:text-slate-300">$1</em>');
   html = html.replace(/(?<!_)_([^_\n]+?)_(?!_)/g, '<em class="italic text-slate-700 dark:text-slate-300">$1</em>');
 
   // Convert gap indicators: [ _______ ] or [46]
@@ -87,7 +87,7 @@ export const FormattedInline: React.FC<{ text?: string; className?: string }> = 
     html = html.replace(/\*\*([\s\S]*?)\*\*/g, '<strong class="font-black text-slate-900 dark:text-white">$1</strong>');
     html = html.replace(/__([\s\S]*?)__/g, '<strong class="font-black text-slate-900 dark:text-white">$1</strong>');
     // Replace italic
-    html = html.replace(/(?<!\*)\*([^\*\n]+?)\*(?!\*)/g, '<em class="italic">$1</em>');
+    html = html.replace(/(?<!\*)\*([^*\n]+?)\*(?!\*)/g, '<em class="italic">$1</em>');
     return html;
   }, [text]);
 

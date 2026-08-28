@@ -76,18 +76,7 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({
   const [showTopicModal, setShowTopicModal] = useState(false);
   const [modalTargetPartner, setModalTargetPartner] = useState<'A' | 'B'>('A');
 
-  // Initialize Part 1A choices
-  useEffect(() => {
-    initPart1A();
-  }, [sprechenTopics]);
-
-  const getDefaultDuration = (part: '1A' | '2' | '3' | 'finish') => {
-    if (part === '1A') return 120; // 2 min
-    if (part === '2') return 180;  // 3 min presentation
-    return 180; // 3 min per partner for Teil 3 planning
-  };
-
-  const initPart1A = () => {
+  const initPart1A = React.useCallback(() => {
     setActivePart('1A');
     const std1A = sprechenTopics.sprecher1AQuestions || [
       {
@@ -143,6 +132,17 @@ export const SprechenModule: React.FC<SprechenModuleProps> = ({
     setTimerFinishedA(false);
     setTimerFinishedB(false);
     setActiveSpeaker('A');
+  }, [sprechenTopics.sprecher1AQuestions]);
+
+  // Initialize Part 1A choices
+  useEffect(() => {
+    initPart1A();
+  }, [initPart1A]);
+
+  const getDefaultDuration = (part: '1A' | '2' | '3' | 'finish') => {
+    if (part === '1A') return 120; // 2 min
+    if (part === '2') return 180;  // 3 min presentation
+    return 180; // 3 min per partner for Teil 3 planning
   };
 
   const initPart2 = () => {
